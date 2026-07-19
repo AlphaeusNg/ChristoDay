@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChristoDay — Christ-centered daily gospel reading</title>
+  <meta name="description" content="Weekday Christ-centered Bible reading plan (Matthew, Mark, Luke, Philippians, Jude). Asia/Singapore schedule, live Scripture, journal, streaks. By Alphaeus Ng." />
+  <meta name="author" content="Alphaeus Ng" />
+  <meta name="theme-color" content="#0A0F1C" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="canonical" href="https://alphaeusng.github.io/ChristoDay/" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta property="og:title" content="ChristoDay" />
+  <meta property="og:description" content="5–10 minute weekday readings that relentlessly point to Jesus." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://alphaeusng.github.io/ChristoDay/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230A0F1C'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='22' fill='%23C9A227'%3ECD%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to reading</a>
+
+  <header class="topbar">
+    <a class="brand" href="./" title="ChristoDay home">
+      <span class="brand-mark" aria-hidden="true">CD</span>
+      <span>
+        <strong>ChristoDay</strong>
+        <small>gospel · weekday · 5–10 min</small>
+      </span>
+    </a>
+    <nav class="top-nav" aria-label="Related">
+      <a href="https://alphaeusng.github.io/">Portfolio</a>
+      <a href="https://alphaeusng.github.io/VerseKeep/">VerseKeep</a>
+      <a href="https://alphaeusng.github.io/pages/seeking-biblical-truth/">Biblical Truth</a>
+      <a href="#about">About</a>
+    </nav>
+  </header>
+
+  <p id="fatal" hidden role="alert"></p>
+
+  <main id="main" class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Christ-centered · not checklist-centered</p>
+      <h1>Meet Jesus in the text today</h1>
+      <p class="lede">
+        A fixed weekday plan through Matthew, Mark, Luke, Philippians, and Jude —
+        natural 5–10 minute segments, Asia/Singapore time, relentlessly gospel-focused.
+        Weekends are rest, not homework.
+      </p>
+    </section>
+
+    <div class="stats" aria-label="Progress">
+      <div class="stat">
+        <b id="stat-streak">0</b>
+        <span>Weekday streak</span>
+      </div>
+      <div class="stat">
+        <b id="stat-done">0</b>
+        <span>Days completed</span>
+      </div>
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="Day navigation">
+      <button type="button" class="btn" id="btn-prev" title="Previous day (←)">← Prev</button>
+      <button type="button" class="btn" id="btn-today" title="Jump to today (T)">Today</button>
+      <button type="button" class="btn" id="btn-next" title="Next day (→)">Next →</button>
+      <label class="muted" style="display:flex;align-items:center;gap:0.4rem">
+        <span class="sr-only">Pick date</span>
+        <input type="date" id="date-pick" aria-label="Pick calendar date" />
+      </label>
+      <label class="muted" style="display:flex;align-items:center;gap:0.4rem;margin-left:auto">
+        Translation
+        <select id="translation" aria-label="Bible translation">
+          <option value="NIV">NIV</option>
+          <option value="ESV">ESV</option>
+          <option value="NKJV">NKJV</option>
+          <option value="WEB">WEB</option>
+        </select>
+      </label>
+    </div>
+
+    <p class="muted" id="reading-date" style="margin:0 0 0.75rem"></p>
+
+    <section id="weekend-panel" class="card weekend-card" hidden>
+      <p class="eyebrow">Sabbath rest</p>
+      <h2>Weekend</h2>
+      <p id="weekend-msg" class="lede" style="margin:0 auto;max-width:28rem"></p>
+    </section>
+
+    <section id="before-panel" class="card weekend-card" hidden>
+      <p class="eyebrow">Coming soon</p>
+      <h2>Plan not started</h2>
+      <p id="before-msg" class="lede" style="margin:0 auto;max-width:28rem"></p>
+    </section>
+
+    <section id="reading-panel" hidden>
+      <article class="card">
+        <div class="card-head">
+          <span class="badge" id="book-badge">—</span>
+          <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
+            <span aria-hidden="true">○</span> Mark complete
+          </button>
+        </div>
+        <h2 class="passage-ref" id="passage-ref">—</h2>
+        <div class="meta-row">
+          <span id="time-est">≈ 5–10 minutes</span>
+          <span>Translation: <strong id="passage-tr-label">—</strong></span>
+          <span id="tomorrow-note"></span>
+        </div>
+        <p class="focus-box" id="book-focus"></p>
+        <p id="passage-status" class="status" hidden>Loading Scripture…</p>
+        <div id="passage-body" class="passage-body" aria-live="polite"></div>
+      </article>
+
+      <article class="card">
+        <p class="eyebrow">Christ-centered reflection</p>
+        <h3 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.15rem">Look for Jesus</h3>
+        <p id="reflection-seed" class="muted" style="margin-top:0"></p>
+        <ol class="questions" id="questions"></ol>
+      </article>
+
+      <article class="card">
+        <p class="eyebrow">Private journal</p>
+        <h3 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.15rem">One sentence for today</h3>
+        <p class="muted" style="margin-top:0">Stored only on this device (<code>localStorage</code>). Never uploaded.</p>
+        <label class="sr-only" for="journal">Journal</label>
+        <textarea id="journal" placeholder="What did you see of Christ? What grace do you need to walk in?"></textarea>
+      </article>
+    </section>
+
+    <section id="about" class="card" style="margin-top:1.5rem">
+      <p class="eyebrow">Why this exists</p>
+      <h2 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.25rem">Niche with a name</h2>
+      <p class="muted" style="margin-top:0">
+        Built by <strong>Alphaeus Ng</strong> — AI engineer by vocation, student of Scripture by calling.
+        Generic reading plans often track chapters; this plan tracks <em>Christ</em>: who He is, what He has done,
+        and how the gospel lands on a real heart. Schedule math is deterministic (Singapore timezone).
+        Live text is optional convenience; your paper Bible is enough.
+      </p>
+      <p class="muted">
+        Related: <a href="https://alphaeusng.github.io/VerseKeep/">VerseKeep</a> (memory) ·
+        <a href="https://alphaeusng.github.io/pages/seeking-biblical-truth/">Seeking Biblical Truth</a> (study vault) ·
+        <a href="https://alphaeusng.github.io/">Portfolio</a>
+      </p>
+      <p class="muted" style="margin-bottom:0">
+        Keys: <span class="kbd">←</span><span class="kbd">→</span> days ·
+        <span class="kbd">T</span> today · <span class="kbd">C</span> complete
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© 2026 Alphaeus Ng · MIT</span>
+    <span>Version <span id="site-version">—</span></span>
+    <span>Not affiliated with any Bible publisher · Translations via public APIs</span>
+  </footer>
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+
+  <script src="js/version.js"></script>
+  <script src="js/schedule.js"></script>
+  <script src="js/bible.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

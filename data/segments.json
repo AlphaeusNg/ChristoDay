@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "startDate": "2026-06-15",
+    "timezone": "Asia/Singapore",
+    "title": "ChristoDay plan",
+    "description": "Weekday Christ-centered gospel readings. No weekend assignments — rest in the gospel."
+  },
+  "weekdayMap": {
+    "1": "jude",
+    "2": "matthew",
+    "3": "mark",
+    "4": "philippians",
+    "5": "luke"
+  },
+  "books": {
+    "matthew": {
+      "label": "Matthew",
+      "focus": "Jesus the Messiah-King — fulfilment, authority, cross, and Great Commission.",
+      "segments": [
+        "1:1-17", "1:18-25", "2:1-12", "2:13-23", "3:1-12", "3:13-17", "4:1-11", "4:12-25",
+        "5:1-12", "5:13-16", "5:17-48", "6:1-18", "6:19-34", "7:1-12", "7:13-29",
+        "8:1-17", "8:18-34", "9:1-17", "9:18-38", "10:1-15", "10:16-42",
+        "11:1-19", "11:20-30", "12:1-21", "12:22-50", "13:1-23", "13:24-58",
+        "14:1-21", "14:22-36", "15:1-20", "15:21-39", "16:1-20", "16:21-28",
+        "17:1-13", "17:14-27", "18:1-20", "18:21-35", "19:1-15", "19:16-30",
+        "20:1-16", "20:17-34", "21:1-22", "21:23-46", "22:1-14", "22:15-46",
+        "23:1-39", "24:1-35", "24:36-51", "25:1-30", "25:31-46",
+        "26:1-16", "26:17-35", "26:36-56", "26:57-75", "27:1-26", "27:27-56",
+        "27:57-66", "28:1-15", "28:16-20"
+      ]
+    },
+    "mark": {
+      "label": "Mark",
+      "focus": "Jesus the Servant-Son — urgency, authority, suffering, and the empty tomb.",
+      "segments": [
+        "1:1-8", "1:9-15", "1:16-39", "1:40-2:12", "2:13-3:6", "3:7-19", "3:20-35",
+        "4:1-20", "4:21-41", "5:1-20", "5:21-43", "6:1-13", "6:14-29", "6:30-56",
+        "7:1-23", "7:24-37", "8:1-21", "8:22-38", "9:1-13", "9:14-32", "9:33-50",
+        "10:1-16", "10:17-34", "10:35-52", "11:1-14", "11:15-33", "12:1-17", "12:18-44",
+        "13:1-23", "13:24-37", "14:1-16", "14:17-31", "14:32-52", "14:53-72",
+        "15:1-20", "15:21-47", "16:1-8"
+      ]
+    },
+    "luke": {
+      "label": "Luke",
+      "focus": "Jesus the merciful Savior — for the lost, the poor, and the outsider.",
+      "segments": [
+        "1:1-4", "1:5-25", "1:26-38", "1:39-56", "1:57-80", "2:1-21", "2:22-52",
+        "3:1-20", "3:21-38", "4:1-15", "4:16-44", "5:1-26", "5:27-39", "6:1-19", "6:20-49",
+        "7:1-17", "7:18-35", "7:36-50", "8:1-21", "8:22-39", "8:40-56",
+        "9:1-17", "9:18-36", "9:37-62", "10:1-24", "10:25-42", "11:1-28", "11:29-54",
+        "12:1-21", "12:22-48", "12:49-59", "13:1-21", "13:22-35", "14:1-24", "14:25-35",
+        "15:1-32", "16:1-18", "16:19-31", "17:1-19", "17:20-37", "18:1-17", "18:18-43",
+        "19:1-27", "19:28-48", "20:1-26", "20:27-47", "21:1-38",
+        "22:1-38", "22:39-71", "23:1-25", "23:26-49", "23:50-56", "24:1-35", "24:36-53"
+      ]
+    },
+    "philippians": {
+      "label": "Philippians",
+      "focus": "Jesus the humble Lord — joy in gospel partnership, kenosis, and contentment in Christ.",
+      "segments": [
+        "1:1-11", "1:12-30", "2:1-18", "2:19-30", "3:1-21", "4:1-9", "4:10-23"
+      ]
+    },
+    "jude": {
+      "label": "Jude",
+      "focus": "Jesus who keeps His people — contend for the faith, mercy, and glory to the only God our Savior.",
+      "mode": "rotation",
+      "rotations": [
+        { "key": "full", "label": "Jude 1:1-25 (full)", "ref": "1:1-25" },
+        { "key": "a", "label": "Jude 1:1-4", "ref": "1:1-4" },
+        { "key": "b", "label": "Jude 1:5-16", "ref": "1:5-16" },
+        { "key": "c", "label": "Jude 1:17-25", "ref": "1:17-25" }
+      ]
+    }
+  },
+  "reflectionTemplates": {
+    "matthew": [
+      "Where does this passage show Jesus as the promised King and true Israel?",
+      "How does His authority or teaching here reveal His heart for sinners?",
+      "What response does the gospel invite — trust, repentance, obedience, or worship?"
+    ],
+    "mark": [
+      "What does Jesus do here that only God-with-us can do?",
+      "How does His path toward the cross reshape what greatness looks like?",
+      "Where are you invited to follow Him with urgency and humility today?"
+    ],
+    "luke": [
+      "Who receives mercy in this scene — and how does that mirror the gospel to you?",
+      "How does Jesus seek and save the lost here?",
+      "What joy or repentance does this passage awaken?"
+    ],
+    "philippians": [
+      "How is Christ Himself the center of Paul's joy and confidence here?",
+      "Where does the humility of Jesus challenge self-reliance or rivalry?",
+      "What gospel partnership or contentment is God forming in you?"
+    ],
+    "jude": [
+      "How does Jude hold together holy seriousness and deep mercy in Christ?",
+      "What does it mean that Jesus is able to keep you from stumbling?",
+      "Where do you need to contend for the faith without losing gospel grace?"
+    ]
+  }
+}

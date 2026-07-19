@@ -1,0 +1,10 @@
+{
+  "name": "ChristoDay",
+  "short_name": "ChristoDay",
+  "description": "Christ-centered weekday gospel reading plan",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0A0F1C",
+  "theme_color": "#0A0F1C",
+  "lang": "en"
+}
