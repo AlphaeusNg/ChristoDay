@@ -64,7 +64,7 @@
   }
 
   /**
-   * @returns {Promise<{ text: string, translation: string, verses: Array }>}
+   * @returns {Promise<{ text: string, html: string, translation: string, verses: Array }>}
    */
   async function fetchPassage(bookKey, ref, translation = "NIV") {
     const bookId = BOOK_IDS[bookKey];
@@ -87,15 +87,12 @@
       }
     }
 
-    const text = collected
-      .map((v) => `${v.verse === ranges[0].verseFrom && v.chapter === ranges[0].chapter ? "" : ""}${v.verse} ${v.text}`)
-      .join(" ");
-
-    const formatted = collected
+    const text = collected.map((v) => v.text).join(" ");
+    const html = collected
       .map((v) => `<sup class="vnum">${v.chapter}:${v.verse}</sup> ${escapeHtml(v.text)}`)
       .join(" ");
 
-    return { text: collected.map((v) => v.text).join(" "), html: formatted, translation: tr, verses: collected };
+    return { text, html, translation: tr, verses: collected };
   }
 
   function stripHtml(s) {

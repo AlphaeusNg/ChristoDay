@@ -6,11 +6,12 @@
 
   const STORAGE_KEY = "christoday.v1";
   const $ = (sel, el = document) => el.querySelector(sel);
-  const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 
   let plan = null;
   let state = loadState();
   let currentYmd = null;
+  /** Monotonic token so slow Bible fetches don't clobber a newer day. */
+  let renderSeq = 0;
 
   function loadState() {
     try {
@@ -62,6 +63,7 @@
   async function init() {
     try {
       const res = await fetch("data/segments.json", { cache: "no-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
       plan = await res.json();
     } catch (e) {
       showFatal("Could not load reading plan data.");
@@ -87,8 +89,10 @@
     });
     $("#translation")?.addEventListener("change", async (e) => {
       state.translation = e.target.value;
+      const day = ensureDay(currentYmd);
+      day.translation = state.translation;
       saveState();
-      await loadPassage();
+      await loadPassage(renderSeq);
     });
     $("#date-pick")?.addEventListener("change", async (e) => {
       if (e.target.value) await renderDay(e.target.value);
@@ -134,6 +138,7 @@
   }
 
   async function renderDay(ymd) {
+    const seq = ++renderSeq;
     currentYmd = ymd;
     const reading = ChristoSchedule.resolveReading(plan, ymd);
     const datePick = $("#date-pick");
@@ -153,13 +158,11 @@
     if (reading.kind === "weekend") {
       weekendEl.hidden = false;
       $("#weekend-msg").textContent = reading.message;
-      $("#btn-complete").hidden = true;
       return;
     }
     if (reading.kind === "before_start") {
       beforeEl.hidden = false;
       $("#before-msg").textContent = reading.message;
-      $("#btn-complete").hidden = true;
       return;
     }
     if (reading.kind !== "reading") {
@@ -168,7 +171,6 @@
     }
 
     readingEl.hidden = false;
-    $("#btn-complete").hidden = false;
 
     $("#book-badge").textContent = reading.bookLabel;
     $("#passage-ref").textContent = reading.fullRef;
@@ -188,7 +190,7 @@
     if (tr) tr.value = state.translation || day.translation || "NIV";
     updateCompleteButton(!!day.completed);
 
-    await loadPassage();
+    await loadPassage(seq);
   }
 
   function buildReflectionSeed(reading) {
@@ -203,7 +205,7 @@
     return `${opener} As you read ${reading.fullRef}, ask: How does this passage reveal His person, work, or gospel glory? End with one short prayer of trust.`;
   }
 
-  async function loadPassage() {
+  async function loadPassage(seq) {
     const reading = ChristoSchedule.resolveReading(plan, currentYmd);
     if (reading.kind !== "reading") return;
 
@@ -216,15 +218,17 @@
     const tr = state.translation || "NIV";
     try {
       const result = await ChristoBible.fetchPassage(reading.bookKey, reading.ref, tr);
+      if (seq !== renderSeq) return; // user navigated away
       if (!result.verses?.length) throw new Error("Empty passage");
       body.innerHTML = result.html;
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
     } catch (err) {
+      if (seq !== renderSeq) return;
       status.hidden = false;
       status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
       body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
-        <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline.</p>`;
+        <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
       $("#passage-tr-label").textContent = "—";
     }
   }

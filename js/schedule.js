@@ -7,6 +7,7 @@
 
   const TZ = "Asia/Singapore";
   const START = "2026-06-15"; // Monday, plan epoch
+  const MS_PER_DAY = 86400000;
 
   function partsInSingapore(date = new Date()) {
     const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -43,21 +44,29 @@
     return partsInSingapore(ymdToUtcNoon(ymd)).weekdayNum;
   }
 
+  /** Whole calendar days from aYmd to bYmd (b - a). */
+  function daysBetweenYmd(aYmd, bYmd) {
+    return Math.round((ymdToUtcNoon(bYmd) - ymdToUtcNoon(aYmd)) / MS_PER_DAY);
+  }
+
   /**
    * Count occurrences of a specific weekday (0=Sun..6=Sat) from startYmd to endYmd inclusive.
-   * Both dates are calendar dates in Singapore.
+   * Both dates are calendar dates in Singapore. O(1) after finding the first match.
    */
   function countWeekdayInclusive(startYmd, endYmd, weekdayNum) {
-    let count = 0;
-    let cur = startYmd;
-    // Safety cap ~40 years
-    for (let i = 0; i < 15000; i++) {
-      if (weekdayOfYmd(cur) === weekdayNum) count++;
-      if (cur === endYmd) break;
-      cur = addDaysYmd(cur, 1);
-      if (cur > endYmd && count > 0) break;
+    if (!startYmd || !endYmd || endYmd < startYmd) return 0;
+
+    // First occurrence of weekdayNum on or after startYmd
+    let first = startYmd;
+    const startWd = weekdayOfYmd(startYmd);
+    if (startWd !== weekdayNum) {
+      let delta = (weekdayNum - startWd + 7) % 7;
+      if (delta === 0) delta = 7;
+      first = addDaysYmd(startYmd, delta);
     }
-    return count;
+    if (first > endYmd) return 0;
+
+    return Math.floor(daysBetweenYmd(first, endYmd) / 7) + 1;
   }
 
   function countMondaysInclusive(startYmd, endYmd) {
@@ -82,11 +91,14 @@
     }
 
     if (wd === 0 || wd === 6) {
+      const isSaturday = wd === 6;
       return {
         kind: "weekend",
         ymd: today,
-        weekday: wd === 0 ? "Sunday" : "Saturday",
-        message: "No reading today (weekend). Rest in the gospel and prepare your heart for tomorrow.",
+        weekday: isSaturday ? "Saturday" : "Sunday",
+        message: isSaturday
+          ? "No reading today (Saturday). Rest in the gospel — the plan resumes Monday."
+          : "No reading today (Sunday). Rest in the gospel and prepare your heart for Monday.",
       };
     }
 
@@ -102,10 +114,8 @@
 
     if (book.mode === "rotation") {
       // Jude: number of Mondays from start to today inclusive
-      const judeTurn = countMondaysInclusive(start, today);
-      const rotIndex = ((judeTurn % 4) + 4) % 4; // 1->1, 2->2, 3->3, 0->0 in prompt; map carefully
       // Prompt: %4 == 1 full, == 2 a, == 3 b, == 0 c
-      // If judeTurn % 4 === 1 → index 0 (full); === 2 → 1; === 3 → 2; === 0 → 3
+      const judeTurn = countMondaysInclusive(start, today);
       const map = { 1: 0, 2: 1, 3: 2, 0: 3 };
       const idx = map[judeTurn % 4];
       const rot = book.rotations[idx];
@@ -177,5 +187,6 @@
     weekdayOfYmd,
     countWeekdayInclusive,
     countMondaysInclusive,
+    daysBetweenYmd,
   };
 })(typeof window !== "undefined" ? window : globalThis);

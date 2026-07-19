@@ -342,6 +342,17 @@ textarea:focus {
   gap: 0.5rem 1.25rem;
   justify-content: space-between;
 }
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+.footer-links a {
+  color: var(--muted);
+}
+.footer-links a:hover {
+  color: var(--gold);
+}
 
 .kbd {
   font-family: var(--mono);
