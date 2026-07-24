@@ -1,6 +1,6 @@
 /* ChristoDay service worker — precache shell + plan for offline weekday use.
    Bible live text stays network-only. */
-const CACHE = "christoday-2026.07.24.4";
+const CACHE = "christoday-2026.07.24.5";
 const PRECACHE = [
   "./",
   "./index.html",
