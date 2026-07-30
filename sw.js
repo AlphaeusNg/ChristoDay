@@ -1,6 +1,7 @@
 /* ChristoDay service worker — precache shell + plan for offline weekday use.
    Bible live text stays network-only. */
-const CACHE = "christoday-2026.07.24.6";
+importScripts("./js/version.js");
+const CACHE = `christoday-${self.SITE_VERSION.id}`;
 const PRECACHE = [
   "./",
   "./index.html",
