@@ -13,6 +13,32 @@
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
 
+  function bindAutoHideHeader() {
+    const header = $(".topbar");
+    if (!header) return;
+    let lastY = Math.max(0, window.scrollY);
+    let ticking = false;
+
+    function update() {
+      const y = Math.max(0, window.scrollY);
+      const delta = y - lastY;
+      if (y <= 16 || delta < 0 || header.matches(":focus-within")) {
+        header.classList.remove("is-scroll-hidden");
+      } else if (delta > 0 && y > header.offsetHeight) {
+        header.classList.add("is-scroll-hidden");
+      }
+      lastY = y;
+      ticking = false;
+    }
+
+    header.addEventListener("focusin", () => header.classList.remove("is-scroll-hidden"));
+    window.addEventListener("scroll", () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }, { passive: true });
+  }
+
   function loadState() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
@@ -61,6 +87,7 @@
   }
 
   async function init() {
+    bindAutoHideHeader();
     try {
       const res = await fetch("data/segments.json", { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);

@@ -76,6 +76,24 @@ a:hover {
   border-bottom: 1px solid var(--line);
   background: rgba(10, 15, 28, 0.85);
   backdrop-filter: blur(12px);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  will-change: transform;
+}
+
+.topbar.is-scroll-hidden {
+  transform: translateY(calc(-100% - 1px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.topbar:focus-within {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar { transition: none; }
 }
 
 .brand {
