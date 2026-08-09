@@ -10,14 +10,16 @@ completed autonomous improvement cycles.
   timeout, in-flight deduplication, and a 50-chapter memory cache.
 - Persisted journal/completion state with 7 passing hydration/persistence cases
   and non-throwing save failure handling.
-- GitHub Actions runs schedule, Bible client, and JavaScript syntax checks.
+- GitHub Actions runs schedule, Bible, state, site/offline structure, and syntax
+  checks.
 - Zero-build static site; journal and completion state remain device-local.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Add structural shell/precache validation | Test / maintainability | Medium: HTML script references and offline precache entries can drift silently | Small / low | Verify local assets and required runtime modules | Next |
+| 1 | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates can remain in totals/state | Small / low | Add leap-day and invalid-month/day cases | Next |
+| — | Add structural shell/precache validation | Test / maintainability | Medium: HTML references and offline precache could drift silently | Small / low | 11 precache entries plus local refs | Completed in Cycle 25 |
 | — | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: malformed records caused incidental errors or empty text | Small / low | Normalized container and verse records | Completed in Cycle 24 |
 | — | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy errors threw from journal/completion actions | Small / low | Boolean save contract plus status surface | Completed in Cycle 23 |
 | — | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetched identical chapters | Small / low | 50-entry cache plus in-flight map | Completed in Cycle 22 |
@@ -304,3 +306,44 @@ repeatable session-level failure.
 **Next opportunity:** Add a structural test that every local HTML script/style
 exists and that all required offline runtime files—including new state modules—
 remain in the service-worker precache.
+
+### Cycle 25 — Verify site and offline structure (2026-08-09)
+
+**Why this won:** Adding `state.js` required coordinated edits to HTML load order
+and the service-worker precache. Neither existing syntax tests nor browser code
+would catch a missing path until deployment or an offline visit.
+
+**Plan and success criteria**
+
+1. Verify every local HTML `src`/`href` target exists.
+2. Verify every precache entry exists and all runtime modules/data are included.
+3. Lock the state-before-app load order and run the check in CI.
+
+**Changes**
+
+- Added `tools/test-site.mjs` for local references, 11 precache entries,
+  required runtime assets, and script order.
+- Added the structural command to `AGENTS.md` and GitHub Actions.
+
+**Verification evidence**
+
+- Site test reports all local references valid and 11 precache entries verified.
+- Schedule: 39; Bible: 9; state: 7; all syntax checks passed.
+- `git diff --check`: passed.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 6/10 | 9/10 | Missing/misordered runtime assets fail before deployment |
+| Test coverage / verifiability | 4/10 | 9/10 | HTML and offline shell now have an executable contract |
+| Maintainability | 5/10 | 9/10 | New modules require one obvious precache/test update |
+| Performance | 9/10 | 9/10 | Structural check is filesystem-only and near-instant |
+| Offline UX | 4/10 | 9/10 | Required reading shell/data omissions are CI failures |
+
+**Lesson / process improvement:** PWA changes span runtime load order and offline
+packaging. A small structural test should verify both whenever modules are added.
+
+**Next opportunity:** Replace regex-only saved date validation with real UTC
+calendar validation, preserving valid leap days while discarding impossible
+month/day combinations.

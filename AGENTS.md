@@ -28,6 +28,7 @@ python3 -m http.server 8091
 node tools/test-schedule.mjs
 node tools/test-bible.mjs
 node tools/test-state.mjs
+node tools/test-site.mjs
 node --check js/schedule.js && node --check js/bible.js && node --check js/state.js && node --check js/app.js
 ```
 
