@@ -12,6 +12,10 @@ vm.createContext(sandbox);
 vm.runInContext(source, sandbox);
 const stateApi = sandbox.window.ChristoState;
 
+assert.equal(stateApi.validYmd("2028-02-29"), true);
+assert.equal(stateApi.validYmd("2027-02-29"), false);
+assert.equal(stateApi.validYmd("2026-13-01"), false);
+
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.hydrateState(null))),
   { translation: "NIV", days: {} }
@@ -27,6 +31,7 @@ const hydrated = stateApi.hydrateState({
       completedAt: "2026-08-09T01:00:00.000Z",
     },
     "bad-date": { completed: true },
+    "2026-02-30": { completed: true },
     "2026-08-10": null,
   },
 });
@@ -61,4 +66,4 @@ assert.equal(
   false
 );
 
-console.log("test-state.mjs: 7 hydration and persistence cases ok");
+console.log("test-state.mjs: 10 hydration and persistence cases ok");

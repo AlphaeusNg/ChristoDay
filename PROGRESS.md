@@ -8,7 +8,7 @@ completed autonomous improvement cycles.
 - Deterministic weekday schedule with 39 passing schedule/data tests.
 - Live Bible client with 9 passing network/payload/cache/passage tests, a 10-second
   timeout, in-flight deduplication, and a 50-chapter memory cache.
-- Persisted journal/completion state with 7 passing hydration/persistence cases
+- Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
 - GitHub Actions runs schedule, Bible, state, site/offline structure, and syntax
   checks.
@@ -18,7 +18,8 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates can remain in totals/state | Small / low | Add leap-day and invalid-month/day cases | Next |
+| 1 | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevent stale rendering but unrelated requests continue until completion/timeout | Medium / medium | Coordinate UI aborts with shared chapter requests | Next |
+| — | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates remained in totals/state | Small / low | Leap-day and invalid calendar cases | Completed in Cycle 26 |
 | — | Add structural shell/precache validation | Test / maintainability | Medium: HTML references and offline precache could drift silently | Small / low | 11 precache entries plus local refs | Completed in Cycle 25 |
 | — | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: malformed records caused incidental errors or empty text | Small / low | Normalized container and verse records | Completed in Cycle 24 |
 | — | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy errors threw from journal/completion actions | Small / low | Boolean save contract plus status surface | Completed in Cycle 23 |
@@ -347,3 +348,47 @@ packaging. A small structural test should verify both whenever modules are added
 **Next opportunity:** Replace regex-only saved date validation with real UTC
 calendar validation, preserving valid leap days while discarding impossible
 month/day combinations.
+
+### Cycle 26 — Validate saved calendar dates (2026-08-09)
+
+**Why this won:** State hydration accepted any `YYYY-MM-DD` shape, including
+`2026-02-30` and month 13. Those records could inflate completion totals and
+remain permanently unreachable through the date input.
+
+**Plan and success criteria**
+
+1. Require strict format and a UTC parse/ISO round trip.
+2. Preserve valid leap days while rejecting non-leap and impossible dates.
+3. Apply the validator before any saved day enters hydrated state.
+
+**Changes**
+
+- Added/exported `validYmd` and used it in day-record hydration.
+- Added valid leap-day, invalid leap-day, invalid month, and impossible saved-day
+  coverage.
+
+**Verification evidence**
+
+- State: 10 cases passed (up from 7); Bible: 9; schedule: 39; site/offline
+  structure and all syntax checks passed.
+- `git diff --check`: passed.
+- `2028-02-29` survives; `2027-02-29`, `2026-13-01`, and `2026-02-30` fail or
+  are discarded.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 5/10 | 9/10 | Only reachable real dates contribute to state/totals |
+| Test coverage / verifiability | 5/10 | 9/10 | Leap and impossible calendar boundaries are explicit |
+| Maintainability | 7/10 | 8/10 | Date policy is one exported helper |
+| Performance | 9/10 | 9/10 | One parse per small saved record |
+| User experience | 6/10 | 8/10 | Ghost completion records are removed during hydration |
+
+**Lesson / process improvement:** Format validation is not semantic validation.
+For canonical date keys, round-trip through a timezone-fixed representation and
+compare the exact original string.
+
+**Next opportunity:** Coordinate UI-level cancellation with the shared Bible
+request cache so navigating away can stop obsolete unique chapter requests
+without disrupting consumers that still need the same in-flight request.

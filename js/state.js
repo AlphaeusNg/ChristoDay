@@ -13,6 +13,12 @@
     return TRANSLATIONS.has(value) ? value : fallback;
   }
 
+  function validYmd(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+
   function defaultState() {
     return { translation: "NIV", days: {} };
   }
@@ -24,7 +30,7 @@
     if (!isRecord(saved.days)) return hydrated;
 
     for (const [ymd, value] of Object.entries(saved.days)) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd) || !isRecord(value)) continue;
+      if (!validYmd(ymd) || !isRecord(value)) continue;
       const day = {
         completed: value.completed === true,
         journal: typeof value.journal === "string" ? value.journal : "",
@@ -66,5 +72,13 @@
     return state.days[ymd];
   }
 
-  global.ChristoState = { STORAGE_KEY, defaultState, hydrateState, loadState, saveState, ensureDay };
+  global.ChristoState = {
+    STORAGE_KEY,
+    defaultState,
+    hydrateState,
+    loadState,
+    saveState,
+    ensureDay,
+    validYmd,
+  };
 })(typeof window !== "undefined" ? window : globalThis);
