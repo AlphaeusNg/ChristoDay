@@ -3,6 +3,8 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
+Last updated: 2026-08-10 (Cycle 86 across the projects workspace; ChristoDay Cycle 28)
+
 ## Current state
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
@@ -11,17 +13,19 @@ completed autonomous improvement cycles.
   50-chapter memory cache.
 - Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
-- GitHub Actions runs schedule, Bible, state, site/offline structure, and syntax
-  checks.
+- GitHub Actions runs 18 workflow-policy assertions plus schedule, Bible, state,
+  site/offline structure, and complete JavaScript syntax checks on Node 24 LTS
+  with read-only permissions, stale-run cancellation, and a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
+- Deployment version: `2026.08.10.1`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every unpublished check still targets older Node/actions and lacks explicit least privilege or timeout | Small / low | Verify supported official action/runtime versions before editing | Next |
-| 2 | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites do not execute the complete DOM boot or cancellation integration | Medium / low | Reuse the test-only browser approach proven in the sibling static sites | Backlog |
-| 3 | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passes schedule tests, but runtime fetch consumers trust its shape | Small-medium / low | Reuse schedule invariants and show safe visitor recovery | Backlog |
+| 1 | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites do not execute the complete DOM boot or cancellation integration | Medium / low | Reuse the test-only browser approach proven in the sibling static sites | Next |
+| 2 | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passes schedule tests, but runtime fetch consumers trust its shape | Small-medium / low | Reuse schedule invariants and show safe visitor recovery | Backlog |
+| — | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every check needed supported runtimes and bounded least privilege | Small / low | 18 executable workflow policies | Completed in Cycle 28 |
 | — | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevented stale rendering but unrelated requests continued until completion/timeout | Medium / medium | Ref-count shared chapter consumers and subscribe new UI work before aborting old | Completed in Cycle 27 |
 | — | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates remained in totals/state | Small / low | Leap-day and invalid calendar cases | Completed in Cycle 26 |
 | — | Add structural shell/precache validation | Test / maintainability | Medium: HTML references and offline precache could drift silently | Small / low | 11 precache entries plus local refs | Completed in Cycle 25 |
@@ -459,3 +463,67 @@ retry cannot inherit doomed work.
 explicit read-only permissions, a bounded timeout, and executable policy checks.
 Workspace next: pivot after this ChristoDay cycle to keep improvement breadth
 across the project hub.
+
+### Cycle 28 — Modernize and enforce CI policy (2026-08-10)
+
+**Why this won:** All nine unpublished reliability cycles depended on a workflow
+that still used the deprecated Node 20 action runtime and tested on end-of-life
+Node 20. It also had no explicit least-privilege permissions, timeout,
+concurrency cancellation, or executable protection against policy regression.
+
+**Plan and success criteria**
+
+1. Lock supported action and Node majors with a test-first workflow contract.
+2. Add read-only permissions, duplicate-run cancellation, and a bounded job.
+3. Preserve every domain suite and expand syntax coverage to every module,
+   tool, and the service worker.
+4. Reproduce the exact workflow locally before publishing the accumulated
+   verified series.
+
+**Changes**
+
+- Upgraded `actions/checkout` and `actions/setup-node` from v4 to v7.
+- Moved project checks from Node 20 to Node 24 LTS.
+- Added explicit `contents: read`, ref-scoped concurrency with stale-run
+  cancellation, and a five-minute job timeout.
+- Added `tools/test-workflow.mjs` with 18 trigger, permission, runtime, command,
+  syntax, and deprecated-version assertions; CI now enforces that policy.
+- Replaced the hand-maintained four-file syntax list with deterministic checks
+  for every `js/*.js`, `tools/*.mjs`, and `sw.js` file.
+- Updated contributor commands and bumped the site/offline cache version to
+  `2026.08.10.1`.
+
+**Verification evidence**
+
+- Test-first: the new workflow suite failed on missing read-only permissions
+  before implementation.
+- Official action documentation uses checkout/setup-node v7; Node's release
+  table identifies v20 as end-of-life and v24 as LTS.
+- `node tools/test-workflow.mjs`: 18 CI policy assertions passed.
+- Schedule: 39 passed; Bible: 12 network/payload/cache/cancellation cases;
+  state: 10 hydration/persistence cases; site: 11 precache entries.
+- Local runtime: Node `v24.14.1`.
+- Recursive application/tool syntax and service-worker syntax passed.
+- Segment/manifest JSON parsing and `git diff --check` passed.
+- Retrying local HTTP preview served the ordered runtime modules, service-worker
+  precache, and `2026.08.10.1` version successfully.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 7/10 | 9/10 | Every existing contract runs on supported, bounded infrastructure |
+| Test coverage / verifiability | 6/10 | 10/10 | The workflow now tests its own policy and every JS/tool file |
+| Maintainability | 6/10 | 9/10 | Recursive syntax discovery replaces a drifting file list |
+| Security / robustness | 5/10 | 9/10 | Read-only permissions and supported runtimes are enforced |
+| Developer experience | 6/10 | 9/10 | Stale duplicate runs cancel and failures retain named attribution |
+
+**Lesson / process improvement:** A CI workflow is production code for the
+verification system. Test its permissions, runtimes, bounds, and command
+coverage—not just whether its YAML currently parses. Prefer recursive discovery
+when the repository's module layout is stable so new test files cannot escape
+syntax checking.
+
+**Next opportunity:** Add a browser startup/day-navigation/translation smoke
+that executes the real DOM boot and cancellation integration. Workspace next:
+rotate after publishing this infrastructure-focused ChristoDay cycle.

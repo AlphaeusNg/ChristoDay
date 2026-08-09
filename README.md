@@ -32,7 +32,12 @@ python3 -m http.server 8091
 # http://127.0.0.1:8091/
 
 node tools/test-schedule.mjs
-node --check js/*.js
+node tools/test-bible.mjs
+node tools/test-state.mjs
+node tools/test-site.mjs
+node tools/test-workflow.mjs
+find js tools -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
+node --check sw.js
 ```
 
 ## Plan epoch
