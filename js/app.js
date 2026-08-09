@@ -4,11 +4,10 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "christoday.v1";
   const $ = (sel, el = document) => el.querySelector(sel);
 
   let plan = null;
-  let state = loadState();
+  let state = ChristoState.loadState();
   let currentYmd = null;
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
@@ -39,24 +38,12 @@
     }, { passive: true });
   }
 
-  function loadState() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
-    } catch {
-      return {};
-    }
-  }
-
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    ChristoState.saveState(state);
   }
 
   function ensureDay(ymd) {
-    if (!state.days) state.days = {};
-    if (!state.days[ymd]) {
-      state.days[ymd] = { completed: false, journal: "", translation: state.translation || "NIV" };
-    }
-    return state.days[ymd];
+    return ChristoState.ensureDay(state, ymd);
   }
 
   function computeStreak(todayYmd) {

@@ -17,8 +17,11 @@ jobs:
         run: node tools/test-schedule.mjs
       - name: Bible client tests
         run: node tools/test-bible.mjs
+      - name: Persisted state tests
+        run: node tools/test-state.mjs
       - name: JavaScript syntax
         run: |
           node --check js/schedule.js
           node --check js/bible.js
+          node --check js/state.js
           node --check js/app.js

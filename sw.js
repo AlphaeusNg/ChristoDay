@@ -9,6 +9,7 @@ const PRECACHE = [
   "./js/version.js",
   "./js/schedule.js",
   "./js/bible.js",
+  "./js/state.js",
   "./js/app.js",
   "./data/segments.json",
   "./manifest.webmanifest",

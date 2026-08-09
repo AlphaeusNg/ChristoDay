@@ -7,6 +7,7 @@ completed autonomous improvement cycles.
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
 - Live Bible client with 4 passing network/passage tests and a 10-second timeout.
+- Persisted journal/completion state with 6 passing hydration/persistence cases.
 - GitHub Actions runs schedule, Bible client, and JavaScript syntax checks.
 - Zero-build static site; journal and completion state remain device-local.
 
@@ -14,8 +15,8 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage can crash `ensureDay` or render paths | Small / low | Extract state normalization for Node tests | Next |
-| 2 | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetches identical chapters | Small / low | Bound cache by translation/book/chapter | Backlog |
+| 1 | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetches identical chapters | Small / low | Bound cache by translation/book/chapter | Next |
+| — | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage crashed day initialization | Small / low | Six state boundary cases | Completed in Cycle 21 |
 | — | Run schedule and Bible tests in CI | Test / process | High compounding value: checks were local-only | Small / low | Node 20 zero-install workflow | Completed in Cycle 20 |
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
@@ -111,3 +112,52 @@ signals without meaningful runtime cost.
 
 **Next opportunity:** Extract and test saved-state hydration so malformed or
 older `localStorage` values cannot crash journal, completion, or streak paths.
+
+### Cycle 21 — Normalize persisted journal state (2026-08-09)
+
+**Why this won:** `loadState` returned any successfully parsed JSON. A payload
+such as `{"days":"broken"}` remained truthy, then strict-mode assignment in
+`ensureDay` could crash the reading surface. Older or partially damaged local
+state should preserve valid journal entries and safely default everything else.
+
+**Plan and success criteria**
+
+1. Centralize defaults, hydration, storage I/O, and day creation in a testable
+   browser-global module.
+2. Preserve valid journal/completion data while rejecting malformed containers,
+   dates, field types, and translations.
+3. Precache the new module, run it in CI, and bump the cache/site version.
+
+**Changes**
+
+- Added `js/state.js` and routed application state load/save/day creation
+  through `ChristoState`.
+- Added six hydration, corrupt-storage, day-creation, and save cases.
+- Loaded and precached the module, extended CI/agent checks, and bumped version
+  to `2026.08.09.1`.
+
+**Verification evidence**
+
+- Schedule: 39 passed; Bible client: 4 cases passed; state: 6 cases passed.
+- Syntax checks passed for every `js/*.js` file and `sw.js`.
+- `git diff --check`: passed.
+- Valid completed journal data survives hydration; malformed `days` and corrupt
+  JSON yield a writable `{ translation: "NIV", days: {} }` state.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 9/10 | Render paths receive stable nested state shapes |
+| Test coverage / verifiability | 2/10 | 9/10 | Six persistence and migration paths run locally and in CI |
+| Maintainability | 4/10 | 9/10 | State schema and storage boundary have one owner |
+| Performance | 9/10 | 9/10 | Linear hydration over small per-day records |
+| Privacy / safety | 7/10 | 9/10 | Only known local fields/types are retained and saved |
+
+**Lesson / process improvement:** Parsed JSON is still untrusted input. Normalize
+at the storage boundary and persist only the hydrated schema so repaired state
+becomes durable.
+
+**Next opportunity:** Add a bounded in-memory chapter cache with in-flight
+request deduplication so repeated navigation and cross-range reads do not issue
+duplicate public API requests.
