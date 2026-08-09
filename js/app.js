@@ -39,7 +39,15 @@
   }
 
   function saveState() {
-    ChristoState.saveState(state);
+    const saved = ChristoState.saveState(state);
+    const status = $("#storage-status");
+    if (status) {
+      status.hidden = saved;
+      status.textContent = saved
+        ? ""
+        : "Could not save on this device. Your current entry remains visible, but may be lost when this tab closes.";
+    }
+    return saved;
   }
 
   function ensureDay(ymd) {

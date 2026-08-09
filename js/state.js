@@ -46,7 +46,12 @@
   }
 
   function saveState(state, storage = global.localStorage) {
-    storage.setItem(STORAGE_KEY, JSON.stringify(hydrateState(state)));
+    try {
+      storage.setItem(STORAGE_KEY, JSON.stringify(hydrateState(state)));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function ensureDay(state, ymd) {

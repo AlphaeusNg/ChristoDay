@@ -8,7 +8,8 @@ completed autonomous improvement cycles.
 - Deterministic weekday schedule with 39 passing schedule/data tests.
 - Live Bible client with 7 passing network/cache/passage tests, a 10-second
   timeout, in-flight deduplication, and a 50-chapter memory cache.
-- Persisted journal/completion state with 6 passing hydration/persistence cases.
+- Persisted journal/completion state with 7 passing hydration/persistence cases
+  and non-throwing save failure handling.
 - GitHub Actions runs schedule, Bible client, and JavaScript syntax checks.
 - Zero-build static site; journal and completion state remain device-local.
 
@@ -16,7 +17,8 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy-mode errors currently throw from journal/completion actions | Small / low | Return save status and expose a concise local-only warning | Next |
+| 1 | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: `null` or malformed verse entries currently become generic fallback errors or empty text | Small / low | Normalize chapter payloads and test invalid entries | Next |
+| — | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy errors threw from journal/completion actions | Small / low | Boolean save contract plus status surface | Completed in Cycle 23 |
 | — | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetched identical chapters | Small / low | 50-entry cache plus in-flight map | Completed in Cycle 22 |
 | — | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage crashed day initialization | Small / low | Six state boundary cases | Completed in Cycle 21 |
 | — | Run schedule and Bible tests in CI | Test / process | High compounding value: checks were local-only | Small / low | Node 20 zero-install workflow | Completed in Cycle 20 |
@@ -211,3 +213,47 @@ observable eviction test.
 **Next opportunity:** Make state persistence return a safe failure signal and
 surface it without interrupting journal/completion interactions when
 localStorage is unavailable or full.
+
+### Cycle 23 — Survive localStorage write failures (2026-08-09)
+
+**Why this won:** Browser privacy settings, disabled storage, and quota errors
+can make `localStorage.setItem` throw. Those exceptions propagated through
+journal input and completion handlers, interrupting interaction without telling
+the user their private state was not durable.
+
+**Plan and success criteria**
+
+1. Convert persistence exceptions into a boolean result.
+2. Keep in-memory interaction functioning and expose a non-blocking status
+   warning when the device cannot save.
+3. Hide the warning automatically after a later successful save.
+
+**Changes**
+
+- Wrapped hydrated-state serialization/storage in a true/false save contract.
+- Added an accessible `role="status"` message beneath the journal.
+- Routed app saves through the status surface and added success/failure tests.
+
+**Verification evidence**
+
+- State suite: 7 cases passed (up from 6); Bible: 7; schedule: 39.
+- All application/service-worker syntax checks and `git diff --check` passed.
+- A throwing storage adapter returns `false` without escaping; successful
+  persistence returns `true` and retains completed journal data.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 9/10 | Storage denial no longer aborts handlers |
+| Test coverage / verifiability | 5/10 | 9/10 | Both save outcomes are explicit tests |
+| Maintainability | 7/10 | 8/10 | One boolean contract drives all save feedback |
+| User experience | 3/10 | 9/10 | Users receive a clear, non-blocking durability warning |
+| Privacy / safety | 6/10 | 9/10 | The UI no longer implies unsaved private text is durable |
+
+**Lesson / process improvement:** Local-first does not mean localStorage is
+infallible. Persistence APIs should return an observable result so UI handlers
+can remain functional and honest about durability.
+
+**Next opportunity:** Normalize Bible API payloads and reject malformed chapter
+or verse records before filtering/ranking text, with stable fallback errors.

@@ -53,7 +53,12 @@ assert.deepEqual(
 );
 
 let saved;
-stateApi.saveState(hydrated, { setItem: (_key, value) => { saved = value; } });
+assert.equal(stateApi.saveState(hydrated, { setItem: (_key, value) => { saved = value; } }), true);
 assert.equal(JSON.parse(saved).days["2026-08-09"].completed, true);
 
-console.log("test-state.mjs: 6 hydration and persistence cases ok");
+assert.equal(
+  stateApi.saveState(hydrated, { setItem: () => { throw new Error("quota exceeded"); } }),
+  false
+);
+
+console.log("test-state.mjs: 7 hydration and persistence cases ok");
