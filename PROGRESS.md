@@ -6,7 +6,7 @@ completed autonomous improvement cycles.
 ## Current state
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
-- Live Bible client with 7 passing network/cache/passage tests, a 10-second
+- Live Bible client with 9 passing network/payload/cache/passage tests, a 10-second
   timeout, in-flight deduplication, and a 50-chapter memory cache.
 - Persisted journal/completion state with 7 passing hydration/persistence cases
   and non-throwing save failure handling.
@@ -17,7 +17,8 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: `null` or malformed verse entries currently become generic fallback errors or empty text | Small / low | Normalize chapter payloads and test invalid entries | Next |
+| 1 | Add structural shell/precache validation | Test / maintainability | Medium: HTML script references and offline precache entries can drift silently | Small / low | Verify local assets and required runtime modules | Next |
+| — | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: malformed records caused incidental errors or empty text | Small / low | Normalized container and verse records | Completed in Cycle 24 |
 | — | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy errors threw from journal/completion actions | Small / low | Boolean save contract plus status surface | Completed in Cycle 23 |
 | — | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetched identical chapters | Small / low | 50-entry cache plus in-flight map | Completed in Cycle 22 |
 | — | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage crashed day initialization | Small / low | Six state boundary cases | Completed in Cycle 21 |
@@ -257,3 +258,49 @@ can remain functional and honest about durability.
 
 **Next opportunity:** Normalize Bible API payloads and reject malformed chapter
 or verse records before filtering/ranking text, with stable fallback errors.
+
+### Cycle 24 — Validate Bible API payloads (2026-08-09)
+
+**Why this won:** The client assumed every successful JSON response was an array
+or object with `.verses`, then dereferenced every entry. `null`, malformed
+containers, or null verse records produced incidental `TypeError`s; invalid
+verse numbers could also enter filtering silently.
+
+**Plan and success criteria**
+
+1. Normalize supported array/object containers before caching.
+2. Retain only positive integer verse numbers with string text.
+3. Return stable errors for invalid chapter payloads and requested passages with
+   no usable verses.
+
+**Changes**
+
+- Added and exported `normalizeChapterData`.
+- Validated JSON before successful cache insertion and simplified passage
+  assembly to consume normalized arrays only.
+- Added invalid-container and mixed-entry payload cases.
+
+**Verification evidence**
+
+- Bible client: 9 cases passed (up from 7); schedule: 39; state: 7.
+- All JavaScript/service-worker syntax checks and `git diff --check` passed.
+- `null` containers now return `Bible API returned invalid chapter data`; a
+  mixed payload retains only its valid `{ verse: 2, text: "Valid" }` record.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 9/10 | All downstream passage logic consumes a stable record shape |
+| Test coverage / verifiability | 5/10 | 9/10 | Container and record corruption have direct cases |
+| Maintainability | 5/10 | 8/10 | One normalizer owns third-party response assumptions |
+| Performance | 8/10 | 8/10 | One linear filter/map before bounded caching |
+| User experience | 5/10 | 8/10 | Fallback receives stable, meaningful failure messages |
+
+**Lesson / process improvement:** Validate third-party JSON before caching it.
+Caching only normalized successes prevents malformed data from becoming a
+repeatable session-level failure.
+
+**Next opportunity:** Add a structural test that every local HTML script/style
+exists and that all required offline runtime files—including new state modules—
+remain in the service-worker precache.

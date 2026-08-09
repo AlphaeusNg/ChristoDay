@@ -41,6 +41,26 @@ function loadBible(fetchImpl, timers = {}) {
 }
 
 {
+  const bible = loadBible(async () => ({ ok: true, json: async () => null }));
+  await assert.rejects(
+    () => bible.fetchChapter("NIV", 40, 1),
+    /Bible API returned invalid chapter data/
+  );
+}
+
+{
+  const bible = loadBible(async () => ({
+    ok: true,
+    json: async () => ({
+      verses: [null, { verse: "2", text: "Valid" }, { verse: 0, text: "Invalid" }],
+    }),
+  }));
+  assert.deepEqual(JSON.parse(JSON.stringify(await bible.fetchChapter("NIV", 40, 1))), [
+    { verse: 2, text: "Valid" },
+  ]);
+}
+
+{
   let cleared = false;
   const bible = loadBible(
     async (_url, options) => {
@@ -121,4 +141,4 @@ function loadBible(fetchImpl, timers = {}) {
   assert.equal(fetchCount, bible.MAX_CACHED_CHAPTERS + 2);
 }
 
-console.log("test-bible.mjs: 7 network, cache, and passage cases ok");
+console.log("test-bible.mjs: 9 network, payload, cache, and passage cases ok");

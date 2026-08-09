@@ -60,6 +60,22 @@
     return parts;
   }
 
+  function normalizeChapterData(payload) {
+    const rawVerses = Array.isArray(payload)
+      ? payload
+      : payload && Array.isArray(payload.verses)
+        ? payload.verses
+        : null;
+    if (!rawVerses) throw new Error("Bible API returned invalid chapter data");
+    return rawVerses
+      .filter((verse) => verse && typeof verse === "object")
+      .map((verse) => ({ verse: Number(verse.verse), text: verse.text }))
+      .filter(
+        (verse) =>
+          Number.isInteger(verse.verse) && verse.verse > 0 && typeof verse.text === "string"
+      );
+  }
+
   async function requestChapter(translation, bookId, chapter, timeoutMs) {
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const controller = new AbortController();
@@ -67,7 +83,7 @@
     try {
       const res = await fetch(url, { mode: "cors", signal: controller.signal });
       if (!res.ok) throw new Error(`Bible fetch failed (${res.status})`);
-      return await res.json();
+      return normalizeChapterData(await res.json());
     } catch (error) {
       if (controller.signal.aborted) throw new Error("Bible fetch timed out");
       throw error;
@@ -114,14 +130,15 @@
     for (const range of ranges) {
       const chapterData = await fetchChapter(tr, bookId, range.chapter);
       // bolls returns array of { pk, verse, text }
-      const verses = Array.isArray(chapterData) ? chapterData : chapterData.verses || [];
-      for (const v of verses) {
+      for (const v of chapterData) {
         const n = Number(v.verse);
         if (n >= range.verseFrom && n <= range.verseTo) {
           collected.push({ chapter: range.chapter, verse: n, text: stripHtml(v.text || "") });
         }
       }
     }
+
+    if (!collected.length) throw new Error("Bible API returned no verses for passage");
 
     const text = collected.map((v) => v.text).join(" ");
     const html = collected
@@ -156,6 +173,7 @@
     FETCH_TIMEOUT_MS,
     MAX_CACHED_CHAPTERS,
     parseRef,
+    normalizeChapterData,
     fetchChapter,
     fetchPassage,
     clearChapterCache,
