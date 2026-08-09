@@ -19,6 +19,9 @@
     WEB: { code: "WEB", label: "WEB" },
   };
   const FETCH_TIMEOUT_MS = 10_000;
+  const MAX_CACHED_CHAPTERS = 50;
+  const chapterCache = new Map();
+  const chapterRequests = new Map();
 
   /**
    * Parse refs like "1:1-17", "1:40-2:12", "16:1-8"
@@ -57,7 +60,7 @@
     return parts;
   }
 
-  async function fetchChapter(translation, bookId, chapter, timeoutMs = FETCH_TIMEOUT_MS) {
+  async function requestChapter(translation, bookId, chapter, timeoutMs) {
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -71,6 +74,29 @@
     } finally {
       clearTimeout(timeoutId);
     }
+  }
+
+  function fetchChapter(translation, bookId, chapter, timeoutMs = FETCH_TIMEOUT_MS) {
+    const key = `${translation}:${bookId}:${chapter}`;
+    if (chapterCache.has(key)) return Promise.resolve(chapterCache.get(key));
+    if (chapterRequests.has(key)) return chapterRequests.get(key);
+
+    const request = requestChapter(translation, bookId, chapter, timeoutMs)
+      .then((data) => {
+        if (chapterCache.size >= MAX_CACHED_CHAPTERS) {
+          chapterCache.delete(chapterCache.keys().next().value);
+        }
+        chapterCache.set(key, data);
+        return data;
+      })
+      .finally(() => chapterRequests.delete(key));
+    chapterRequests.set(key, request);
+    return request;
+  }
+
+  function clearChapterCache() {
+    chapterCache.clear();
+    chapterRequests.clear();
   }
 
   /**
@@ -128,8 +154,10 @@
     BOOK_IDS,
     TRANSLATIONS,
     FETCH_TIMEOUT_MS,
+    MAX_CACHED_CHAPTERS,
     parseRef,
     fetchChapter,
     fetchPassage,
+    clearChapterCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);

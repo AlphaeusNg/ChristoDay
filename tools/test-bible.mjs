@@ -78,4 +78,47 @@ function loadBible(fetchImpl, timers = {}) {
   assert.equal(passage.verses.length, 2);
 }
 
-console.log("test-bible.mjs: 4 network and passage cases ok");
+{
+  let fetchCount = 0;
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const bible = loadBible(async () => {
+    fetchCount++;
+    await pending;
+    return { ok: true, json: async () => [{ verse: 1, text: "Shared" }] };
+  });
+  const first = bible.fetchChapter("NIV", 40, 1);
+  const second = bible.fetchChapter("NIV", 40, 1);
+  assert.equal(fetchCount, 1);
+  release();
+  assert.deepEqual(await first, await second);
+  await bible.fetchChapter("NIV", 40, 1);
+  assert.equal(fetchCount, 1);
+}
+
+{
+  let fetchCount = 0;
+  const bible = loadBible(async () => {
+    fetchCount++;
+    if (fetchCount === 1) throw new Error("temporary failure");
+    return { ok: true, json: async () => [] };
+  });
+  await assert.rejects(() => bible.fetchChapter("NIV", 40, 1), /temporary failure/);
+  await bible.fetchChapter("NIV", 40, 1);
+  assert.equal(fetchCount, 2);
+}
+
+{
+  let fetchCount = 0;
+  const bible = loadBible(async () => {
+    fetchCount++;
+    return { ok: true, json: async () => [] };
+  });
+  for (let chapter = 1; chapter <= bible.MAX_CACHED_CHAPTERS + 1; chapter++) {
+    await bible.fetchChapter("NIV", 40, chapter);
+  }
+  await bible.fetchChapter("NIV", 40, 1);
+  assert.equal(fetchCount, bible.MAX_CACHED_CHAPTERS + 2);
+}
+
+console.log("test-bible.mjs: 7 network, cache, and passage cases ok");

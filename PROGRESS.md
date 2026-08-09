@@ -6,7 +6,8 @@ completed autonomous improvement cycles.
 ## Current state
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
-- Live Bible client with 4 passing network/passage tests and a 10-second timeout.
+- Live Bible client with 7 passing network/cache/passage tests, a 10-second
+  timeout, in-flight deduplication, and a 50-chapter memory cache.
 - Persisted journal/completion state with 6 passing hydration/persistence cases.
 - GitHub Actions runs schedule, Bible client, and JavaScript syntax checks.
 - Zero-build static site; journal and completion state remain device-local.
@@ -15,7 +16,8 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetches identical chapters | Small / low | Bound cache by translation/book/chapter | Next |
+| 1 | Handle localStorage write failures without breaking input handlers | Reliability / UX | Medium: quota/privacy-mode errors currently throw from journal/completion actions | Small / low | Return save status and expose a concise local-only warning | Next |
+| — | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetched identical chapters | Small / low | 50-entry cache plus in-flight map | Completed in Cycle 22 |
 | — | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage crashed day initialization | Small / low | Six state boundary cases | Completed in Cycle 21 |
 | — | Run schedule and Bible tests in CI | Test / process | High compounding value: checks were local-only | Small / low | Node 20 zero-install workflow | Completed in Cycle 20 |
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
@@ -161,3 +163,51 @@ becomes durable.
 **Next opportunity:** Add a bounded in-memory chapter cache with in-flight
 request deduplication so repeated navigation and cross-range reads do not issue
 duplicate public API requests.
+
+### Cycle 22 — Cache and deduplicate chapter requests (2026-08-09)
+
+**Why this won:** Revisiting a day or requesting overlapping ranges fetched the
+same translation/book/chapter repeatedly. Concurrent callers also created
+duplicate public API traffic, increasing latency and the chance of rate or
+network failure.
+
+**Plan and success criteria**
+
+1. Share one promise for concurrent identical chapter requests.
+2. Cache successful results with a strict 50-chapter FIFO bound.
+3. Remove settled in-flight entries and never cache failures, so retry remains
+   possible.
+
+**Changes**
+
+- Added separate resolved-data and in-flight maps keyed by
+  translation/book/chapter.
+- Added FIFO eviction at 50 chapters and an explicit cache reset hook.
+- Extended the Bible suite with concurrent deduplication, resolved reuse,
+  failure retry, and eviction coverage.
+
+**Verification evidence**
+
+- Bible client: 7 cases passed (up from 4); schedule: 39 passed; state: 6
+  passed; all application/service-worker syntax checks passed.
+- `git diff --check`: passed.
+- Two concurrent calls issue one fetch; a rejected fetch is retried; chapter 1
+  is refetched after 51 unique chapters prove bounded eviction.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 6/10 | 9/10 | Failures remain retryable and concurrent callers share outcomes |
+| Test coverage / verifiability | 5/10 | 9/10 | Deduplication, reuse, retry, and eviction are deterministic tests |
+| Maintainability | 6/10 | 8/10 | Resolved and in-flight states have distinct maps/lifecycles |
+| Performance / resources | 4/10 | 9/10 | Repeat network calls are removed and memory is capped |
+| User experience | 6/10 | 9/10 | Revisiting passages is immediate within the session |
+
+**Lesson / process improvement:** Do not cache rejected promises. Separate
+in-flight deduplication from resolved-value caching and bound the latter with an
+observable eviction test.
+
+**Next opportunity:** Make state persistence return a safe failure signal and
+surface it without interrupting journal/completion interactions when
+localStorage is unavailable or full.
