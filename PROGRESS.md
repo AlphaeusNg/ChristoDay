@@ -7,15 +7,16 @@ completed autonomous improvement cycles.
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
 - Live Bible client with 4 passing network/passage tests and a 10-second timeout.
+- GitHub Actions runs schedule, Bible client, and JavaScript syntax checks.
 - Zero-build static site; journal and completion state remain device-local.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Run schedule and Bible tests in CI | Test / process | High compounding value: checks are currently local-only | Small / low | Node-only zero-install test commands | Next |
-| 2 | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage can crash `ensureDay` or render paths | Small / low | Extract state normalization for Node tests | Backlog |
-| 3 | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetches identical chapters | Small / low | Bound cache by translation/book/chapter | Backlog |
+| 1 | Hydrate and validate saved journal/day state | Reliability | High: malformed nested localStorage can crash `ensureDay` or render paths | Small / low | Extract state normalization for Node tests | Next |
+| 2 | Cache/deduplicate chapter requests | Performance / reliability | Medium: repeated navigation refetches identical chapters | Small / low | Bound cache by translation/book/chapter | Backlog |
+| — | Run schedule and Bible tests in CI | Test / process | High compounding value: checks were local-only | Small / low | Node 20 zero-install workflow | Completed in Cycle 20 |
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
@@ -68,3 +69,45 @@ timers rather than relying on flaky external requests.
 
 **Next opportunity:** Add zero-install GitHub Actions coverage for schedule,
 Bible client, and syntax checks so regressions are caught on every push/PR.
+
+### Cycle 20 — Run ChristoDay checks in CI (2026-08-09)
+
+**Why this won:** The new Bible boundary suite and existing schedule tests were
+fast and dependency-free but relied on local discipline. Automatic execution
+makes both protections compound across every future change.
+
+**Plan and success criteria**
+
+1. Run schedule and Bible suites independently on pushes and pull requests.
+2. Retain explicit syntax checks for every application module.
+3. Reproduce the exact workflow commands locally before committing.
+
+**Changes**
+
+- Added `.github/workflows/ci.yml` using Node 20.
+- Added separate schedule, Bible-client, and JavaScript-syntax steps for clear
+  failure attribution.
+
+**Verification evidence**
+
+- Workflow-equivalent local run: 39 schedule assertions and 4 Bible cases
+  passed; all JavaScript syntax checks passed.
+- `git diff --check`: passed.
+- No package installation or network access is required by the workflow.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 7/10 | 8/10 | Existing contracts now gate every change |
+| Test coverage / verifiability | 3/10 | 9/10 | All automated checks run on push and PR |
+| Maintainability | 6/10 | 8/10 | Failure domains have separate named steps |
+| Performance / resources | 9/10 | 9/10 | Zero-install checks complete in well under a second locally |
+| Developer experience | 5/10 | 9/10 | Regressions surface without manual command discovery |
+
+**Lesson / process improvement:** When tests are zero-install and deterministic,
+promote them to CI immediately; separate steps preserve actionable failure
+signals without meaningful runtime cost.
+
+**Next opportunity:** Extract and test saved-state hydration so malformed or
+older `localStorage` values cannot crash journal, completion, or streak paths.
