@@ -76,49 +76,126 @@
       );
   }
 
-  async function requestChapter(translation, bookId, chapter, timeoutMs) {
+  function cancellationError() {
+    const error = new Error("Bible fetch cancelled");
+    error.name = "AbortError";
+    return error;
+  }
+
+  async function requestChapter(translation, bookId, chapter, timeoutMs, requestSignal) {
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let timedOut = false;
+    const cancelRequest = () => controller.abort();
+    if (requestSignal?.aborted) cancelRequest();
+    else requestSignal?.addEventListener("abort", cancelRequest, { once: true });
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
     try {
       const res = await fetch(url, { mode: "cors", signal: controller.signal });
       if (!res.ok) throw new Error(`Bible fetch failed (${res.status})`);
-      return normalizeChapterData(await res.json());
+      const payload = await res.json();
+      if (controller.signal.aborted) {
+        throw timedOut ? new Error("Bible fetch timed out") : cancellationError();
+      }
+      return normalizeChapterData(payload);
     } catch (error) {
-      if (controller.signal.aborted) throw new Error("Bible fetch timed out");
+      if (timedOut) throw new Error("Bible fetch timed out");
+      if (requestSignal?.aborted) throw cancellationError();
       throw error;
     } finally {
       clearTimeout(timeoutId);
+      requestSignal?.removeEventListener("abort", cancelRequest);
     }
   }
 
-  function fetchChapter(translation, bookId, chapter, timeoutMs = FETCH_TIMEOUT_MS) {
+  /** Give each caller independent cancellation without breaking shared fetches. */
+  function subscribeToChapter(entry, key, signal) {
+    entry.consumers += 1;
+    return new Promise((resolve, reject) => {
+      let released = false;
+      const release = (cancelled) => {
+        if (released) return;
+        released = true;
+        signal?.removeEventListener("abort", onAbort);
+        entry.consumers = Math.max(0, entry.consumers - 1);
+        if (cancelled && entry.pending && entry.consumers === 0) {
+          if (chapterRequests.get(key) === entry) chapterRequests.delete(key);
+          entry.controller.abort();
+        }
+      };
+      const onAbort = () => {
+        release(true);
+        reject(cancellationError());
+      };
+      signal?.addEventListener("abort", onAbort, { once: true });
+      entry.promise.then(
+        (data) => {
+          if (released) return;
+          release(false);
+          resolve(data);
+        },
+        (error) => {
+          if (released) return;
+          release(false);
+          reject(error);
+        }
+      );
+    });
+  }
+
+  /**
+   * Fetch/cache one chapter. The optional fifth argument cancels only this
+   * consumer; the network request is aborted when no consumers remain.
+   */
+  function fetchChapter(
+    translation,
+    bookId,
+    chapter,
+    timeoutMs = FETCH_TIMEOUT_MS,
+    signal
+  ) {
+    if (signal?.aborted) return Promise.reject(cancellationError());
     const key = `${translation}:${bookId}:${chapter}`;
     if (chapterCache.has(key)) return Promise.resolve(chapterCache.get(key));
-    if (chapterRequests.has(key)) return chapterRequests.get(key);
 
-    const request = requestChapter(translation, bookId, chapter, timeoutMs)
-      .then((data) => {
-        if (chapterCache.size >= MAX_CACHED_CHAPTERS) {
-          chapterCache.delete(chapterCache.keys().next().value);
-        }
-        chapterCache.set(key, data);
-        return data;
-      })
-      .finally(() => chapterRequests.delete(key));
-    chapterRequests.set(key, request);
-    return request;
+    let entry = chapterRequests.get(key);
+    if (!entry) {
+      const controller = new AbortController();
+      entry = { consumers: 0, controller, pending: true, promise: null };
+      entry.promise = requestChapter(translation, bookId, chapter, timeoutMs, controller.signal)
+        .then((data) => {
+          if (controller.signal.aborted) throw cancellationError();
+          if (chapterCache.size >= MAX_CACHED_CHAPTERS) {
+            chapterCache.delete(chapterCache.keys().next().value);
+          }
+          chapterCache.set(key, data);
+          return data;
+        })
+        .finally(() => {
+          entry.pending = false;
+          if (chapterRequests.get(key) === entry) chapterRequests.delete(key);
+        });
+      chapterRequests.set(key, entry);
+    }
+    return subscribeToChapter(entry, key, signal);
   }
 
   function clearChapterCache() {
     chapterCache.clear();
+    for (const entry of chapterRequests.values()) entry.controller.abort();
     chapterRequests.clear();
   }
 
   /**
+   * @param {{ signal?: AbortSignal }} options
    * @returns {Promise<{ text: string, html: string, translation: string, verses: Array }>}
    */
-  async function fetchPassage(bookKey, ref, translation = "NIV") {
+  async function fetchPassage(bookKey, ref, translation = "NIV", options = {}) {
+    const signal = options?.signal;
+    if (signal?.aborted) throw cancellationError();
     const bookId = BOOK_IDS[bookKey];
     if (!bookId) throw new Error("Unknown book");
     const ranges = parseRef(ref);
@@ -128,7 +205,14 @@
     const collected = [];
 
     for (const range of ranges) {
-      const chapterData = await fetchChapter(tr, bookId, range.chapter);
+      const chapterData = await fetchChapter(
+        tr,
+        bookId,
+        range.chapter,
+        FETCH_TIMEOUT_MS,
+        signal
+      );
+      if (signal?.aborted) throw cancellationError();
       // bolls returns array of { pk, verse, text }
       for (const v of chapterData) {
         const n = Number(v.verse);
@@ -139,6 +223,7 @@
     }
 
     if (!collected.length) throw new Error("Bible API returned no verses for passage");
+    if (signal?.aborted) throw cancellationError();
 
     const text = collected.map((v) => v.text).join(" ");
     const html = collected

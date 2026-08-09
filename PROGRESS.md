@@ -6,8 +6,9 @@ completed autonomous improvement cycles.
 ## Current state
 
 - Deterministic weekday schedule with 39 passing schedule/data tests.
-- Live Bible client with 9 passing network/payload/cache/passage tests, a 10-second
-  timeout, in-flight deduplication, and a 50-chapter memory cache.
+- Live Bible client with 12 passing network/payload/cache/cancellation/passage
+  tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
+  50-chapter memory cache.
 - Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
 - GitHub Actions runs schedule, Bible, state, site/offline structure, and syntax
@@ -18,7 +19,10 @@ completed autonomous improvement cycles.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevent stale rendering but unrelated requests continue until completion/timeout | Medium / medium | Coordinate UI aborts with shared chapter requests | Next |
+| 1 | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every unpublished check still targets older Node/actions and lacks explicit least privilege or timeout | Small / low | Verify supported official action/runtime versions before editing | Next |
+| 2 | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites do not execute the complete DOM boot or cancellation integration | Medium / low | Reuse the test-only browser approach proven in the sibling static sites | Backlog |
+| 3 | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passes schedule tests, but runtime fetch consumers trust its shape | Small-medium / low | Reuse schedule invariants and show safe visitor recovery | Backlog |
+| — | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevented stale rendering but unrelated requests continued until completion/timeout | Medium / medium | Ref-count shared chapter consumers and subscribe new UI work before aborting old | Completed in Cycle 27 |
 | — | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates remained in totals/state | Small / low | Leap-day and invalid calendar cases | Completed in Cycle 26 |
 | — | Add structural shell/precache validation | Test / maintainability | Medium: HTML references and offline precache could drift silently | Small / low | 11 precache entries plus local refs | Completed in Cycle 25 |
 | — | Validate Bible API response shapes before passage assembly | Correctness / robustness | Medium: malformed records caused incidental errors or empty text | Small / low | Normalized container and verse records | Completed in Cycle 24 |
@@ -392,3 +396,66 @@ compare the exact original string.
 **Next opportunity:** Coordinate UI-level cancellation with the shared Bible
 request cache so navigating away can stop obsolete unique chapter requests
 without disrupting consumers that still need the same in-flight request.
+
+### Cycle 27 — Cancel obsolete passage consumers safely (2026-08-10)
+
+**Why this won:** `renderSeq` prevented stale text from painting, but obsolete
+unique chapter fetches still consumed network and timeout budget. Directly
+aborting a deduplicated promise would also break a newer day or translation
+request that needed the same in-flight chapter.
+
+**Plan and success criteria**
+
+1. Give every chapter caller an independent cancellation subscription.
+2. Abort the underlying fetch only when its final consumer cancels.
+3. Subscribe new UI work before cancelling old work so same-chapter navigation
+   retains the shared request.
+4. Keep cancellations out of the cache and make the same chapter immediately
+   retryable after its last consumer leaves.
+
+**Changes**
+
+- Replaced the in-flight promise map with entries that track controller,
+  pending state, promise, and consumer count.
+- Added `AbortSignal` support to `fetchChapter` and `fetchPassage`; cancellation
+  returns the stable `Bible fetch cancelled` error while the independent
+  10-second timeout retains `Bible fetch timed out`.
+- Remove an abandoned entry from the map before aborting its network request,
+  preventing immediate retries from attaching to a doomed promise.
+- Abort active requests when navigating to weekend/pre-plan states. For a new
+  reading or translation, start the new passage subscription first and only
+  then abort the previous controller.
+- Extended Bible coverage from 9 to 12 cases and added a structural assertion
+  that locks the subscribe-before-abort ordering.
+
+**Verification evidence**
+
+- Test-first: the new site contract failed because the app supplied no signal;
+  the first cancellation case then waited for the old 10-second timeout and
+  returned `Bible fetch timed out` instead of `Bible fetch cancelled`.
+- Bible client: 12 cases passed, including one cancelled shared consumer with a
+  surviving consumer, last-consumer underlying abort plus immediate retry, and
+  cross-chapter cancellation before chapter two.
+- Schedule: 39 passed; state: 10; site/offline structure: 11 precache entries.
+- Syntax checks passed for all application/service-worker files;
+  `data/segments.json` parsed; `git diff --check` passed.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 6/10 | 9/10 | Shared survivors are preserved and cancelled work cannot cache or poison retry |
+| Test coverage / verifiability | 6/10 | 9/10 | Three deterministic ownership/cancellation cases plus UI ordering contract |
+| Maintainability | 6/10 | 8/10 | Explicit consumer ownership replaces ambiguous shared-promise cancellation |
+| Performance / resources | 5/10 | 9/10 | Obsolete unique work stops promptly instead of waiting up to 10 seconds |
+| User experience | 7/10 | 9/10 | Rapid navigation spends bandwidth only on the current reading |
+
+**Lesson / process improvement:** Cancellation ownership belongs at the shared
+request boundary. Attach the replacement consumer before releasing the old one,
+and delete a last-consumer entry synchronously before abort so an immediate
+retry cannot inherit doomed work.
+
+**Next opportunity:** Upgrade the CI workflow to supported Node/action versions,
+explicit read-only permissions, a bounded timeout, and executable policy checks.
+Workspace next: pivot after this ChristoDay cycle to keep improvement breadth
+across the project hub.

@@ -141,4 +141,72 @@ function loadBible(fetchImpl, timers = {}) {
   assert.equal(fetchCount, bible.MAX_CACHED_CHAPTERS + 2);
 }
 
-console.log("test-bible.mjs: 9 network, payload, cache, and passage cases ok");
+{
+  let releaseRequest;
+  let underlyingSignal;
+  const bible = loadBible((_url, options) => {
+    underlyingSignal = options.signal;
+    return new Promise((resolve, reject) => {
+      releaseRequest = () => resolve({
+        ok: true,
+        json: async () => [{ verse: 1, text: "Shared after navigation" }],
+      });
+      options.signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+    });
+  });
+  const oldController = new AbortController();
+  const newController = new AbortController();
+  const oldConsumer = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, oldController.signal);
+  const newConsumer = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, newController.signal);
+  oldController.abort();
+  await assert.rejects(() => oldConsumer, /Bible fetch cancelled/);
+  assert.equal(underlyingSignal.aborted, false, "a surviving consumer keeps the shared fetch alive");
+  releaseRequest();
+  assert.equal((await newConsumer)[0].text, "Shared after navigation");
+}
+
+{
+  let fetchCount = 0;
+  let firstSignal;
+  const bible = loadBible(async (_url, options) => {
+    fetchCount++;
+    if (fetchCount === 1) {
+      firstSignal = options.signal;
+      return new Promise((_resolve, reject) => {
+        options.signal.addEventListener("abort", () =>
+          reject(new DOMException("aborted", "AbortError"))
+        );
+      });
+    }
+    return { ok: true, json: async () => [{ verse: 1, text: "Retry" }] };
+  });
+  const controller = new AbortController();
+  const obsolete = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, controller.signal);
+  controller.abort();
+  await assert.rejects(() => obsolete, /Bible fetch cancelled/);
+  assert.equal(firstSignal.aborted, true, "the last cancellation aborts the underlying fetch");
+  assert.equal((await bible.fetchChapter("NIV", 40, 1))[0].text, "Retry");
+  assert.equal(fetchCount, 2, "a cancelled request is removed immediately and remains retryable");
+}
+
+{
+  const requestedUrls = [];
+  const bible = loadBible((url, options) => {
+    requestedUrls.push(url);
+    return new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () =>
+        reject(new DOMException("aborted", "AbortError"))
+      );
+    });
+  });
+  const controller = new AbortController();
+  const passage = bible.fetchPassage("matthew", "1:40-2:2", "NIV", {
+    signal: controller.signal,
+  });
+  controller.abort();
+  await assert.rejects(() => passage, /Bible fetch cancelled/);
+  assert.equal(requestedUrls.length, 1, "cancellation prevents the next chapter request");
+  assert.match(requestedUrls[0], /\/1\/$/);
+}
+
+console.log("test-bible.mjs: 12 network, payload, cache, cancellation, and passage cases ok");

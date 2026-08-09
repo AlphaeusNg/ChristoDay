@@ -11,6 +11,7 @@
   let currentYmd = null;
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
+  let passageController = null;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -178,16 +179,19 @@
     beforeEl.hidden = true;
 
     if (reading.kind === "weekend") {
+      cancelPassageRequest();
       weekendEl.hidden = false;
       $("#weekend-msg").textContent = reading.message;
       return;
     }
     if (reading.kind === "before_start") {
+      cancelPassageRequest();
       beforeEl.hidden = false;
       $("#before-msg").textContent = reading.message;
       return;
     }
     if (reading.kind !== "reading") {
+      cancelPassageRequest();
       showFatal(reading.message || "Unknown schedule state");
       return;
     }
@@ -238,21 +242,37 @@
     status.hidden = false;
 
     const tr = state.translation || "NIV";
+    const previousController = passageController;
+    const controller = new AbortController();
+    passageController = controller;
+    const request = ChristoBible.fetchPassage(reading.bookKey, reading.ref, tr, {
+      signal: controller.signal,
+    });
+    // Subscribe first so same-chapter navigation keeps the shared fetch alive.
+    previousController?.abort();
     try {
-      const result = await ChristoBible.fetchPassage(reading.bookKey, reading.ref, tr);
-      if (seq !== renderSeq) return; // user navigated away
+      const result = await request;
+      if (controller.signal.aborted || seq !== renderSeq) return; // user navigated away
       if (!result.verses?.length) throw new Error("Empty passage");
       body.innerHTML = result.html;
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
     } catch (err) {
-      if (seq !== renderSeq) return;
+      if (controller.signal.aborted || seq !== renderSeq) return;
       status.hidden = false;
       status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
       body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
         <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
       $("#passage-tr-label").textContent = "—";
+    } finally {
+      if (passageController === controller) passageController = null;
     }
+  }
+
+  function cancelPassageRequest() {
+    const controller = passageController;
+    passageController = null;
+    controller?.abort();
   }
 
   function escapeHtml(s) {

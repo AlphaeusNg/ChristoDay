@@ -47,6 +47,15 @@ assert(
   "state.js must load before app.js"
 );
 
+const app = readFileSync(join(root, "js/app.js"), "utf8");
+const passageRequestIndex = app.indexOf("signal: controller.signal");
+const previousAbortIndex = app.indexOf("previousController?.abort()", passageRequestIndex);
+assert(passageRequestIndex >= 0, "app.js must pass an AbortSignal to passage requests");
+assert(
+  previousAbortIndex > passageRequestIndex,
+  "app.js must subscribe the new passage before aborting the previous consumer"
+);
+
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`
 );
