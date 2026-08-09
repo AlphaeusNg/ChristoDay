@@ -18,6 +18,7 @@
     NKJV: { code: "NKJV", label: "NKJV" },
     WEB: { code: "WEB", label: "WEB" },
   };
+  const FETCH_TIMEOUT_MS = 10_000;
 
   /**
    * Parse refs like "1:1-17", "1:40-2:12", "16:1-8"
@@ -56,11 +57,20 @@
     return parts;
   }
 
-  async function fetchChapter(translation, bookId, chapter) {
+  async function fetchChapter(translation, bookId, chapter, timeoutMs = FETCH_TIMEOUT_MS) {
     const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
-    const res = await fetch(url, { mode: "cors" });
-    if (!res.ok) throw new Error(`Bible fetch failed (${res.status})`);
-    return res.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { mode: "cors", signal: controller.signal });
+      if (!res.ok) throw new Error(`Bible fetch failed (${res.status})`);
+      return await res.json();
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error("Bible fetch timed out");
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**
@@ -117,7 +127,9 @@
   global.ChristoBible = {
     BOOK_IDS,
     TRANSLATIONS,
+    FETCH_TIMEOUT_MS,
     parseRef,
+    fetchChapter,
     fetchPassage,
   };
 })(typeof window !== "undefined" ? window : globalThis);

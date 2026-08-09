@@ -26,6 +26,7 @@ tools/test-schedule.mjs
 ```bash
 python3 -m http.server 8091
 node tools/test-schedule.mjs
+node tools/test-bible.mjs
 node --check js/schedule.js && node --check js/bible.js && node --check js/app.js
 ```
 
