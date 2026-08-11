@@ -48,8 +48,10 @@ npm run test:browser
 The locked Playwright suite boots the real page with controlled Bible API
 responses, navigates from Matthew to Mark, overlaps an obsolete NIV request
 with a newer ESV selection, and verifies the new translation remains rendered
-and persisted without browser errors. It also denies journal storage, proves
-journal/completion progress and honest durability guidance survive day
+and persisted without browser errors. It forces a malformed live-passage
+response, proves the reference-only reading, journal, and completion controls
+remain usable, then verifies another translation restores live text. It also
+denies journal storage, proves journal/completion progress and honest durability guidance survive day
 navigation, then verifies a later permitted write makes the full entry durable.
 A separate worker-enabled context installs
 the offline shell at the production-like `/ChristoDay/` path, verifies that

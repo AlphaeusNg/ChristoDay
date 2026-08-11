@@ -82,6 +82,43 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   expect(saved.days["2026-06-17"].translation).toBe("ESV");
 });
 
+test("keeps the reading usable when live passage text fails", async ({ page }) => {
+  await page.route(/\/get-text\/NIV\/40\/1\/$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "controlled outage" }),
+    });
+  });
+
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  const datePicker = page.locator("#date-pick");
+  await datePicker.fill("2026-06-16");
+  await datePicker.dispatchEvent("change");
+
+  await expect(page.locator("#reading-panel")).toBeVisible();
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#passage-status")).toBeVisible();
+  await expect(page.locator("#passage-status")).toContainText(
+    "Could not load live text (Bible API returned invalid chapter data).",
+  );
+  await expect(page.locator("#passage-body")).toContainText("Read: Matthew 1:1-17");
+  await expect(page.locator("#passage-body")).toContainText(
+    "Offline or blocked networks fall back to the reference only",
+  );
+  await expect(page.locator("#passage-tr-label")).toHaveText("—");
+
+  await page.locator("#journal").fill("The reference still keeps today's reading usable.");
+  await page.locator("#btn-complete").click();
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#stat-done")).toHaveText("1");
+
+  await page.locator("#translation").selectOption("ESV");
+  await expect(page.locator("#passage-status")).toBeHidden();
+  await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
+  await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
+});
+
 test("keeps reading progress visible and reports denied device saves", async ({ page }) => {
   await page.addInitScript(() => {
     const originalSetItem = Storage.prototype.setItem;

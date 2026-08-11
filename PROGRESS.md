@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 138 across the projects workspace; ChristoDay Cycle 33)
+Last updated: 2026-08-11 (Cycle 147 across the projects workspace; ChristoDay Cycle 34)
 
 ## Current state
 
@@ -17,21 +17,23 @@ Last updated: 2026-08-11 (Cycle 138 across the projects workspace; ChristoDay Cy
   plus a production-mounted installed-worker journey covering scope, cache
   ownership, event lifetime, network/cache failures, and offline reload.
 - The controlled reading browser project covers startup, navigation,
-  translation cancellation, denied journal/completion saves, in-memory
-  continuity, honest durability status, and recovery persistence.
+  translation cancellation, live-passage failure fallback and recovery, denied
+  journal/completion saves, in-memory continuity, honest durability status, and
+  recovery persistence.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.5`.
+- Deployment version: `2026.08.11.6`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium: Bible units cover network failures, but the DOM journey does not prove the reference-only fallback remains usable | Small-medium / low | Existing controlled Bible route and passage status/body surfaces | Planned |
+| 1 | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium: schema units and a source-order contract cover validation, but the DOM journey does not prove startup reaches the intended fatal recovery surface | Small-medium / low | Controlled plan route, fatal status, and strict expected-error handling | Planned |
+| — | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium | Small-medium / low | Reference, explanation, journal/completion usability, and translation recovery are controlled in Chromium | Completed in Cycle 34 |
 | — | Exercise journal save-denial status in a real browser | Verification / UX | Medium | Small-medium / low | Denial, navigation continuity, guidance, and recovery persistence are controlled in Chromium | Completed in Cycle 33 |
 | — | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium | Small-medium / low | Production-mounted browser and deterministic worker fixture cover scope, cache ownership, lifecycle, and failures | Completed in Cycle 32 |
 | — | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks proved precache membership but not a controlled offline reload | Medium / low | Worker-enabled Chromium now verifies cache ownership plus offline document, CSS, module, and plan responses | Completed in Cycle 31 |
@@ -49,6 +51,64 @@ Last updated: 2026-08-11 (Cycle 138 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 34 — Browser-gate live-passage failure fallback (2026-08-11)
+
+**Why this won:** Bible unit tests covered HTTP, payload, and timeout failures,
+but the complete DOM path had never proved that a failed public API response
+left a useful reading surface. A regression could hide the reference, disable
+journaling/completion, or prevent translation recovery while all focused client
+tests remained green.
+
+**Plan and success criteria**
+
+1. Return one controlled invalid Matthew payload without using the external API.
+2. Prove the reading reference, explanatory fallback, and unavailable
+   translation label are honest and visible.
+3. Prove journal/completion controls still work and selecting another
+   translation restores live text, with no page or console errors.
+
+**Changes**
+
+- Added a real Chromium journey that forces the NIV Matthew chapter boundary to
+  return a structurally invalid payload.
+- Verified the exact Matthew reference, visible failure explanation,
+  reference-only body, and unavailable live-translation label.
+- Exercised journal entry and completion during the fallback, then changed to
+  ESV and proved the status cleared and live text returned.
+- Documented the expanded browser scope and bumped the site/offline cache
+  version to `2026.08.11.6`; runtime behavior did not need alteration.
+
+**Verification evidence**
+
+- The application assertions passed on the first run, confirming the existing
+  fallback behavior. The initial HTTP-503 fixture correctly produced Chromium
+  console errors and failed the suite's strict error gate; replacing it with an
+  invalid successful payload exercised the same application boundary without
+  weakening that invariant.
+- The focused fallback journey passed after the fixture correction.
+- The complete schedule 49/49, Bible 12/12, state 10/10, site, service-worker,
+  workflow 25/25, and browser 4/4 suites passed after the final state edits.
+- Correctness/reliability: 9/10 → 9/10 (behavior was already correct; regression
+  risk is materially lower).
+- Verifiability: 5/10 → 10/10 (fallback content, continued controls, and live
+  recovery are now exercised at the DOM boundary).
+- Maintainability: 8/10 → 9/10 (the documented product promise now has one
+  deterministic integration owner).
+- Performance/resources: 10/10 → 10/10 (test-only runtime behavior).
+- Security/privacy: 9/10 → 9/10 (controlled responses and local-only journal
+  behavior are unchanged).
+- User experience: 9/10 → 9/10 (the existing resilient UX is now protected).
+
+**Lesson / process improvement:** Expected failure fixtures should not force a
+suite to ignore browser errors broadly. Exercise the application's rejection
+boundary with a controlled bad payload when HTTP devtools noise would otherwise
+weaken a strict console gate. Verify fallback usefulness, not just error copy,
+by continuing through the core controls and recovery path.
+
+**Next opportunity:** Rotate to AIly for the next workspace cycle. On the next
+ChristoDay rotation, browser-gate invalid fetched-plan startup and the intended
+fatal recovery surface.
 
 ### Cycle 33 — Browser-gate denied journal persistence (2026-08-11)
 
