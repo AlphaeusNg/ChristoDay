@@ -35,6 +35,46 @@ function assert(cond, msg) {
 
 console.log("ChristoDay schedule tests\n");
 
+assert(typeof S.validatePlan === "function", "schedule exports runtime plan validation");
+if (typeof S.validatePlan === "function") {
+  assert(S.validatePlan(plan).ok, "checked-in plan passes runtime validation");
+  assert(!S.validatePlan(null).ok, "null plan is rejected");
+
+  const withChange = (change) => {
+    const candidate = JSON.parse(JSON.stringify(plan));
+    change(candidate);
+    return candidate;
+  };
+  assert(
+    !S.validatePlan(withChange((p) => { p.meta.startDate = "2026-02-30"; })).ok,
+    "impossible plan start date is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { delete p.weekdayMap[3]; })).ok,
+    "missing weekday mapping is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { p.weekdayMap[2] = "missing"; })).ok,
+    "mapping to an unknown book is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { p.books.matthew.segments = []; })).ok,
+    "empty segment catalog is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { p.books.mark.segments[0] = "chapter one"; })).ok,
+    "malformed passage reference is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { p.books.jude.rotations.pop(); })).ok,
+    "incomplete four-part rotation is rejected",
+  );
+  assert(
+    !S.validatePlan(withChange((p) => { p.reflectionTemplates.luke = []; })).ok,
+    "missing reflection prompts are rejected",
+  );
+}
+
 // Start date is Monday
 assert(S.weekdayOfYmd("2026-06-15") === 1, "2026-06-15 is Monday");
 

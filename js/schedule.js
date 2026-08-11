@@ -9,6 +9,110 @@
   const START = "2026-06-15"; // Monday, plan epoch
   const MS_PER_DAY = 86400000;
 
+  function isRecord(value) {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function nonEmptyString(value) {
+    return typeof value === "string" && value.trim().length > 0;
+  }
+
+  function validYmd(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return false;
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
+
+  function validPassageRef(value) {
+    if (typeof value !== "string") return false;
+    const match = /^([1-9]\d*):([1-9]\d*)-(?:([1-9]\d*):)?([1-9]\d*)$/.exec(value.trim());
+    if (!match) return false;
+    const startChapter = Number(match[1]);
+    const startVerse = Number(match[2]);
+    const endChapter = match[3] ? Number(match[3]) : startChapter;
+    const endVerse = Number(match[4]);
+    return endChapter > startChapter || (endChapter === startChapter && endVerse >= startVerse);
+  }
+
+  /** Validate fetched plan data before any schedule or rendering consumer uses it. */
+  function validatePlan(plan) {
+    const errors = [];
+    if (!isRecord(plan)) {
+      return { ok: false, errors: ["Plan must be an object."] };
+    }
+
+    if (!isRecord(plan.meta)) {
+      errors.push("Plan metadata is missing.");
+    } else {
+      if (!validYmd(plan.meta.startDate)) {
+        errors.push("Plan startDate must be a real YYYY-MM-DD date.");
+      } else if (weekdayOfYmd(plan.meta.startDate) !== 1) {
+        errors.push("Plan startDate must be a Monday.");
+      }
+      if (plan.meta.timezone !== TZ) {
+        errors.push(`Plan timezone must be ${TZ}.`);
+      }
+    }
+
+    if (!isRecord(plan.weekdayMap)) errors.push("Plan weekdayMap is missing.");
+    if (!isRecord(plan.books)) errors.push("Plan books catalog is missing.");
+    if (!isRecord(plan.reflectionTemplates)) errors.push("Plan reflection templates are missing.");
+
+    if (!isRecord(plan.weekdayMap) || !isRecord(plan.books)) {
+      return { ok: false, errors };
+    }
+
+    for (let weekday = 1; weekday <= 5; weekday += 1) {
+      const bookKey = plan.weekdayMap[String(weekday)];
+      if (!nonEmptyString(bookKey)) {
+        errors.push(`Weekday ${weekday} has no book mapping.`);
+        continue;
+      }
+
+      const book = plan.books[bookKey];
+      if (!isRecord(book)) {
+        errors.push(`Mapped book ${bookKey} is missing.`);
+        continue;
+      }
+      if (!nonEmptyString(book.label)) errors.push(`${bookKey} has no label.`);
+      if (!nonEmptyString(book.focus)) errors.push(`${bookKey} has no focus.`);
+
+      if (book.mode === "rotation") {
+        if (!Array.isArray(book.rotations) || book.rotations.length !== 4) {
+          errors.push(`${bookKey} must have exactly four rotations.`);
+        } else {
+          book.rotations.forEach((rotation, index) => {
+            if (!isRecord(rotation) || !nonEmptyString(rotation.label)) {
+              errors.push(`${bookKey} rotation ${index + 1} has no label.`);
+            }
+            if (!isRecord(rotation) || !validPassageRef(rotation.ref)) {
+              errors.push(`${bookKey} rotation ${index + 1} has an invalid reference.`);
+            }
+          });
+        }
+      } else {
+        if (book.mode != null) errors.push(`${bookKey} has an unsupported mode.`);
+        if (!Array.isArray(book.segments) || !book.segments.length) {
+          errors.push(`${bookKey} must have at least one segment.`);
+        } else if (book.segments.some((reference) => !validPassageRef(reference))) {
+          errors.push(`${bookKey} has an invalid segment reference.`);
+        }
+      }
+
+      const questions = plan.reflectionTemplates?.[bookKey];
+      if (
+        !Array.isArray(questions)
+        || !questions.length
+        || questions.some((question) => !nonEmptyString(question))
+      ) {
+        errors.push(`${bookKey} must have at least one valid reflection prompt.`);
+      }
+    }
+
+    return { ok: errors.length === 0, errors };
+  }
+
   function partsInSingapore(date = new Date()) {
     const fmt = new Intl.DateTimeFormat("en-CA", {
       timeZone: TZ,
@@ -181,6 +285,7 @@
     TZ,
     START,
     partsInSingapore,
+    validatePlan,
     resolveReading,
     formatDisplayDate,
     addDaysYmd,

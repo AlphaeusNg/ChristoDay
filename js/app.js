@@ -87,8 +87,14 @@
     try {
       const res = await fetch("data/segments.json", { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      plan = await res.json();
+      const candidatePlan = await res.json();
+      const validation = ChristoSchedule.validatePlan(candidatePlan);
+      if (!validation.ok) {
+        throw new Error(`Invalid reading plan: ${validation.errors.join(" ")}`);
+      }
+      plan = candidatePlan;
     } catch (e) {
+      console.error("[ChristoDay] plan load failed", e);
       showFatal("Could not load reading plan data.");
       return;
     }

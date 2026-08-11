@@ -48,6 +48,13 @@ assert(
 );
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
+const planValidationIndex = app.indexOf("ChristoSchedule.validatePlan(candidatePlan)");
+const planAssignmentIndex = app.indexOf("plan = candidatePlan");
+assert(planValidationIndex >= 0, "app.js must validate fetched plan data");
+assert(
+  planAssignmentIndex > planValidationIndex,
+  "app.js must validate fetched plan data before runtime assignment",
+);
 const passageRequestIndex = app.indexOf("signal: controller.signal");
 const previousAbortIndex = app.indexOf("previousController?.abort()", passageRequestIndex);
 assert(passageRequestIndex >= 0, "app.js must pass an AbortSignal to passage requests");

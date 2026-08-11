@@ -3,11 +3,11 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-10 (Cycle 86 across the projects workspace; ChristoDay Cycle 28)
+Last updated: 2026-08-11 (Cycle 99 across the projects workspace; ChristoDay Cycle 29)
 
 ## Current state
 
-- Deterministic weekday schedule with 39 passing schedule/data tests.
+- Deterministic weekday schedule with 49 passing schedule/data/schema tests.
 - Live Bible client with 12 passing network/payload/cache/cancellation/passage
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
   50-chapter memory cache.
@@ -17,14 +17,14 @@ Last updated: 2026-08-10 (Cycle 86 across the projects workspace; ChristoDay Cyc
   site/offline structure, and complete JavaScript syntax checks on Node 24 LTS
   with read-only permissions, stale-run cancellation, and a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.10.1`.
+- Deployment version: `2026.08.11.1`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
 | 1 | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites do not execute the complete DOM boot or cancellation integration | Medium / low | Reuse the test-only browser approach proven in the sibling static sites | Next |
-| 2 | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passes schedule tests, but runtime fetch consumers trust its shape | Small-medium / low | Reuse schedule invariants and show safe visitor recovery | Backlog |
+| — | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passed schedule tests, but runtime fetch consumers trusted its shape | Small-medium / low | 10 schema/boundary contracts plus fatal recovery integration | Completed in Cycle 29 |
 | — | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every check needed supported runtimes and bounded least privilege | Small / low | 18 executable workflow policies | Completed in Cycle 28 |
 | — | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevented stale rendering but unrelated requests continued until completion/timeout | Medium / medium | Ref-count shared chapter consumers and subscribe new UI work before aborting old | Completed in Cycle 27 |
 | — | Validate saved date keys as real calendar dates | Correctness | Medium: regex-valid impossible dates remained in totals/state | Small / low | Leap-day and invalid calendar cases | Completed in Cycle 26 |
@@ -527,3 +527,61 @@ syntax checking.
 **Next opportunity:** Add a browser startup/day-navigation/translation smoke
 that executes the real DOM boot and cancellation integration. Workspace next:
 rotate after publishing this infrastructure-focused ChristoDay cycle.
+
+### Cycle 29 — Validate fetched reading-plan data (2026-08-11)
+
+**Why this won:** A successful JSON parse was assigned directly to runtime
+state. A malformed service-worker cache entry or deployed payload could then
+throw inside schedule/render paths when weekday mappings, books, segment arrays,
+rotations, or reflection prompts were absent. The visitor saw an incidental
+failure instead of the existing safe fatal state.
+
+**Plan and success criteria**
+
+1. Validate the calendar epoch, timezone, five weekday mappings, mapped book
+   metadata, segment/rotation references, and reflection prompts.
+2. Reject invalid data before assigning it to the application plan.
+3. Keep the detailed cause observable in the console while showing visitors the
+   stable non-technical recovery message.
+
+**Changes**
+
+- Added `ChristoSchedule.validatePlan`, including semantic date/Monday checks,
+  the fixed Singapore timezone, referenced book structure, ordered passage
+  ranges, exactly four rotation entries, and non-empty reflection prompts.
+- Routed fetched JSON through validation before `plan` assignment and logged the
+  diagnostic while preserving the existing fatal UI.
+- Added ten schedule/schema assertions plus a structural contract locking
+  validation ahead of runtime assignment.
+- Bumped the site/service-worker cache version to `2026.08.11.1`.
+
+**Verification evidence**
+
+- Test-first: the schedule suite failed because validation was not exported;
+  the site suite independently failed because the app assigned unvalidated data.
+- Schedule/data/schema suite: 49 passed (up from 39), covering the checked-in
+  payload plus null, impossible date, missing mapping/book, empty segments,
+  malformed references, incomplete rotation, and missing prompts.
+- Bible client: 12; persisted state: 10; workflow policy: 18; site/offline
+  structure: 11 precache entries.
+- Recursive application/tool/service-worker syntax, segment/manifest JSON
+  parsing, local served-page probes, and `git diff --check` passed.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 5/10 | 9/10 | Only a complete, internally consistent plan reaches schedule/render consumers |
+| Test coverage / verifiability | 6/10 | 9/10 | Ten schema cases and assignment-order integration run in CI |
+| Maintainability | 6/10 | 9/10 | Schedule data invariants now have one named owner |
+| Performance | 9/10 | 9/10 | One small linear validation pass occurs only at startup |
+| User experience / observability | 6/10 | 9/10 | Visitors receive stable recovery while developers retain the exact cause |
+
+**Lesson / process improvement:** Checked-in data tests prove the repository
+artifact, not the browser boundary. Validate again after fetch/cache
+deserialization, and assign shared runtime state only after the whole payload
+passes so partial data cannot escape.
+
+**Next opportunity:** Add a browser startup/day-navigation/translation smoke
+that executes real DOM boot and passage cancellation integration. Workspace
+next: rotate to AIly after this ChristoDay cycle.
