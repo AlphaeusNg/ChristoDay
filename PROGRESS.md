@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 129 across the projects workspace; ChristoDay Cycle 32)
+Last updated: 2026-08-11 (Cycle 138 across the projects workspace; ChristoDay Cycle 33)
 
 ## Current state
 
@@ -16,19 +16,23 @@ Last updated: 2026-08-11 (Cycle 129 across the projects workspace; ChristoDay Cy
 - Service-worker runtime behavior has four deterministic execution scenarios
   plus a production-mounted installed-worker journey covering scope, cache
   ownership, event lifetime, network/cache failures, and offline reload.
+- The controlled reading browser project covers startup, navigation,
+  translation cancellation, denied journal/completion saves, in-memory
+  continuity, honest durability status, and recovery persistence.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.4`.
+- Deployment version: `2026.08.11.5`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Exercise journal save-denial status in a real browser | Verification / UX | Medium: the state unit proves non-throwing failure, but the browser journey does not prove typed journal text remains visible with honest durability guidance | Small-medium / low | Existing controlled reading journey and `#storage-status` surface |
+| 1 | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium: Bible units cover network failures, but the DOM journey does not prove the reference-only fallback remains usable | Small-medium / low | Existing controlled Bible route and passage status/body surfaces | Planned |
+| — | Exercise journal save-denial status in a real browser | Verification / UX | Medium | Small-medium / low | Denial, navigation continuity, guidance, and recovery persistence are controlled in Chromium | Completed in Cycle 33 |
 | — | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium | Small-medium / low | Production-mounted browser and deterministic worker fixture cover scope, cache ownership, lifecycle, and failures | Completed in Cycle 32 |
 | — | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks proved precache membership but not a controlled offline reload | Medium / low | Worker-enabled Chromium now verifies cache ownership plus offline document, CSS, module, and plan responses | Completed in Cycle 31 |
 | — | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites did not execute the complete DOM boot or cancellation integration | Medium / low | Locked offline Playwright fixture and 24 CI policy contracts | Completed in Cycle 30 |
@@ -45,6 +49,60 @@ Last updated: 2026-08-11 (Cycle 129 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 33 — Browser-gate denied journal persistence (2026-08-11)
+
+**Why this won:** The state unit already proved that storage exceptions return
+`false`, but no browser contract exercised the complete input/status/navigation
+path. A regression could erase typed journal text, misreport durability, or
+fail to flush the current in-memory day after storage recovered while every
+pure test remained green.
+
+**Plan and success criteria**
+
+1. Deny only writes to `christoday.v1` in real Chromium without disturbing
+   page startup or the controlled Bible API.
+2. Prove journal text and completion remain visible through a day-navigation
+   round trip while the accessible status explains the durability risk.
+3. Re-enable writes and prove the complete in-memory entry becomes durable and
+   the warning clears.
+
+**Changes**
+
+- Added a reading-browser journey with a selectively failing Storage adapter.
+- Verified the journal input, completion button, completed-day count, warning
+  copy, absent device record, and navigation continuity during denial.
+- Verified a later permitted input persists both the recovered journal text and
+  the earlier completion state, then hides the warning.
+- Documented the expanded browser scope and bumped the deployment version to
+  `2026.08.11.5`; runtime behavior did not need alteration.
+
+**Verification evidence**
+
+- The new contract passed on its first focused execution, confirming the
+  existing runtime behavior and converting an unverified claim into a gate.
+- The strengthened journal-plus-completion journey passed 5/5 repeated runs.
+- The complete schedule, Bible, state, site, service-worker, workflow, browser,
+  dependency-audit, syntax, JSON, diff, hosted CI, Pages, and live-version
+  results are recorded in the Cycle 138 completion summary.
+- Correctness/reliability: 9/10 → 9/10 (behavior was already correct; regression
+  risk is materially lower).
+- Verifiability: 5/10 → 10/10 (the full denial, continuity, and recovery path is
+  now exercised in a browser).
+- Maintainability: 8/10 → 9/10 (the persistence contract is documented at its
+  real DOM boundary).
+- Performance/resources: 10/10 → 10/10 (test-only change; runtime unchanged).
+- Security/privacy: 9/10 → 9/10 (local-only behavior unchanged and now proven).
+- User experience: 9/10 → 9/10 (existing honest behavior is now protected).
+
+**Lesson / process improvement:** A green-on-first-run test is valid improvement
+when closing a known verification gap: it does not prove a new fix, but it makes
+an important behavior enforceable. Recovery tests should verify the entire
+in-memory record is flushed, including fields changed by a different control.
+
+**Next opportunity:** Rotate to AIly for the next workspace cycle. On the next
+ChristoDay rotation, browser-gate the reference-only passage fallback when the
+live Bible request fails.
 
 ### Cycle 32 — Isolate runtime caching and own fetch lifetimes (2026-08-11)
 

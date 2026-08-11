@@ -81,3 +81,53 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   expect(saved.translation).toBe("ESV");
   expect(saved.days["2026-06-17"].translation).toBe("ESV");
 });
+
+test("keeps reading progress visible and reports denied device saves", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    window.__christoStateWritesAllowed = false;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === "christoday.v1" && !window.__christoStateWritesAllowed) {
+        throw new DOMException("storage denied", "QuotaExceededError");
+      }
+      return originalSetItem.call(this, key, value);
+    };
+  });
+
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  const datePicker = page.locator("#date-pick");
+  const journal = page.locator("#journal");
+  const storageStatus = page.locator("#storage-status");
+  await datePicker.fill("2026-06-16");
+  await datePicker.dispatchEvent("change");
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+
+  const firstEntry = "Christ meets me with grace here.";
+  await journal.fill(firstEntry);
+  await expect(journal).toHaveValue(firstEntry);
+  await expect(storageStatus).toBeVisible();
+  await expect(storageStatus).toContainText("current entry remains visible");
+  await expect(storageStatus).toContainText("may be lost when this tab closes");
+  expect(await page.evaluate(() => localStorage.getItem("christoday.v1"))).toBeNull();
+  await page.locator("#btn-complete").click();
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#stat-done")).toHaveText("1");
+
+  await page.locator("#btn-next").click();
+  await expect(datePicker).toHaveValue("2026-06-17");
+  await expect(journal).toHaveValue("");
+  await page.locator("#btn-prev").click();
+  await expect(datePicker).toHaveValue("2026-06-16");
+  await expect(journal).toHaveValue(firstEntry);
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+
+  await page.evaluate(() => {
+    window.__christoStateWritesAllowed = true;
+  });
+  const recoveredEntry = `${firstEntry} It is safe now.`;
+  await journal.fill(recoveredEntry);
+  await expect(storageStatus).toBeHidden();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
+  expect(saved.days["2026-06-16"].journal).toBe(recoveredEntry);
+  expect(saved.days["2026-06-16"].completed).toBe(true);
+});
