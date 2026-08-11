@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 99 across the projects workspace; ChristoDay Cycle 29)
+Last updated: 2026-08-11 (Cycle 109 across the projects workspace; ChristoDay Cycle 30)
 
 ## Current state
 
@@ -13,17 +13,19 @@ Last updated: 2026-08-11 (Cycle 99 across the projects workspace; ChristoDay Cyc
   50-chapter memory cache.
 - Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
-- GitHub Actions runs 18 workflow-policy assertions plus schedule, Bible, state,
-  site/offline structure, and complete JavaScript syntax checks on Node 24 LTS
-  with read-only permissions, stale-run cancellation, and a five-minute timeout.
+- GitHub Actions runs 24 workflow-policy assertions plus schedule, Bible, state,
+  site/offline structure, complete JavaScript syntax checks, and a real Chromium
+  reading journey on Node 24 LTS with locked test dependencies, read-only
+  permissions, stale-run cancellation, and a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.1`.
+- Deployment version: `2026.08.11.2`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites do not execute the complete DOM boot or cancellation integration | Medium / low | Reuse the test-only browser approach proven in the sibling static sites | Next |
+| 1 | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks prove precache membership but not a controlled offline reload | Medium / low | Current deterministic browser journey intentionally blocks service workers | Next |
+| — | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites did not execute the complete DOM boot or cancellation integration | Medium / low | Locked offline Playwright fixture and 24 CI policy contracts | Completed in Cycle 30 |
 | — | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passed schedule tests, but runtime fetch consumers trusted its shape | Small-medium / low | 10 schema/boundary contracts plus fatal recovery integration | Completed in Cycle 29 |
 | — | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every check needed supported runtimes and bounded least privilege | Small / low | 18 executable workflow policies | Completed in Cycle 28 |
 | — | Abort obsolete passage requests after navigation | Performance / reliability | Medium: sequence guards prevented stale rendering but unrelated requests continued until completion/timeout | Medium / medium | Ref-count shared chapter consumers and subscribe new UI work before aborting old | Completed in Cycle 27 |
@@ -585,3 +587,68 @@ passes so partial data cannot escape.
 **Next opportunity:** Add a browser startup/day-navigation/translation smoke
 that executes real DOM boot and passage cancellation integration. Workspace
 next: rotate to AIly after this ChristoDay cycle.
+
+### Cycle 30 — Exercise the reading journey in Chromium (2026-08-11)
+
+**Why this won:** The pure suites strongly covered schedule, API, persistence,
+and workflow boundaries but never booted their combined DOM application. Script
+ordering, selectors, event binding, passage replacement, and translation
+persistence could regress together while every focused contract stayed green.
+
+**Plan and success criteria**
+
+1. Boot the fetched and validated plan in a real Chromium page without relying
+   on third-party availability.
+2. Render a deterministic Matthew date, navigate to Mark, and overlap a slow
+   NIV fetch with a newer ESV request.
+3. Prove the newer passage stays visible and persisted after stale work settles,
+   with page/console errors treated as failures.
+4. Lock exact dependencies and run the browser gate in CI after cheap suites.
+
+**Changes**
+
+- Added exact Playwright `1.62.1` test metadata and lockfile plus a single-worker
+  local-server Chromium configuration.
+- Added a browser journey that boots the live DOM, selects 2026-06-16, verifies
+  Matthew 1:1-17, navigates to Mark 1:1-8, and switches from a delayed NIV
+  response to ESV.
+- Asserted final passage text/status, saved global/day translation state, fatal
+  visibility, and absence of page or console errors after the stale window.
+- Stubbed external Bible/font/support requests and blocked service workers so
+  the integration stays deterministic while all application assets remain real.
+- Added locked dependency caching/install and Chromium execution to CI after
+  syntax; expanded workflow policy from 18 to 24 assertions.
+- Documented local commands, ignored generated browser output, and bumped the
+  site/offline cache version to `2026.08.11.2`.
+
+**Verification evidence**
+
+- Test-first: the expanded policy suite failed on missing npm dependency caching
+  before workflow implementation.
+- Browser journey: 1/1 passed in 1.9 seconds, then 3/3 overlap repetitions
+  passed in 4.1 seconds without runtime errors.
+- Workflow policy: 24; schedule/data/schema: 49; Bible client: 12; persisted
+  state: 10; site/offline structure: 11 precache entries.
+- Clean lockfile installation reported zero npm vulnerabilities.
+- Recursive application/tool/service-worker syntax, JSON parsing, and
+  `git diff --check`: passed.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 7/10 | 9/10 | Combined boot/navigation/translation behavior now gates deployment |
+| Test coverage / verifiability | 6/10 | 10/10 | Fast contracts are supplemented by a deterministic real-DOM journey |
+| Maintainability | 8/10 | 9/10 | One conventional spec owns the cross-module user path and commands are documented |
+| Performance / resources | 9/10 | 8/10 | Runtime is unchanged; Chromium adds CI setup after cheap gates pass |
+| Security / robustness | 8/10 | 10/10 | Unexpected browser errors fail and the test makes no uncontrolled external calls |
+
+**Lesson / process improvement:** Cancellation tests are strongest when the
+obsolete response is deliberately held past the newer response and the DOM is
+checked again after that stale window. Keep browser fixtures at public user
+boundaries while injecting deterministic data only at network edges.
+
+**Next opportunity:** Run a controlled installed-service-worker/offline reload
+journey; the current structural precache check and browser smoke do not prove
+the deployed shell actually survives loss of network. Workspace next: rotate to
+AIly after publishing this ChristoDay verification cycle.

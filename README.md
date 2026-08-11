@@ -28,6 +28,7 @@ Zero-build static site: HTML / CSS / JS. GitHub Pages from `main` / root.
 
 ```bash
 cd /home/alph/projects/ChristoDay
+npm ci --ignore-scripts
 python3 -m http.server 8091
 # http://127.0.0.1:8091/
 
@@ -36,9 +37,18 @@ node tools/test-bible.mjs
 node tools/test-state.mjs
 node tools/test-site.mjs
 node tools/test-workflow.mjs
-find js tools -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
+find js tools tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
 node --check sw.js
+node --check playwright.config.mjs
+npx playwright install chromium
+npm run test:browser
 ```
+
+The locked Playwright smoke boots the real page with controlled Bible API
+responses, navigates from Matthew to Mark, overlaps an obsolete NIV request
+with a newer ESV selection, and verifies the new translation remains rendered
+and persisted without browser errors. External assets are stubbed and service
+workers are blocked for deterministic CI; the deployed app remains zero-build.
 
 ## Plan epoch
 
