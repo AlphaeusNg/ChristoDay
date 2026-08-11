@@ -1,7 +1,8 @@
 /* ChristoDay service worker — precache shell + plan for offline weekday use.
    Bible live text stays network-only. */
 importScripts("./js/version.js");
-const CACHE = `christoday-${self.SITE_VERSION.id}`;
+const CACHE_PREFIX = "christoday-";
+const CACHE = `${CACHE_PREFIX}${self.SITE_VERSION.id}`;
 const PRECACHE = [
   "./",
   "./index.html",
@@ -25,7 +26,11 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE)
+          .map((k) => caches.delete(k))
+      )
     ).then(() => self.clients.claim())
   );
 });

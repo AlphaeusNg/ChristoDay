@@ -12,9 +12,20 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4176",
     browserName: "chromium",
-    serviceWorkers: "block",
     trace: "retain-on-failure",
   },
+  projects: [
+    {
+      name: "reading",
+      testMatch: /reading\.spec\.mjs/,
+      use: { serviceWorkers: "block" },
+    },
+    {
+      name: "offline",
+      testMatch: /offline\.spec\.mjs/,
+      use: { serviceWorkers: "allow" },
+    },
+  ],
   webServer: {
     command: "python3 -m http.server 4176",
     url: "http://127.0.0.1:4176/",

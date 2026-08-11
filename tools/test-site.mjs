@@ -21,6 +21,12 @@ for (const htmlFile of ["index.html", "404.html"]) {
 }
 
 const worker = readFileSync(join(root, "sw.js"), "utf8");
+assert.match(worker, /const CACHE_PREFIX = "christoday-";/, "service worker owns a cache prefix");
+assert.match(
+  worker,
+  /\.filter\(\(k\) => k\.startsWith\(CACHE_PREFIX\) && k !== CACHE\)/,
+  "activation must delete only obsolete ChristoDay caches",
+);
 const precacheBlock = /const PRECACHE = \[([\s\S]*?)\];/.exec(worker)?.[1];
 assert(precacheBlock, "service worker must declare PRECACHE");
 const precache = [...precacheBlock.matchAll(/"([^"]+)"/g)].map((match) => match[1]);

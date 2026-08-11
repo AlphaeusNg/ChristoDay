@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 109 across the projects workspace; ChristoDay Cycle 30)
+Last updated: 2026-08-11 (Cycle 119 across the projects workspace; ChristoDay Cycle 31)
 
 ## Current state
 
@@ -14,17 +14,19 @@ Last updated: 2026-08-11 (Cycle 109 across the projects workspace; ChristoDay Cy
 - Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
 - GitHub Actions runs 24 workflow-policy assertions plus schedule, Bible, state,
-  site/offline structure, complete JavaScript syntax checks, and a real Chromium
-  reading journey on Node 24 LTS with locked test dependencies, read-only
-  permissions, stale-run cancellation, and a five-minute timeout.
+  site/offline structure, complete JavaScript syntax checks, and separate real
+  Chromium reading and installed-service-worker journeys on Node 24 LTS with
+  locked test dependencies, read-only permissions, stale-run cancellation, and
+  a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.2`.
+- Deployment version: `2026.08.11.3`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks prove precache membership but not a controlled offline reload | Medium / low | Current deterministic browser journey intentionally blocks service workers | Next |
+| 1 | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium: same-origin out-of-scope resources can enter the ChristoDay cache, and untracked writes may be terminated | Small-medium / low | Shared Pages origin; cache-name ownership is now protected and worker behavior has a real-browser fixture | Next |
+| — | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks proved precache membership but not a controlled offline reload | Medium / low | Worker-enabled Chromium now verifies cache ownership plus offline document, CSS, module, and plan responses | Completed in Cycle 31 |
 | — | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites did not execute the complete DOM boot or cancellation integration | Medium / low | Locked offline Playwright fixture and 24 CI policy contracts | Completed in Cycle 30 |
 | — | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passed schedule tests, but runtime fetch consumers trusted its shape | Small-medium / low | 10 schema/boundary contracts plus fatal recovery integration | Completed in Cycle 29 |
 | — | Upgrade CI runtime, action versions, and job policy | Test / security / process | High: every check needed supported runtimes and bounded least privilege | Small / low | 18 executable workflow policies | Completed in Cycle 28 |
@@ -652,3 +654,73 @@ boundaries while injecting deterministic data only at network edges.
 journey; the current structural precache check and browser smoke do not prove
 the deployed shell actually survives loss of network. Workspace next: rotate to
 AIly after publishing this ChristoDay verification cycle.
+
+### Cycle 31 — Verify offline reload and isolate cache cleanup (2026-08-11)
+
+**Why this won:** Structural checks proved that precache paths existed, but the
+only browser suite explicitly blocked service workers. Inspection also revealed
+that activation deleted every other Cache Storage entry. Cache Storage is
+origin-wide, so on the shared GitHub Pages origin ChristoDay could evict another
+project's offline cache even though service-worker control is path-scoped.
+
+**Plan and success criteria**
+
+1. Install and control the real page in a dedicated worker-enabled browser
+   context while preserving the cancellation-focused worker-blocked journey.
+2. Seed both a foreign cache and an obsolete ChristoDay cache; preserve the
+   former and remove only the latter during activation.
+3. Disconnect Chromium, reload through the active worker, and render a
+   deterministic reference-only reading from cached shell and plan assets.
+4. Keep unexpected page/console failures fatal while allowing only the known
+   optional support script to be unavailable offline.
+
+**Changes**
+
+- Added a `christoday-` cache ownership prefix and limited activation cleanup to
+  obsolete cache names within that prefix.
+- Added separate Playwright projects: the existing reading/cancellation journey
+  still blocks workers, while the offline journey allows a clean worker lifecycle.
+- Added a worker-enabled browser test that seeds origin-wide cache sentinels,
+  waits for control, checks cache ownership, disconnects the browser, and proves
+  the document, stylesheet, application module, and plan JSON came from the worker.
+- Verified the offline page renders Matthew 1:1-17 with the documented live-text
+  fallback and no application errors.
+- Added a fast structural cache-ownership contract, documented the browser
+  topology, and bumped the site/offline cache version to `2026.08.11.3`.
+
+**Verification evidence**
+
+- Test-first: the worker-enabled run received only
+  `christoday-2026.08.11.2`; both the seeded foreign cache and obsolete local
+  cache had been deleted, proving the origin-wide eviction defect.
+- `npm run test:browser -- --repeat-each=3`: 6/6 reading and offline journeys
+  passed in 6.1 seconds; the offline navigation and four critical assets each
+  reported service-worker delivery.
+- Workflow policy: 24; schedule/data/schema: 49; Bible client: 12; persisted
+  state: 10; site/offline structure: 11 precache entries plus cache ownership.
+- Recursive application/tool/test, service-worker, and Playwright syntax checks
+  passed; JSON artifacts parsed; npm audit found zero vulnerabilities;
+  `git diff --check` passed.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 9/10 | Activation no longer deletes other same-origin projects' caches |
+| Test coverage / verifiability | 4/10 | 10/10 | A real installed worker now gates offline shell and plan recovery |
+| Maintainability | 6/10 | 9/10 | Cache ownership is named and browser modes are isolated by project |
+| Performance / resources | 8/10 | 8/10 | Runtime strategy is unchanged; one small browser journey is added after cheap checks |
+| Security / robustness | 4/10 | 9/10 | Origin-wide storage mutation is constrained to ChristoDay-owned names |
+| Offline user experience | 6/10 | 9/10 | A disconnected reload reaches a usable deterministic reading and honest text fallback |
+
+**Lesson / process improvement:** Service-worker scope does not scope the Cache
+Storage namespace. Every worker on a shared origin needs an explicit ownership
+prefix, and cleanup tests should seed foreign state before activation. Separate
+browser projects are a clean way to keep one integration test worker-free while
+exercising the real worker lifecycle in another.
+
+**Next opportunity:** Restrict runtime caching to URLs within the worker's
+registration scope and attach cache writes to `event.waitUntil`, preventing
+out-of-scope same-origin support assets or terminated background writes from
+weakening cache ownership. Workspace next: rotate to AIly after this
+service-worker cycle.

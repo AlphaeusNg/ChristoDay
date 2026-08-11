@@ -44,11 +44,14 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The locked Playwright smoke boots the real page with controlled Bible API
+The locked Playwright suite boots the real page with controlled Bible API
 responses, navigates from Matthew to Mark, overlaps an obsolete NIV request
 with a newer ESV selection, and verifies the new translation remains rendered
-and persisted without browser errors. External assets are stubbed and service
-workers are blocked for deterministic CI; the deployed app remains zero-build.
+and persisted without browser errors. A separate worker-enabled context installs
+the offline shell, verifies that unrelated same-origin caches survive activation,
+disconnects Chromium, and reloads a working reference-only reading from the
+service-worker cache. External assets remain controlled and deterministic; the
+deployed app remains zero-build.
 
 ## Plan epoch
 
