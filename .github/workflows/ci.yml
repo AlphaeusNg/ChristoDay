@@ -34,6 +34,8 @@ jobs:
         run: node tools/test-state.mjs
       - name: Site and offline structure
         run: node tools/test-site.mjs
+      - name: Service worker behavior
+        run: node tools/test-service-worker.mjs
       - name: JavaScript syntax
         run: |
           find js tools tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check

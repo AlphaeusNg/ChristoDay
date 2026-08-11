@@ -26,7 +26,7 @@ check(/cache:\s*npm/, "workflow caches locked npm dependencies");
 check(/run:\s*npm ci --ignore-scripts\b/, "workflow installs exact test dependencies");
 check(/run:\s*node tools\/test-workflow\.mjs/, "workflow enforces its own policy");
 
-for (const suite of ["schedule", "bible", "state", "site"]) {
+for (const suite of ["schedule", "bible", "state", "site", "service-worker"]) {
   check(new RegExp(`run:\\s*node tools/test-${suite}\\.mjs`), `workflow runs the ${suite} suite`);
 }
 

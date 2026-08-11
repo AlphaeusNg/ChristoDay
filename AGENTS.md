@@ -30,6 +30,7 @@ node tools/test-schedule.mjs
 node tools/test-bible.mjs
 node tools/test-state.mjs
 node tools/test-site.mjs
+node tools/test-service-worker.mjs
 node tools/test-workflow.mjs
 find js tools tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
 node --check sw.js

@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 119 across the projects workspace; ChristoDay Cycle 31)
+Last updated: 2026-08-11 (Cycle 129 across the projects workspace; ChristoDay Cycle 32)
 
 ## Current state
 
@@ -13,19 +13,23 @@ Last updated: 2026-08-11 (Cycle 119 across the projects workspace; ChristoDay Cy
   50-chapter memory cache.
 - Persisted journal/completion state with 10 passing hydration/persistence cases
   and non-throwing save failure handling.
-- GitHub Actions runs 24 workflow-policy assertions plus schedule, Bible, state,
-  site/offline structure, complete JavaScript syntax checks, and separate real
+- Service-worker runtime behavior has four deterministic execution scenarios
+  plus a production-mounted installed-worker journey covering scope, cache
+  ownership, event lifetime, network/cache failures, and offline reload.
+- GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
+  site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.3`.
+- Deployment version: `2026.08.11.4`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium: same-origin out-of-scope resources can enter the ChristoDay cache, and untracked writes may be terminated | Small-medium / low | Shared Pages origin; cache-name ownership is now protected and worker behavior has a real-browser fixture | Next |
+| 1 | Exercise journal save-denial status in a real browser | Verification / UX | Medium: the state unit proves non-throwing failure, but the browser journey does not prove typed journal text remains visible with honest durability guidance | Small-medium / low | Existing controlled reading journey and `#storage-status` surface |
+| — | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium | Small-medium / low | Production-mounted browser and deterministic worker fixture cover scope, cache ownership, lifecycle, and failures | Completed in Cycle 32 |
 | — | Add installed-service-worker offline reload smoke coverage | Verification / reliability | Medium-high: structural checks proved precache membership but not a controlled offline reload | Medium / low | Worker-enabled Chromium now verifies cache ownership plus offline document, CSS, module, and plan responses | Completed in Cycle 31 |
 | — | Add browser startup/day-navigation/translation smoke coverage | Verification | High: pure suites did not execute the complete DOM boot or cancellation integration | Medium / low | Locked offline Playwright fixture and 24 CI policy contracts | Completed in Cycle 30 |
 | — | Validate fetched plan data before runtime rendering | Correctness | Medium: checked-in data passed schedule tests, but runtime fetch consumers trusted its shape | Small-medium / low | 10 schema/boundary contracts plus fatal recovery integration | Completed in Cycle 29 |
@@ -41,6 +45,73 @@ Last updated: 2026-08-11 (Cycle 119 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 32 — Isolate runtime caching and own fetch lifetimes (2026-08-11)
+
+**Why this won:** ChristoDay shares the `alphaeusng.github.io` origin with other
+projects, but its fetch handler cached every same-origin GET and used global
+`caches.match()`. It could therefore store out-of-scope resources or serve a
+ChristoDay URL from another project's older cache. Runtime writes also ran as
+detached promises that the browser could terminate after the response settled.
+
+**Plan and success criteria**
+
+1. Reproduce the production `/ChristoDay/` scope in Chromium.
+2. Prove out-of-scope resources never enter the owned cache and foreign caches
+   never answer ChristoDay requests.
+3. Bind network refresh/cache writes to `event.waitUntil()` without letting a
+   cache failure discard a usable network response.
+
+**Changes**
+
+- Derived the runtime boundary from `self.registration.scope` and bypassed all
+  cross-origin or same-origin out-of-scope requests, keeping the Bible API and
+  shared-origin siblings network-only.
+- Replaced global `caches.match()` with lookup in the current versioned
+  ChristoDay cache only.
+- Shared one background network/update promise between cache-first response
+  logic and `event.waitUntil()`, and isolated `cache.put()` failures from valid
+  network delivery.
+- Mounted Playwright from the projects parent at `/ChristoDay/`, seeded a
+  conflicting foreign cache entry, fetched the same-origin root, and retained
+  the existing controlled offline reading assertions under the true prefix.
+- Added `tools/test-service-worker.mjs` with four executable scope, ownership,
+  lifetime, offline fallback, and cache-write failure scenarios; wired it into
+  local commands and CI, raising workflow policy coverage from 24 to 25.
+- Bumped the site/cache version to `2026.08.11.4`.
+
+**Verification evidence**
+
+- Test-first source policy failed on absent installed-scope derivation; the
+  production-mounted browser then proved the origin root entered ChristoDay's
+  cache before the fix.
+- Self-review red evidence: a rejected `cache.put()` caused the first worker
+  implementation to return `undefined` instead of the valid network response;
+  the execution fixture caught it and passed after failure isolation.
+- Schedule 49/49, Bible 12/12, state 10/10, site/offline structure, service
+  worker execution, and workflow policy 25/25 pass.
+- Both real Chromium journeys pass: live reading/navigation and installed
+  worker cache isolation/offline reload. Recursive syntax, tracked JSON,
+  dependency audit, and `git diff --check` pass.
+- Correctness/reliability: 5/10 → 10/10 (only owned scope/cache data can answer,
+  and cache failure no longer breaks network delivery).
+- Verifiability: 5/10 → 10/10 (source policy, VM execution, and installed worker
+  each cover a different failure boundary).
+- Maintainability: 7/10 → 9/10 (scope and cache ownership have one explicit
+  runtime policy with an executable CI gate).
+- Performance/resources: 6/10 → 9/10 (out-of-scope traffic bypasses the worker;
+  in-scope refreshes have a bounded event lifetime).
+- Security/isolation: 4/10 → 10/10 (shared-origin sibling resources and caches
+  cannot contaminate ChristoDay responses).
+
+**Lesson / process improvement:** A cache prefix protects deletion only. Full
+ownership also requires scope-constrained writes and current-cache reads.
+Whenever `waitUntil()` is added, simulate cache rejection separately so
+lifecycle correctness does not accidentally turn optional caching into a hard
+response dependency.
+
+**Next opportunity:** Exercise journal persistence denial through the real DOM
+so visible text continuity and honest durability status are browser-gated.
 
 ### Cycle 19 — Bound and test live Bible fetches (2026-08-09)
 

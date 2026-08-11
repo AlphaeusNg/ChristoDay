@@ -27,6 +27,26 @@ assert.match(
   /\.filter\(\(k\) => k\.startsWith\(CACHE_PREFIX\) && k !== CACHE\)/,
   "activation must delete only obsolete ChristoDay caches",
 );
+assert.match(
+  worker,
+  /new URL\(self\.registration\.scope\)/,
+  "runtime caching must derive the installed ChristoDay scope",
+);
+assert.match(
+  worker,
+  /url\.pathname\.startsWith\([^)]*\.pathname\)/,
+  "runtime caching must reject same-origin paths outside the installed scope",
+);
+assert.doesNotMatch(
+  worker,
+  /caches\.match\(req\)/,
+  "runtime cache reads must not search caches owned by other projects",
+);
+assert.match(
+  worker,
+  /event\.waitUntil\(networkPromise/,
+  "runtime cache writes must extend the fetch event lifetime",
+);
 const precacheBlock = /const PRECACHE = \[([\s\S]*?)\];/.exec(worker)?.[1];
 assert(precacheBlock, "service worker must declare PRECACHE");
 const precache = [...precacheBlock.matchAll(/"([^"]+)"/g)].map((match) => match[1]);

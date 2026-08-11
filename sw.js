@@ -3,6 +3,7 @@
 importScripts("./js/version.js");
 const CACHE_PREFIX = "christoday-";
 const CACHE = `${CACHE_PREFIX}${self.SITE_VERSION.id}`;
+const SCOPE_URL = new URL(self.registration.scope);
 const PRECACHE = [
   "./",
   "./index.html",
@@ -40,23 +41,31 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Never cache third-party Bible API
-  if (url.hostname === "bolls.life" || url.hostname.includes("fonts.")) {
+  // Never intercept third-party requests or same-origin resources owned by
+  // another project on the shared GitHub Pages origin.
+  if (
+    url.origin !== SCOPE_URL.origin ||
+    !url.pathname.startsWith(SCOPE_URL.pathname)
+  ) {
     return;
   }
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.ok && url.origin === self.location.origin) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
+  const cachePromise = caches.open(CACHE);
+  const cachedPromise = cachePromise.then((cache) => cache.match(req));
+  const networkPromise = Promise.all([cachePromise, cachedPromise]).then(
+    ([cache, cached]) => fetch(req)
+      .then(async (response) => {
+        if (response?.ok) {
+          try {
+            await cache.put(req, response.clone());
+          } catch {
+            // A quota/policy cache failure must not discard a valid response.
           }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+        }
+        return response;
+      })
+      .catch(() => cached)
   );
+  event.respondWith(cachedPromise.then((cached) => cached || networkPromise));
+  event.waitUntil(networkPromise.then(() => undefined));
 });

@@ -47,7 +47,7 @@ test.afterEach(async ({ page }) => {
 });
 
 test("boots, navigates, and keeps the newest translation", async ({ page }) => {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("./", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#site-version")).not.toHaveText("—");
   await expect(page.locator("#fatal")).toBeHidden();
 

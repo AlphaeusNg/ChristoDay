@@ -10,7 +10,7 @@ export default defineConfig({
   },
   reporter: [["line"]],
   use: {
-    baseURL: "http://127.0.0.1:4176",
+    baseURL: "http://127.0.0.1:4176/ChristoDay/",
     browserName: "chromium",
     trace: "retain-on-failure",
   },
@@ -27,8 +27,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "python3 -m http.server 4176",
-    url: "http://127.0.0.1:4176/",
+    command: "python3 -m http.server 4176 --directory ..",
+    url: "http://127.0.0.1:4176/ChristoDay/",
     reuseExistingServer: !process.env.CI,
     timeout: 15_000,
   },

@@ -41,15 +41,23 @@ test.afterEach(async ({ page }) => {
 });
 
 test("preserves foreign caches and reloads the reading shell offline", async ({ context, page }) => {
-  await page.goto("/manifest.webmanifest");
+  await page.goto("manifest.webmanifest");
   await page.evaluate(async () => {
     const foreign = await caches.open("other-project-offline-v1");
     await foreign.put("./foreign-sentinel", new Response("keep"));
+    await foreign.put(
+      "./js/version.js",
+      new Response(
+        'globalThis.SITE_VERSION = { id: "foreign-cache", label: "Wrong project" };',
+        { headers: { "Content-Type": "application/javascript" } }
+      )
+    );
     await caches.open("christoday-obsolete-test");
   });
 
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("./", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#site-version")).not.toHaveText("—");
+  const expectedVersion = await page.locator("#site-version").textContent();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
 
@@ -57,6 +65,22 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   expect(cacheNames).toContain("other-project-offline-v1");
   expect(cacheNames).not.toContain("christoday-obsolete-test");
   expect(cacheNames.filter((name) => name.startsWith("christoday-"))).toHaveLength(1);
+
+  const rootFetchOk = await page.evaluate(async () => {
+    const response = await fetch(new URL("/", location.origin));
+    return response.ok;
+  });
+  expect(rootFetchOk).toBe(true);
+  await page.waitForTimeout(200);
+  const rootEnteredChristoDayCache = await page.evaluate(async () => {
+    const cacheName = (await caches.keys()).find((name) => name.startsWith("christoday-"));
+    const cache = await caches.open(cacheName);
+    return !!(await cache.match(new URL("/", location.origin)));
+  });
+  expect(
+    rootEnteredChristoDayCache,
+    "same-origin resources outside the worker scope must not enter its cache"
+  ).toBe(false);
 
   const workerResponses = new Set();
   page.on("response", (response) => {
@@ -66,7 +90,7 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   await context.setOffline(true);
   const navigation = await page.reload({ waitUntil: "domcontentloaded" });
   expect(navigation?.fromServiceWorker()).toBe(true);
-  await expect(page.locator("#site-version")).not.toHaveText("—");
+  await expect(page.locator("#site-version")).toHaveText(expectedVersion);
   await expect(page.locator("#fatal")).toBeHidden();
 
   const datePicker = page.locator("#date-pick");
@@ -76,7 +100,12 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   await expect(page.locator("#passage-body .fallback-ref")).toContainText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("schedule still works fully offline");
 
-  for (const path of ["/", "/css/style.css", "/js/app.js", "/data/segments.json"]) {
+  for (const path of [
+    "/ChristoDay/",
+    "/ChristoDay/css/style.css",
+    "/ChristoDay/js/app.js",
+    "/ChristoDay/data/segments.json",
+  ]) {
     expect(workerResponses, `${path} must be served by the installed worker`).toContain(path);
   }
 });

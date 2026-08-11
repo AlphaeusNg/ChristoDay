@@ -36,6 +36,7 @@ node tools/test-schedule.mjs
 node tools/test-bible.mjs
 node tools/test-state.mjs
 node tools/test-site.mjs
+node tools/test-service-worker.mjs
 node tools/test-workflow.mjs
 find js tools tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
 node --check sw.js
@@ -48,10 +49,11 @@ The locked Playwright suite boots the real page with controlled Bible API
 responses, navigates from Matthew to Mark, overlaps an obsolete NIV request
 with a newer ESV selection, and verifies the new translation remains rendered
 and persisted without browser errors. A separate worker-enabled context installs
-the offline shell, verifies that unrelated same-origin caches survive activation,
-disconnects Chromium, and reloads a working reference-only reading from the
-service-worker cache. External assets remain controlled and deterministic; the
-deployed app remains zero-build.
+the offline shell at the production-like `/ChristoDay/` path, verifies that
+unrelated same-origin caches survive activation and cannot answer ChristoDay
+requests, rejects out-of-scope runtime writes, disconnects Chromium, and reloads
+a working reference-only reading from the service-worker cache. External assets
+remain controlled and deterministic; the deployed app remains zero-build.
 
 ## Plan epoch
 
