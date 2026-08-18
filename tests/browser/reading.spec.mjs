@@ -208,3 +208,45 @@ test("shows fatal recovery when the fetched reading plan is invalid", async ({ p
   expect(expected, "invalid plan load must log a developer diagnostic").not.toEqual([]);
   runtimeErrors.set(page, unexpected);
 });
+
+test("shows fatal recovery when the plan fetch is not successful", async ({ page }) => {
+  await page.route("**/ChristoDay/data/segments.json", async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: "text/plain",
+      body: "missing segments.json",
+    });
+  });
+
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("#fatal")).toBeVisible();
+  await expect(page.locator("#fatal")).toHaveText("Could not load reading plan data.");
+  await expect(page.locator("#fatal")).toHaveAttribute("role", "alert");
+  await expect(page.locator("#site-version")).toHaveText("—");
+  await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page.locator("#passage-ref")).toHaveText("—");
+
+  await page.locator("#date-pick").fill("2026-06-16");
+  await page.locator("#date-pick").dispatchEvent("change");
+  await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page.locator("#passage-ref")).toHaveText("—");
+  expect(await page.evaluate(() => window.ChristoDayApp.getPlan())).toBeFalsy();
+
+  const errors = runtimeErrors.get(page) || [];
+  const expected = [];
+  const unexpected = [];
+  for (const error of errors) {
+    if (/plan load failed|HTTP 404|Failed to load resource: the server responded with a status of 404/i.test(error)) {
+      expected.push(error);
+    } else {
+      unexpected.push(error);
+    }
+  }
+  expect(expected, "non-200 plan fetch must log a developer diagnostic").not.toEqual([]);
+  expect(
+    expected.some((error) => /HTTP 404/.test(error)),
+    "non-200 plan fetch must log the HTTP status",
+  ).toBe(true);
+  runtimeErrors.set(page, unexpected);
+});

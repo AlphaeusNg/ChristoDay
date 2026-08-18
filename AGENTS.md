@@ -43,5 +43,5 @@ npm run test:browser
 
 - Zero-build; dark gold portfolio aesthetic
 - Schedule must stay deterministic; tests cover start week + Jude rotation
-- Invalid fetched plan data must stay on the user-safe fatal recovery surface
+- Invalid or unreachable fetched plan data must stay on the user-safe fatal recovery surface
 - Do not ship secrets; journal is localStorage only

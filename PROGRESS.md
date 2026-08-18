@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-18 (Cycle 157 across the projects workspace; ChristoDay Cycle 35)
+Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 36)
 
 ## Current state
 
@@ -19,20 +19,22 @@ Last updated: 2026-08-18 (Cycle 157 across the projects workspace; ChristoDay Cy
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
-  recovery persistence, and invalid fetched-plan fatal recovery.
+  recovery persistence, invalid fetched-plan fatal recovery, and non-200 plan
+  fetch fatal recovery.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.18.1`.
+- Deployment version: `2026.08.18.2`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404/503 plan route plus the existing user-safe fatal copy | Planned |
+| 1 | Exercise a network-aborted or unparseable plan body in a real browser | Verification / reliability | Low: 404 and invalid JSON now reach fatal recovery, but a dropped request or 200 non-JSON body still share that surface without a dedicated journey | Small / low | Controlled abort or non-JSON 200 plus the existing user-safe fatal copy | Planned |
+| — | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404 plan route, unbound UI, HTTP-status diagnostic, and existing user-safe fatal copy | Completed in Cycle 36 |
 | — | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium | Small-medium / low | Impossible start date payload, alert copy, unbound UI, and expected diagnostic are controlled in Chromium | Completed in Cycle 35 |
 | — | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium | Small-medium / low | Reference, explanation, journal/completion usability, and translation recovery are controlled in Chromium | Completed in Cycle 34 |
 | — | Exercise journal save-denial status in a real browser | Verification / UX | Medium | Small-medium / low | Denial, navigation continuity, guidance, and recovery persistence are controlled in Chromium | Completed in Cycle 33 |
@@ -52,6 +54,65 @@ Last updated: 2026-08-18 (Cycle 157 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 36 — Browser-gate non-200 plan fetch recovery (2026-08-18)
+
+**Why this won:** Workspace cycle 160 returned here after the documented
+rotation. Invalid JSON already reached the user-safe fatal surface, but a
+missing or failing `segments.json` response used the same `!res.ok` branch
+without a Chromium contract. A regression could bind a reading from a later
+retry or leak an HTTP status into the visitor-facing copy.
+
+**Plan and success criteria**
+
+1. Serve a controlled 404 on the real `segments.json` route.
+2. Prove the alert, exact recovery copy, unbound date control, and absent plan
+   handle.
+3. Keep the suite's unexpected-error gate intact by accepting only the known
+   plan-load and HTTP-404 diagnostics.
+
+**Changes**
+
+- Added a reading-browser journey that fulfills `data/segments.json` with HTTP
+  404 and a non-JSON body.
+- Verified `#fatal` is a visible alert with the stable user-safe message, the
+  version stamp and passage surface stay at their empty defaults, and changing
+  the date does not start a reading.
+- Required the matching `plan load failed` / `HTTP 404` diagnostic and allowed
+  Chromium's 404 resource message so other errors still fail the suite.
+- Documented the expanded browser scope and bumped the site/offline cache
+  version to `2026.08.18.2`; runtime already threw on non-200 and did not need
+  alteration.
+
+**Verification evidence**
+
+- The application assertions passed on the first focused run, converting the
+  existing non-200 fail-closed claim into an enforceable Chromium contract.
+- Schedule 49/49, Bible 12/12, state 10/10, site, service-worker, and
+  workflow 25/25 passed.
+- `npm run test:browser`: 6/6 reading and offline journeys passed.
+- Recursive syntax, tracked JSON, and `git diff --check` passed.
+- Correctness/reliability: 9/10 → 9/10 (behavior was already correct;
+  regression risk is materially lower).
+- Verifiability: 5/10 → 10/10 (404 copy, unbound UI, and HTTP-status
+  diagnostic are now exercised at the DOM boundary).
+- Maintainability: 8/10 → 9/10 (the documented startup recovery now has one
+  deterministic owner for both invalid JSON and non-200).
+- Performance/resources: 10/10 → 10/10 (test-only runtime behavior).
+- Security/privacy: 9/10 → 9/10 (HTTP failure cannot become runtime plan
+  state).
+- User experience: 9/10 → 9/10 (the existing non-technical recovery is now
+  protected for missing plan files).
+
+**Lesson / process improvement:** Invalid JSON and non-200 look identical to
+visitors, but they take different fetch branches. Gate the HTTP status path
+with a fulfilled error response and allow only that status in the console
+filter; do not weaken the suite-wide error invariant to cover it.
+
+**Next opportunity:** Rotate among VerseKeep, KoboForge, the portfolio, and
+AIly. Skip Car-Type-Classification-Service. On the next ChristoDay rotation,
+browser-gate a network-aborted or unparseable plan body if that path still
+lacks a dedicated journey.
 
 ### Cycle 35 — Browser-gate invalid reading-plan recovery (2026-08-18)
 

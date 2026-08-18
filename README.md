@@ -53,9 +53,9 @@ response, proves the reference-only reading, journal, and completion controls
 remain usable, then verifies another translation restores live text. It also
 denies journal storage, proves journal/completion progress and honest durability guidance survive day
 navigation, then verifies a later permitted write makes the full entry durable.
-It also serves a structurally invalid plan payload, proves the user-safe fatal
-recovery surface, and treats the matching plan-load diagnostic as the only
-expected console error.
+It also serves a structurally invalid plan payload and a non-200 `segments.json`
+response, proves the user-safe fatal recovery surface in both cases, and treats
+the matching plan-load diagnostics as the only expected console errors.
 A separate worker-enabled context installs
 the offline shell at the production-like `/ChristoDay/` path, verifies that
 unrelated same-origin caches survive activation and cannot answer ChristoDay
