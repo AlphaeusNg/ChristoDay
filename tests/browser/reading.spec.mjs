@@ -61,9 +61,12 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await datePicker.dispatchEvent("change");
 
   await expect(page.locator("#reading-panel")).toBeVisible();
+  await expect(page.locator("#btn-copy")).toBeVisible();
+  await expect(page.locator("#btn-share")).toBeVisible();
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-tr-label")).toHaveText("NIV");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page).toHaveURL(/d=2026-06-16/);
 
   const slowNivRequest = page.waitForRequest((request) =>
     request.url().includes("/get-text/NIV/41/1/")
@@ -72,10 +75,12 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await slowNivRequest;
   await expect(datePicker).toHaveValue("2026-06-17");
   await expect(page.locator("#passage-ref")).toHaveText("Mark 1:1-8");
+  await expect(page).toHaveURL(/d=2026-06-17/);
 
   await page.locator("#translation").selectOption("ESV");
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
   await expect(page.locator("#passage-body")).toContainText("ESV book 41 chapter 1 verse 1");
+  await expect(page).toHaveURL(/tr=ESV/);
 
   await page.waitForTimeout(600);
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
@@ -188,6 +193,7 @@ test("weekend and pre-start offer the next reading", async ({ page }) => {
   await datePicker.dispatchEvent("change");
   await expect(page.locator("#weekend-panel")).toBeVisible();
   await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page).toHaveURL(/d=2026-06-20/);
   await expect(page.locator("#week-strip [data-ymd='2026-06-16']")).toHaveClass(/is-done/);
   await expect(page.locator("#week-strip [data-ymd='2026-06-17']")).not.toHaveClass(/is-done/);
 
@@ -290,4 +296,108 @@ test("shows fatal recovery when the plan fetch is not successful", async ({ page
     "non-200 plan fetch must log the HTTP status",
   ).toBe(true);
   runtimeErrors.set(page, unexpected);
+});
+
+function singaporeYmd(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+test("opens a deep-linked date and translation and keeps the URL in sync", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#fatal")).toBeHidden();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await expect(page.locator("#translation")).toHaveValue("ESV");
+  await expect(page.locator("#reading-panel")).toBeVisible();
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
+  await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
+  await expect(page).toHaveURL(/d=2026-06-16/);
+  await expect(page).toHaveURL(/tr=ESV/);
+
+  await page.locator("#btn-next").click();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-17");
+  await expect(page.locator("#passage-ref")).toHaveText("Mark 1:1-8");
+  await expect(page).toHaveURL(/d=2026-06-17/);
+  await expect(page).toHaveURL(/tr=ESV/);
+
+  await page.locator("#translation").selectOption("NKJV");
+  await expect(page.locator("#passage-tr-label")).toHaveText("NKJV");
+  await expect(page).toHaveURL(/d=2026-06-17/);
+  await expect(page).toHaveURL(/tr=NKJV/);
+});
+
+test("falls back to today when the deep-link date is invalid", async ({ page }) => {
+  await page.goto("./?d=2026-02-30&tr=KJV", { waitUntil: "domcontentloaded" });
+  const today = singaporeYmd();
+  await expect(page.locator("#date-pick")).toHaveValue(today);
+  await expect(page.locator("#translation")).toHaveValue("NIV");
+  await expect(page).toHaveURL(new RegExp(`d=${today}`));
+  await expect(page).not.toHaveURL(/2026-02-30/);
+  await expect(page).not.toHaveURL(/tr=KJV/);
+  await expect(page).toHaveURL(/tr=NIV/);
+});
+
+test("copies the visible passage and shares a dated reading link", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__copied = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          window.__copied.push(text);
+        },
+        readText: async () => window.__copied[window.__copied.length - 1] || "",
+      },
+    });
+  });
+
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+
+  await page.locator("#btn-copy").click();
+  await expect(page.locator("#action-status")).toBeVisible();
+  await expect(page.locator("#action-status")).toHaveText("Copied passage.");
+  let copied = await page.evaluate(() => window.__copied.at(-1));
+  expect(copied).toContain("Matthew 1:1-17");
+  expect(copied).toContain("NIV book 40 chapter 1 verse 1");
+
+  await page.keyboard.press("y");
+  expect(await page.evaluate(() => window.__copied.length)).toBeGreaterThanOrEqual(2);
+  copied = await page.evaluate(() => window.__copied.at(-1));
+  expect(copied).toContain("Matthew 1:1-17");
+
+  await page.locator("#btn-share").click();
+  await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
+  copied = await page.evaluate(() => window.__copied.at(-1));
+  expect(copied).toContain("Tuesday, 16 June 2026");
+  expect(copied).toContain("Matthew 1:1-17");
+  expect(copied).toMatch(/d=2026-06-16/);
+  expect(copied).toMatch(/tr=NIV/);
+});
+
+test("uses the Web Share API when it is available", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__shares = [];
+    navigator.share = async (data) => {
+      window.__shares.push(data);
+    };
+  });
+
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await page.locator("#btn-share").click();
+  await expect(page.locator("#action-status")).toHaveText("Shared today's reading.");
+  const shares = await page.evaluate(() => window.__shares);
+  expect(shares).toHaveLength(1);
+  expect(shares[0].title).toBe("Matthew 1:1-17");
+  expect(shares[0].text).toContain("Matthew 1:1-17");
+  expect(shares[0].text).toContain("Tuesday, 16 June 2026");
+  expect(shares[0].url).toMatch(/d=2026-06-16/);
+  expect(shares[0].url).toMatch(/tr=WEB/);
 });

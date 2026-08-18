@@ -94,10 +94,15 @@
       <article class="card">
         <div class="card-head">
           <span class="badge" id="book-badge">—</span>
-          <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
-            <span aria-hidden="true">○</span> Mark complete
-          </button>
+          <div class="card-actions">
+            <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)">Copy</button>
+            <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
+            <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
+              <span aria-hidden="true">○</span> Mark complete
+            </button>
+          </div>
         </div>
+        <p id="action-status" class="muted" role="status" hidden></p>
         <h2 class="passage-ref" id="passage-ref">—</h2>
         <div class="meta-row">
           <span id="time-est">≈ 5–10 minutes</span>
@@ -144,7 +149,8 @@
       </p>
       <p class="muted" style="margin-bottom:0">
         Keys: <span class="kbd">←</span><span class="kbd">→</span> days ·
-        <span class="kbd">T</span> today · <span class="kbd">C</span> complete
+        <span class="kbd">T</span> today · <span class="kbd">C</span> complete ·
+        <span class="kbd">Y</span> copy
       </p>
     </details>
   </main>

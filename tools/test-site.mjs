@@ -75,8 +75,14 @@ assert(
 assert.match(index, /class="top-nav"[^>]*>\s*<a href="#about">About<\/a>\s*<\/nav>/, "desktop top-nav keeps About only");
 assert.doesNotMatch(index, /class="hero"/, "first screen must not keep a hero manifesto");
 assert.match(index, /id="date-pick"/, "toolbar date picker remains");
+assert.match(index, /id="translation"/, "toolbar translation select remains");
+assert.match(index, /id="reading-panel"/, "reading panel id remains");
+assert.match(index, /id="fatal"/, "fatal recovery id remains");
 assert.match(index, /id="weekend-panel"/, "weekend panel id remains");
 assert.match(index, /id="btn-preview-monday"/, "preview Monday control remains");
+assert.match(index, /id="btn-copy"/, "copy passage control remains");
+assert.match(index, /id="btn-share"/, "share reading control remains");
+assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
 const planValidationIndex = app.indexOf("ChristoSchedule.validatePlan(candidatePlan)");
@@ -93,6 +99,11 @@ assert(
   previousAbortIndex > passageRequestIndex,
   "app.js must subscribe the new passage before aborting the previous consumer"
 );
+assert.match(app, /params\.get\("d"\)/, "boot must read the d deep-link");
+assert.match(app, /params\.get\("tr"\)/, "boot must read the tr deep-link");
+assert.match(app, /history\.replaceState/, "date/translation changes must update the URL");
+assert.match(app, /navigator\.share/, "share must prefer the Web Share API");
+assert.match(app, /clipboard\.writeText/, "copy/share must write to the clipboard");
 
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`

@@ -280,10 +280,22 @@ select.toolbar-pill {
 .card-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
   margin-bottom: 0.75rem;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+#action-status {
+  margin: 0 0 0.65rem;
 }
 
 .badge {
@@ -572,6 +584,10 @@ textarea:focus {
   }
   .card {
     padding: 1rem 0.95rem;
+  }
+  .card-actions .btn {
+    padding: 0.4rem 0.62rem;
+    font-size: 0.82rem;
   }
   .passage-body {
     font-size: 1.05rem;

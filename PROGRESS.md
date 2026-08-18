@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 37)
+Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 38)
 
 ## Current state
 
@@ -20,23 +20,30 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
   recovery persistence, invalid fetched-plan fatal recovery, non-200 plan
-  fetch fatal recovery, and weekend next-step jumps.
+  fetch fatal recovery, weekend next-step jumps, copy/share, and
+  `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
+- Reading days expose Copy (Y) and Share. Copy writes the visible reference plus
+  passage text; Share uses the Web Share API when present and otherwise copies
+  date + reference + URL. `?d=YYYY-MM-DD` and optional `?tr=NIV|ESV|NKJV|WEB`
+  open that day/translation; invalid dates fall back to today; date and
+  translation changes `replaceState` so a copied URL matches the screen.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.18.3`.
+- Deployment version: `2026.08.18.5`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
 | 1 | Exercise a network-aborted or unparseable plan body in a real browser | Verification / reliability | Low: 404 and invalid JSON now reach fatal recovery, but a dropped request or 200 non-JSON body still share that surface without a dedicated journey | Small / low | Controlled abort or non-JSON 200 plus the existing user-safe fatal copy | Planned |
+| — | Copy the visible passage, share today's reading, and deep-link date/translation | UX | High: visitors could not copy, share, or reopen a specific day | Small / low | Copy + Y, Web Share / clipboard fallback, `?d=` / `?tr=` boot and replaceState | Completed in Cycle 38 |
 | — | Lead phones with today's reading and give weekend/pre-start a next step | UX | High: hero + about + two-row toolbar buried Scripture; weekend was a tombstone | Medium / low | Compact date/streak line, details about, gold-outline toolbar, Preview Monday / Last Friday, Mon–Fri strip | Completed in Cycle 37 |
 | — | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404 plan route, unbound UI, HTTP-status diagnostic, and existing user-safe fatal copy | Completed in Cycle 36 |
 | — | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium | Small-medium / low | Impossible start date payload, alert copy, unbound UI, and expected diagnostic are controlled in Chromium | Completed in Cycle 35 |
@@ -58,6 +65,52 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 38 — Copy, share, and deep-link today's reading (2026-08-18)
+
+**Why this won:** The weekday product is meant to be opened, read, and passed
+along. Visitors could finish a passage and still had no way to copy the visible
+text, share today's reading, or reopen a specific date/translation from a URL.
+
+**Plan and success criteria**
+
+1. Add a Copy control that writes the visible reference plus passage text and
+   announces through a small `role="status"` (Y is optional).
+2. Add Share that prefers the Web Share API and otherwise copies
+   `date · ref · URL`.
+3. Honor `?d=YYYY-MM-DD` and optional `?tr=NIV|ESV|NKJV|WEB` on boot. Invalid
+   dates fall back to today. `replaceState` when the user changes date or
+   translation so a copied URL matches the screen.
+4. Keep `#date-pick`, `#translation`, `#reading-panel`, `#fatal`, and
+   weekend/preview IDs. Journal stays `localStorage` only.
+
+**Changes**
+
+- Added `#btn-copy`, `#btn-share`, and `#action-status` on the reading card.
+- Boot reads `d` / `tr`; invalid dates fall back to Singapore today and invalid
+  translations keep the saved/default Bible. Date, next/prev/today, weekend
+  jumps, and the translation select call `history.replaceState`.
+- Share writes the same deep-link into the address bar, then shares or copies
+  one line. Journal text is never copied or shared.
+- Bumped the site/offline cache version to `2026.08.18.5`.
+
+**Verification evidence**
+
+- Schedule, Bible, state, site, service-worker, and workflow suites plus
+  recursive syntax checks.
+- `npm run test:browser` including deep-link boot, invalid-date fallback,
+  URL sync after date/translation changes, clipboard copy + Y, and Web Share
+  when `navigator.share` is present.
+- Existing IDs and local-only journal behavior are unchanged.
+
+**Lesson / process improvement:** A shareable reading needs the address bar and
+the share payload to describe the same day. Update the URL on user changes, and
+canonicalize a bad incoming `d` so a copied link cannot keep an impossible date.
+
+**Next opportunity:** Rotate among VerseKeep, KoboForge, the portfolio, and
+AIly. Skip Car-Type-Classification-Service. On the next ChristoDay rotation,
+browser-gate a network-aborted or unparseable plan body if that path still
+lacks a dedicated journey.
 
 ### Cycle 37 — Lead with today's reading (2026-08-18)
 

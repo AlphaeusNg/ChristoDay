@@ -6,12 +6,15 @@
 
   const $ = (sel, el = document) => el.querySelector(sel);
 
+  const TRANSLATIONS = new Set(["NIV", "ESV", "NKJV", "WEB"]);
+
   let plan = null;
   let state = ChristoState.loadState();
   let currentYmd = null;
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
   let passageController = null;
+  let actionStatusTimer = 0;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -99,9 +102,16 @@
       return;
     }
 
-    currentYmd = ChristoSchedule.partsInSingapore().ymd;
+    const params = new URLSearchParams(location.search);
+    const requestedYmd = params.get("d");
+    const requestedTr = params.get("tr");
+    const hadDeepLink = params.has("d") || params.has("tr");
+    if (TRANSLATIONS.has(requestedTr)) state.translation = requestedTr;
+    currentYmd = ChristoState.validYmd(requestedYmd)
+      ? requestedYmd
+      : ChristoSchedule.partsInSingapore().ymd;
     bindUi();
-    await renderDay(currentYmd);
+    await renderDay(currentYmd, { syncUrl: hadDeepLink });
     $("#site-version").textContent = SITE_VERSION?.id || "";
   }
 
@@ -110,6 +120,12 @@
     $("#btn-next")?.addEventListener("click", () => shiftDay(1));
     $("#btn-today")?.addEventListener("click", () => renderDay(ChristoSchedule.partsInSingapore().ymd));
     $("#btn-complete")?.addEventListener("click", toggleComplete);
+    $("#btn-copy")?.addEventListener("click", () => {
+      copyVisiblePassage().catch(() => {});
+    });
+    $("#btn-share")?.addEventListener("click", () => {
+      shareReading().catch(() => {});
+    });
     $("#journal")?.addEventListener("input", (e) => {
       const day = ensureDay(currentYmd);
       day.journal = e.target.value;
@@ -121,6 +137,7 @@
       const day = ensureDay(currentYmd);
       day.translation = state.translation;
       saveState();
+      writeDeepLink(currentYmd, state.translation);
       await loadPassage(renderSeq);
     });
     $("#date-pick")?.addEventListener("change", async (e) => {
@@ -144,7 +161,110 @@
       if (e.key === "ArrowRight") shiftDay(1);
       if (e.key === "t" || e.key === "T") renderDay(ChristoSchedule.partsInSingapore().ymd);
       if (e.key === "c" || e.key === "C") toggleComplete();
+      if ((e.key === "y" || e.key === "Y") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        copyVisiblePassage().catch(() => {});
+      }
     });
+  }
+
+  function currentTranslation() {
+    return TRANSLATIONS.has(state.translation) ? state.translation : "NIV";
+  }
+
+  function writeDeepLink(ymd, translation) {
+    const url = new URL(location.href);
+    url.searchParams.set("d", ymd);
+    url.searchParams.set("tr", TRANSLATIONS.has(translation) ? translation : "NIV");
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${location.pathname}${location.search}${location.hash}`;
+    if (next !== current) history.replaceState(null, "", next);
+  }
+
+  function announceAction(message) {
+    const status = $("#action-status");
+    if (!status) return;
+    status.hidden = false;
+    status.textContent = message;
+    clearTimeout(actionStatusTimer);
+    actionStatusTimer = setTimeout(() => {
+      if (status.textContent === message) {
+        status.hidden = true;
+        status.textContent = "";
+      }
+    }, 2500);
+  }
+
+  function visiblePassageText() {
+    const ref = ($("#passage-ref")?.textContent || "").trim();
+    const body = ($("#passage-body")?.innerText || "").replace(/\s+\n/g, "\n").trim();
+    if (ref && body) return `${ref}\n\n${body}`;
+    return ref || body;
+  }
+
+  async function writeClipboard(text) {
+    if (!text) return false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      /* fall through */
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyVisiblePassage() {
+    const readingEl = $("#reading-panel");
+    if (!readingEl || readingEl.hidden) return;
+    const text = visiblePassageText();
+    if (!text) {
+      announceAction("Nothing to copy yet.");
+      return;
+    }
+    const ok = await writeClipboard(text);
+    announceAction(ok ? "Copied passage." : "Could not copy passage.");
+  }
+
+  function shareLine(url) {
+    const display = currentYmd ? ChristoSchedule.formatDisplayDate(currentYmd) : "";
+    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
+    const ref = reading?.kind === "reading"
+      ? reading.fullRef
+      : ($("#passage-ref")?.textContent || "").trim();
+    return [display, ref, url].filter(Boolean).join(" · ");
+  }
+
+  async function shareReading() {
+    writeDeepLink(currentYmd, currentTranslation());
+    const url = location.href;
+    const line = shareLine(url);
+    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
+    const title = reading?.kind === "reading" ? reading.fullRef : "ChristoDay";
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title, text: line, url });
+        announceAction("Shared today's reading.");
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+    const ok = await writeClipboard(line);
+    announceAction(ok ? "Copied today's reading." : "Could not share today's reading.");
   }
 
   function findWeekdayYmd(fromYmd, weekdayNum, direction) {
@@ -225,12 +345,18 @@
     $("#stat-done").textContent = String(countCompleted());
   }
 
-  async function renderDay(ymd) {
+  async function renderDay(ymd, options = {}) {
     const seq = ++renderSeq;
     currentYmd = ymd;
     const reading = ChristoSchedule.resolveReading(plan, ymd);
     const datePick = $("#date-pick");
     if (datePick) datePick.value = ymd;
+    if (options.syncUrl !== false) writeDeepLink(ymd, currentTranslation());
+    const actionStatus = $("#action-status");
+    if (actionStatus) {
+      actionStatus.hidden = true;
+      actionStatus.textContent = "";
+    }
 
     $("#reading-date").textContent = ChristoSchedule.formatDisplayDate(ymd);
     updateMeta();
