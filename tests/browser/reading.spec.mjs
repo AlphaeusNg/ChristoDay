@@ -169,6 +169,42 @@ test("keeps reading progress visible and reports denied device saves", async ({ 
   expect(saved.days["2026-06-16"].completed).toBe(true);
 });
 
+test("weekend and pre-start offer the next reading", async ({ page }) => {
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#fatal")).toBeHidden();
+
+  const datePicker = page.locator("#date-pick");
+  await datePicker.fill("2026-06-16");
+  await datePicker.dispatchEvent("change");
+  await page.locator("#btn-complete").click();
+  await expect(page.locator("#stat-done")).toHaveText("1");
+
+  await datePicker.fill("2026-06-20");
+  await datePicker.dispatchEvent("change");
+  await expect(page.locator("#weekend-panel")).toBeVisible();
+  await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page.locator("#week-strip [data-ymd='2026-06-16']")).toHaveClass(/is-done/);
+  await expect(page.locator("#week-strip [data-ymd='2026-06-17']")).not.toHaveClass(/is-done/);
+
+  await page.locator("#btn-last-friday").click();
+  await expect(datePicker).toHaveValue("2026-06-19");
+  await expect(page.locator("#reading-panel")).toBeVisible();
+  await expect(page.locator("#passage-ref")).toHaveText("Luke 1:1-4");
+
+  await datePicker.fill("2026-06-20");
+  await datePicker.dispatchEvent("change");
+  await page.locator("#btn-preview-monday").click();
+  await expect(datePicker).toHaveValue("2026-06-22");
+  await expect(page.locator("#passage-ref")).toHaveText("Jude 1:1-4");
+
+  await datePicker.fill("2026-06-01");
+  await datePicker.dispatchEvent("change");
+  await expect(page.locator("#before-panel")).toBeVisible();
+  await page.locator("#before-panel .js-preview-monday").click();
+  await expect(datePicker).toHaveValue("2026-06-15");
+  await expect(page.locator("#passage-ref")).toHaveText("Jude 1:1-25");
+});
+
 test("shows fatal recovery when the fetched reading plan is invalid", async ({ page }) => {
   await page.route("**/ChristoDay/data/segments.json", async (route) => {
     await route.fulfill({

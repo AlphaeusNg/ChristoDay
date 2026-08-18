@@ -45,55 +45,58 @@
     <section class="hero">
       <p class="eyebrow">Christ-centered · not checklist-centered</p>
       <h1>Meet Jesus in the text today</h1>
-      <p class="lede">
-        A fixed weekday plan through Matthew, Mark, Luke, Philippians, and Jude —
-        natural 5–10 minute segments, Asia/Singapore time, relentlessly gospel-focused.
-        Weekends are rest, not homework.
-      </p>
+      <p class="lede">Weekday gospel, 5–10 minutes. Weekends rest.</p>
     </section>
 
-    <div class="stats" aria-label="Progress">
-      <div class="stat">
-        <b id="stat-streak">0</b>
-        <span>Weekday streak</span>
+    <div class="reader-head">
+      <div class="stats" aria-label="Progress">
+        <div class="stat">
+          <b id="stat-streak">0</b>
+          <span>Weekday streak</span>
+        </div>
+        <div class="stat">
+          <b id="stat-done">0</b>
+          <span>Days completed</span>
+        </div>
       </div>
-      <div class="stat">
-        <b id="stat-done">0</b>
-        <span>Days completed</span>
-      </div>
-    </div>
 
-    <div class="toolbar" role="toolbar" aria-label="Day navigation">
-      <button type="button" class="btn" id="btn-prev" title="Previous day (←)">← Prev</button>
-      <button type="button" class="btn" id="btn-today" title="Jump to today (T)">Today</button>
-      <button type="button" class="btn" id="btn-next" title="Next day (→)">Next →</button>
-      <label class="muted" style="display:flex;align-items:center;gap:0.4rem">
-        <span class="sr-only">Pick date</span>
-        <input type="date" id="date-pick" aria-label="Pick calendar date" />
-      </label>
-      <label class="muted" style="display:flex;align-items:center;gap:0.4rem;margin-left:auto">
-        Translation
-        <select id="translation" aria-label="Bible translation">
+      <div class="toolbar" role="toolbar" aria-label="Day navigation">
+        <div class="toolbar-nav">
+          <button type="button" class="btn" id="btn-prev" title="Previous day (←)" aria-label="Previous day">←</button>
+          <button type="button" class="btn" id="btn-today" title="Jump to today (T)">Today</button>
+          <button type="button" class="btn" id="btn-next" title="Next day (→)" aria-label="Next day">→</button>
+        </div>
+        <input type="date" id="date-pick" class="toolbar-pill" aria-label="Pick calendar date" />
+        <select id="translation" class="toolbar-pill" aria-label="Bible translation">
           <option value="NIV">NIV</option>
           <option value="ESV">ESV</option>
           <option value="NKJV">NKJV</option>
           <option value="WEB">WEB</option>
         </select>
-      </label>
-    </div>
+      </div>
 
-    <p class="muted" id="reading-date" style="margin:0 0 0.75rem"></p>
+      <p class="muted" id="reading-date"></p>
+    </div>
 
     <section id="weekend-panel" class="card weekend-card" hidden>
       <p class="eyebrow">Sabbath rest</p>
       <h2>Weekend</h2>
-      <p id="weekend-msg" class="lede" style="margin:0 auto;max-width:28rem"></p>
+      <p id="weekend-msg" class="lede"></p>
+      <div class="rest-actions">
+        <button type="button" class="btn btn-primary js-preview-monday" id="btn-preview-monday">Preview Monday</button>
+        <button type="button" class="btn js-last-friday" id="btn-last-friday">Last Friday</button>
+      </div>
+      <div class="week-strip" id="week-strip" role="group" aria-label="This week's completion"></div>
     </section>
 
     <section id="before-panel" class="card weekend-card" hidden>
       <p class="eyebrow">Coming soon</p>
       <h2>Plan not started</h2>
-      <p id="before-msg" class="lede" style="margin:0 auto;max-width:28rem"></p>
+      <p id="before-msg" class="lede"></p>
+      <div class="rest-actions">
+        <button type="button" class="btn btn-primary js-preview-monday">Preview Monday</button>
+        <button type="button" class="btn js-last-friday">Last Friday</button>
+      </div>
     </section>
 
     <section id="reading-panel" hidden>
@@ -132,10 +135,12 @@
       </article>
     </section>
 
-    <section id="about" class="card" style="margin-top:1.5rem">
-      <p class="eyebrow">Why this exists</p>
-      <h2 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.25rem">Niche with a name</h2>
-      <p class="muted" style="margin-top:0">
+    <details id="about" class="card about-card">
+      <summary>
+        <span class="eyebrow">Why this exists</span>
+        <span class="about-title">Niche with a name</span>
+      </summary>
+      <p class="muted">
         Built by <strong>Alphaeus Ng</strong> — AI engineer by vocation, student of Scripture by calling.
         Generic reading plans often track chapters; this plan tracks <em>Christ</em>: who He is, what He has done,
         and how the gospel lands on a real heart. Schedule math is deterministic (Singapore timezone).
@@ -150,7 +155,7 @@
         Keys: <span class="kbd">←</span><span class="kbd">→</span> days ·
         <span class="kbd">T</span> today · <span class="kbd">C</span> complete
       </p>
-    </section>
+    </details>
   </main>
 
   <footer class="footer">

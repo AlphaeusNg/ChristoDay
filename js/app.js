@@ -126,6 +126,18 @@
     $("#date-pick")?.addEventListener("change", async (e) => {
       if (e.target.value) await renderDay(e.target.value);
     });
+    document.querySelectorAll(".js-preview-monday").forEach((btn) => {
+      btn.addEventListener("click", () => renderDay(previewMondayYmd(currentYmd)));
+    });
+    document.querySelectorAll(".js-last-friday").forEach((btn) => {
+      btn.addEventListener("click", () => renderDay(lastFridayYmd(currentYmd)));
+    });
+    $("#week-strip")?.addEventListener("click", (e) => {
+      const dayBtn = e.target.closest("[data-ymd]");
+      if (dayBtn?.dataset.ymd) renderDay(dayBtn.dataset.ymd);
+    });
+    window.addEventListener("hashchange", syncAboutFromHash);
+    syncAboutFromHash();
     document.addEventListener("keydown", (e) => {
       if (e.target.matches("textarea, input, select")) return;
       if (e.key === "ArrowLeft") shiftDay(-1);
@@ -133,6 +145,53 @@
       if (e.key === "t" || e.key === "T") renderDay(ChristoSchedule.partsInSingapore().ymd);
       if (e.key === "c" || e.key === "C") toggleComplete();
     });
+  }
+
+  function findWeekdayYmd(fromYmd, weekdayNum, direction) {
+    let ymd = ChristoSchedule.addDaysYmd(fromYmd, direction);
+    for (let i = 0; i < 8; i++) {
+      if (ChristoSchedule.weekdayOfYmd(ymd) === weekdayNum) return ymd;
+      ymd = ChristoSchedule.addDaysYmd(ymd, direction);
+    }
+    return ymd;
+  }
+
+  function previewMondayYmd(ymd) {
+    const start = plan?.meta?.startDate || ChristoSchedule.START;
+    const nextMonday = findWeekdayYmd(ymd, 1, 1);
+    return nextMonday < start ? start : nextMonday;
+  }
+
+  function lastFridayYmd(ymd) {
+    return findWeekdayYmd(ymd, 5, -1);
+  }
+
+  function weekMondayYmd(ymd) {
+    const weekday = ChristoSchedule.weekdayOfYmd(ymd);
+    if (weekday === 0) return ChristoSchedule.addDaysYmd(ymd, -6);
+    if (weekday === 6) return ChristoSchedule.addDaysYmd(ymd, -5);
+    return ChristoSchedule.addDaysYmd(ymd, 1 - weekday);
+  }
+
+  function renderWeekStrip(ymd) {
+    const strip = $("#week-strip");
+    if (!strip) return;
+    const labels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    const monday = weekMondayYmd(ymd);
+    strip.innerHTML = labels.map((label, index) => {
+      const dayYmd = ChristoSchedule.addDaysYmd(monday, index);
+      const done = !!state.days?.[dayYmd]?.completed;
+      const display = ChristoSchedule.formatDisplayDate(dayYmd);
+      const classes = done ? "badge week-day btn-primary is-done" : "badge week-day";
+      return `<button type="button" class="${classes}" data-ymd="${dayYmd}" aria-pressed="${done ? "true" : "false"}" aria-label="${escapeHtml(display)}${done ? ", completed" : ", not completed"}">${label}</button>`;
+    }).join("");
+  }
+
+  function syncAboutFromHash() {
+    const about = $("#about");
+    if (about instanceof HTMLDetailsElement && location.hash === "#about") {
+      about.open = true;
+    }
   }
 
   function shiftDay(delta) {
@@ -188,6 +247,7 @@
       cancelPassageRequest();
       weekendEl.hidden = false;
       $("#weekend-msg").textContent = reading.message;
+      renderWeekStrip(ymd);
       return;
     }
     if (reading.kind === "before_start") {

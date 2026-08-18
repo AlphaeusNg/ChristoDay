@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 36)
+Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 37)
 
 ## Current state
 
@@ -19,21 +19,25 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
-  recovery persistence, invalid fetched-plan fatal recovery, and non-200 plan
-  fetch fatal recovery.
+  recovery persistence, invalid fetched-plan fatal recovery, non-200 plan
+  fetch fatal recovery, and weekend next-step jumps.
+- Reader chrome leads with today's date, streak, and passage: collapsed hero
+  lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
+  pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.18.2`.
+- Deployment version: `2026.08.18.3`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
 | 1 | Exercise a network-aborted or unparseable plan body in a real browser | Verification / reliability | Low: 404 and invalid JSON now reach fatal recovery, but a dropped request or 200 non-JSON body still share that surface without a dedicated journey | Small / low | Controlled abort or non-JSON 200 plus the existing user-safe fatal copy | Planned |
+| — | Lead phones with today's reading and give weekend/pre-start a next step | UX | High: hero + about + two-row toolbar buried Scripture; weekend was a tombstone | Medium / low | Compact date/streak line, details about, gold-outline toolbar, Preview Monday / Last Friday, Mon–Fri strip | Completed in Cycle 37 |
 | — | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404 plan route, unbound UI, HTTP-status diagnostic, and existing user-safe fatal copy | Completed in Cycle 36 |
 | — | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium | Small-medium / low | Impossible start date payload, alert copy, unbound UI, and expected diagnostic are controlled in Chromium | Completed in Cycle 35 |
 | — | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium | Small-medium / low | Reference, explanation, journal/completion usability, and translation recovery are controlled in Chromium | Completed in Cycle 34 |
@@ -54,6 +58,54 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 37 — Lead with today's reading (2026-08-18)
+
+**Why this won:** The weekday product is a 5–10 minute gospel reading. On a
+phone the long hero lede, two stat cards, a wrapping toolbar, and a full About
+card pushed Scripture below the fold. Weekend and pre-start states were
+tombstones — rest copy with no way to preview Monday or revisit Friday.
+
+**Plan and success criteria**
+
+1. Collapse the hero to one short line and fold `#about` into `<details>`.
+2. On `max-width: 560px`, show a compact date + streak line, then the reading
+   (or weekend/before) panel without a lonely third toolbar row.
+3. Give weekend and pre-start **Preview Monday** and **Last Friday** actions
+   that reuse `renderDay` / the date picker, plus a Mon–Fri completion strip
+   from `state.days[ymd].completed`.
+4. Keep `#fatal`, `#date-pick`, and the passage surface IDs intact.
+
+**Changes**
+
+- Shortened the hero lede; wrapped About in `<details id="about">` and open it
+  when the hash is `#about`.
+- Grouped date, stats, and toolbar in `.reader-head` so phones can grid a
+  date + streak line above one nowrap gold-outline toolbar (`← Today →`, native
+  date, translation select; visible "Translation" label removed).
+- Weekend and pre-start cards now offer Preview Monday / Last Friday. The
+  weekend card also renders a Mon–Fri strip (gold `.badge.btn-primary` when
+  completed, dim empty) that jumps to that weekday.
+- Bumped the site/offline cache version to `2026.08.18.3`.
+
+**Verification evidence**
+
+- Schedule, Bible, state, site, service-worker, and workflow suites plus
+  recursive syntax checks.
+- `npm run test:browser` including weekend next-step jumps from Saturday to
+  last Friday and next Monday, and pre-start Preview Monday to plan epoch.
+- Desktop hero and stat cards stay in the existing navy / Playfair / gold
+  language; journal remains `localStorage` only.
+
+**Lesson / process improvement:** Rest days still need a next step. A
+tombstone that only explains the calendar trains people to leave; two jumps
+that reuse the existing day renderer keep Sabbath rest without stranding the
+reader.
+
+**Next opportunity:** Rotate among VerseKeep, KoboForge, the portfolio, and
+AIly. Skip Car-Type-Classification-Service. On the next ChristoDay rotation,
+browser-gate a network-aborted or unparseable plan body if that path still
+lacks a dedicated journey.
 
 ### Cycle 36 — Browser-gate non-200 plan fetch recovery (2026-08-18)
 
