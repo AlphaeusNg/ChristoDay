@@ -50,6 +50,11 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await page.goto("./", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#site-version")).not.toHaveText("—");
   await expect(page.locator("#fatal")).toBeHidden();
+  await expect(page.locator("main .hero")).toHaveCount(0);
+  await expect(page.locator(".top-nav a[href='#about']")).toBeVisible();
+  await expect(page.locator(".top-nav a[href*='http']")).toHaveCount(0);
+  await expect(page.locator("#date-pick")).toBeVisible();
+  await expect(page.locator("#translation")).toBeVisible();
 
   const datePicker = page.locator("#date-pick");
   await datePicker.fill("2026-06-16");

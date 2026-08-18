@@ -72,6 +72,11 @@ assert(
   index.indexOf('src="js/state.js"') < index.indexOf('src="js/app.js"'),
   "state.js must load before app.js"
 );
+assert.match(index, /class="top-nav"[^>]*>\s*<a href="#about">About<\/a>\s*<\/nav>/, "desktop top-nav keeps About only");
+assert.doesNotMatch(index, /class="hero"/, "first screen must not keep a hero manifesto");
+assert.match(index, /id="date-pick"/, "toolbar date picker remains");
+assert.match(index, /id="weekend-panel"/, "weekend panel id remains");
+assert.match(index, /id="btn-preview-monday"/, "preview Monday control remains");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
 const planValidationIndex = app.indexOf("ChristoSchedule.validatePlan(candidatePlan)");
