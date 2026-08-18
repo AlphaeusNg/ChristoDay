@@ -168,3 +168,43 @@ test("keeps reading progress visible and reports denied device saves", async ({ 
   expect(saved.days["2026-06-16"].journal).toBe(recoveredEntry);
   expect(saved.days["2026-06-16"].completed).toBe(true);
 });
+
+test("shows fatal recovery when the fetched reading plan is invalid", async ({ page }) => {
+  await page.route("**/ChristoDay/data/segments.json", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        meta: { startDate: "2026-02-30", timezone: "Asia/Singapore" },
+        weekdayMap: { 1: "matthew" },
+        books: {},
+        reflectionTemplates: {},
+      }),
+    });
+  });
+
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("#fatal")).toBeVisible();
+  await expect(page.locator("#fatal")).toHaveText("Could not load reading plan data.");
+  await expect(page.locator("#fatal")).toHaveAttribute("role", "alert");
+  await expect(page.locator("#site-version")).toHaveText("—");
+  await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page.locator("#passage-ref")).toHaveText("—");
+
+  await page.locator("#date-pick").fill("2026-06-16");
+  await page.locator("#date-pick").dispatchEvent("change");
+  await expect(page.locator("#reading-panel")).toBeHidden();
+  await expect(page.locator("#passage-ref")).toHaveText("—");
+  expect(await page.evaluate(() => window.ChristoDayApp.getPlan())).toBeFalsy();
+
+  const errors = runtimeErrors.get(page) || [];
+  const expected = [];
+  const unexpected = [];
+  for (const error of errors) {
+    if (/plan load failed|Invalid reading plan/i.test(error)) expected.push(error);
+    else unexpected.push(error);
+  }
+  expect(expected, "invalid plan load must log a developer diagnostic").not.toEqual([]);
+  runtimeErrors.set(page, unexpected);
+});

@@ -1,5 +1,5 @@
 /** Bump on every deploy: YYYY.MM.DD.N */
 globalThis.SITE_VERSION = {
-  id: "2026.08.11.6",
+  id: "2026.08.18.1",
   label: "ChristoDay",
 };

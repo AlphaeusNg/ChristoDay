@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-11 (Cycle 147 across the projects workspace; ChristoDay Cycle 34)
+Last updated: 2026-08-18 (Cycle 157 across the projects workspace; ChristoDay Cycle 35)
 
 ## Current state
 
@@ -18,21 +18,22 @@ Last updated: 2026-08-11 (Cycle 147 across the projects workspace; ChristoDay Cy
   ownership, event lifetime, network/cache failures, and offline reload.
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
-  journal/completion saves, in-memory continuity, honest durability status, and
-  recovery persistence.
+  journal/completion saves, in-memory continuity, honest durability status,
+  recovery persistence, and invalid fetched-plan fatal recovery.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.11.6`.
+- Deployment version: `2026.08.18.1`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium: schema units and a source-order contract cover validation, but the DOM journey does not prove startup reaches the intended fatal recovery surface | Small-medium / low | Controlled plan route, fatal status, and strict expected-error handling | Planned |
+| 1 | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404/503 plan route plus the existing user-safe fatal copy | Planned |
+| — | Exercise invalid reading-plan recovery in a real browser | Verification / reliability | Medium | Small-medium / low | Impossible start date payload, alert copy, unbound UI, and expected diagnostic are controlled in Chromium | Completed in Cycle 35 |
 | — | Exercise live-passage failure fallback in a real browser | Verification / reliability | Medium | Small-medium / low | Reference, explanation, journal/completion usability, and translation recovery are controlled in Chromium | Completed in Cycle 34 |
 | — | Exercise journal save-denial status in a real browser | Verification / UX | Medium | Small-medium / low | Denial, navigation continuity, guidance, and recovery persistence are controlled in Chromium | Completed in Cycle 33 |
 | — | Restrict runtime caching to the ChristoDay service-worker scope and bind cache writes to the fetch event lifetime | Isolation / reliability | Medium | Small-medium / low | Production-mounted browser and deterministic worker fixture cover scope, cache ownership, lifecycle, and failures | Completed in Cycle 32 |
@@ -51,6 +52,62 @@ Last updated: 2026-08-11 (Cycle 147 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 35 — Browser-gate invalid reading-plan recovery (2026-08-18)
+
+**Why this won:** Workspace rotation returned here after AlpArcade. Schema
+units and a source-order contract already rejected malformed plans, but no
+DOM journey proved startup stayed on the user-safe fatal surface instead of
+partially binding the reading UI.
+
+**Plan and success criteria**
+
+1. Serve one structurally invalid but parseable plan payload on the real
+   `segments.json` route.
+2. Prove the alert, exact recovery copy, unbound date control, and absent plan
+   handle.
+3. Keep the suite's unexpected-error gate intact by accepting only the known
+   plan-load diagnostic.
+
+**Changes**
+
+- Added a reading-browser journey that fulfills `data/segments.json` with an
+  impossible start date and incomplete catalog.
+- Verified `#fatal` is a visible alert with the stable user-safe message, the
+  version stamp and passage surface stay at their empty defaults, and changing
+  the date does not start a reading.
+- Allowed only the matching `plan load failed` / `Invalid reading plan`
+  console diagnostic so other errors still fail the suite.
+- Documented the expanded browser scope and bumped the site/offline cache
+  version to `2026.08.18.1`; runtime behavior did not need alteration.
+
+**Verification evidence**
+
+- The application assertions passed on the first focused run, converting the
+  existing fatal-recovery claim into an enforceable Chromium contract.
+- Schedule 49/49, Bible 12/12, state 10/10, site, service-worker, and
+  workflow 25/25 passed.
+- `npm run test:browser`: 5/5 reading and offline journeys passed.
+- Recursive syntax, tracked JSON, and `git diff --check` passed.
+- Correctness/reliability: 9/10 → 9/10 (behavior was already correct;
+  regression risk is materially lower).
+- Verifiability: 5/10 → 10/10 (fatal copy, unbound UI, and expected diagnostic
+  are now exercised at the DOM boundary).
+- Maintainability: 8/10 → 9/10 (the documented startup recovery now has one
+  deterministic integration owner).
+- Performance/resources: 10/10 → 10/10 (test-only runtime behavior).
+- Security/privacy: 9/10 → 9/10 (invalid plan data cannot become runtime state).
+- User experience: 9/10 → 9/10 (the existing non-technical recovery is now
+  protected).
+
+**Lesson / process improvement:** A source-order unit contract proves the
+validator is called, not that visitors see the recovery surface. When the
+application intentionally logs a diagnostic, allow that exact message in the
+test that provoked it instead of disabling the suite-wide console gate.
+
+**Next opportunity:** Rotate to VerseKeep, the oldest remaining non-profile
+backlog. On the next ChristoDay rotation, browser-gate a non-200 plan fetch if
+that path still lacks a dedicated journey.
 
 ### Cycle 34 — Browser-gate live-passage failure fallback (2026-08-11)
 
