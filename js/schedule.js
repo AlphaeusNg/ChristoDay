@@ -215,6 +215,7 @@
     let ref;
     let segmentIndex = 0;
     let segmentLabel;
+    let weekdayOccurrence = 0;
 
     if (book.mode === "rotation") {
       // Jude: number of Mondays from start to today inclusive
@@ -226,8 +227,10 @@
       ref = rot.ref;
       segmentIndex = idx;
       segmentLabel = rot.label;
+      weekdayOccurrence = judeTurn;
     } else {
       const occurrences = countWeekdayInclusive(start, today, wd);
+      weekdayOccurrence = occurrences;
       segmentIndex = (occurrences - 1) % book.segments.length;
       ref = book.segments[segmentIndex];
       segmentLabel = `${book.label} ${ref}`;
@@ -249,6 +252,7 @@
       ref,
       fullRef: `${book.label} ${ref}`,
       segmentIndex,
+      weekdayOccurrence,
       segmentLabel: segmentLabel || `${book.label} ${ref}`,
       questions: plan.reflectionTemplates[bookKey] || [],
       next: {

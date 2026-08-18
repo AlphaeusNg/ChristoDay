@@ -55,6 +55,7 @@
         <div class="toolbar-nav">
           <button type="button" class="btn" id="btn-prev" title="Previous day (←)" aria-label="Previous day">←</button>
           <button type="button" class="btn" id="btn-today" title="Jump to today (T)">Today</button>
+          <button type="button" class="btn" id="btn-continue-incomplete" hidden>Continue incomplete</button>
           <button type="button" class="btn" id="btn-next" title="Next day (→)" aria-label="Next day">→</button>
         </div>
         <input type="date" id="date-pick" class="toolbar-pill" aria-label="Pick calendar date" />
@@ -105,10 +106,12 @@
         <p id="action-status" class="muted" role="status" hidden></p>
         <h2 class="passage-ref" id="passage-ref">—</h2>
         <div class="meta-row">
+          <span id="weekday-progress"></span>
           <span id="time-est">≈ 5–10 minutes</span>
           <span>Translation: <strong id="passage-tr-label">—</strong></span>
           <span id="tomorrow-note"></span>
         </div>
+        <p id="yesterday-line" class="muted" hidden></p>
         <p class="focus-box" id="book-focus"></p>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
         <div id="passage-body" class="passage-body" aria-live="polite"></div>

@@ -84,6 +84,7 @@ assert(S.weekdayOfYmd("2026-06-15") === 1, "2026-06-15 is Monday");
   assert(r.kind === "reading", "start day is reading");
   assert(r.bookKey === "jude", "Monday → Jude");
   assert(r.ref === "1:1-25", "first Monday Jude full");
+  assert(r.weekdayOccurrence === 1, "first Monday is weekday occurrence 1");
 }
 
 // Tuesday = Matthew first segment

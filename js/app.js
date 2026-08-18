@@ -85,6 +85,59 @@
     return Object.values(state.days || {}).filter((d) => d.completed).length;
   }
 
+  function previousWeekdayYmd(fromYmd) {
+    let ymd = ChristoSchedule.addDaysYmd(fromYmd, -1);
+    for (let i = 0; i < 8; i++) {
+      const w = ChristoSchedule.weekdayOfYmd(ymd);
+      if (w >= 1 && w <= 5) return ymd;
+      ymd = ChristoSchedule.addDaysYmd(ymd, -1);
+    }
+    return ymd;
+  }
+
+  function lastIncompleteYmd(fromYmd) {
+    let ymd = previousWeekdayYmd(fromYmd);
+    const start = plan?.meta?.startDate || "2026-06-15";
+    for (let i = 0; i < 80; i++) {
+      if (ymd < start) return "";
+      const day = state.days?.[ymd];
+      const w = ChristoSchedule.weekdayOfYmd(ymd);
+      if (w >= 1 && w <= 5 && day && !day.completed && String(day.journal || "").trim()) {
+        return ymd;
+      }
+      ymd = previousWeekdayYmd(ymd);
+    }
+    return "";
+  }
+
+  function renderYesterdayLine(ymd) {
+    const el = $("#yesterday-line");
+    if (!el) return;
+    const prev = previousWeekdayYmd(ymd);
+    const note = String(state.days?.[prev]?.journal || "").trim();
+    if (!note) {
+      el.hidden = true;
+      el.textContent = "";
+      return;
+    }
+    el.hidden = false;
+    el.textContent = `Yesterday’s line (${ChristoSchedule.formatDisplayDate(prev)}): ${note.slice(0, 180)}`;
+  }
+
+  function renderContinueIncomplete(ymd) {
+    const btn = $("#btn-continue-incomplete");
+    if (!btn) return;
+    const target = lastIncompleteYmd(ymd);
+    if (!target || target === ymd) {
+      btn.hidden = true;
+      btn.dataset.ymd = "";
+      return;
+    }
+    btn.hidden = false;
+    btn.dataset.ymd = target;
+    btn.textContent = `Continue ${ChristoSchedule.formatDisplayDate(target)}`;
+  }
+
   async function init() {
     bindAutoHideHeader();
     try {
@@ -119,6 +172,10 @@
     $("#btn-prev")?.addEventListener("click", () => shiftDay(-1));
     $("#btn-next")?.addEventListener("click", () => shiftDay(1));
     $("#btn-today")?.addEventListener("click", () => renderDay(ChristoSchedule.partsInSingapore().ymd));
+    $("#btn-continue-incomplete")?.addEventListener("click", () => {
+      const ymd = $("#btn-continue-incomplete")?.dataset.ymd;
+      if (ymd) renderDay(ymd);
+    });
     $("#btn-complete")?.addEventListener("click", toggleComplete);
     $("#btn-copy")?.addEventListener("click", () => {
       copyVisiblePassage().catch(() => {});
@@ -394,7 +451,13 @@
     $("#passage-ref").textContent = reading.fullRef;
     $("#time-est").textContent = reading.timeEstimate;
     $("#book-focus").textContent = reading.bookFocus;
+    const occ = Number(reading.weekdayOccurrence) || 0;
+    $("#weekday-progress").textContent = occ
+      ? `${reading.weekdayName} ${occ} of this plan`
+      : "";
     $("#tomorrow-note").textContent = `Next weekday: ${reading.next.weekdayName} · ${reading.next.bookLabel}`;
+    renderYesterdayLine(ymd);
+    renderContinueIncomplete(ymd);
 
     const qList = $("#questions");
     qList.innerHTML = reading.questions.map((q) => `<li>${escapeHtml(q)}</li>`).join("");
