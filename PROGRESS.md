@@ -101,6 +101,9 @@ silently disappeared even though it remained saved on the device.
   structure, workflow policy 25, recursive syntax, and diff checks passed.
 - `CI=1 npm run test:browser`: 12/12 reading and installed-worker journeys passed.
 - `npm audit --audit-level=high`: zero vulnerabilities.
+- Hosted CI run `32760753055` passed every Node 24 and Chromium gate; Pages run
+  `32760751784` deployed successfully, and the live site served version
+  `2026.08.25.1`.
 
 **Scores (change-specific)**
 
