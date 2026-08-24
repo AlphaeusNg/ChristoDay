@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-25 (ChristoDay Cycle 41)
+Last updated: 2026-08-25 (ChristoDay Cycle 42)
 
 ## Current state
 
@@ -21,7 +21,7 @@ Last updated: 2026-08-25 (ChristoDay Cycle 41)
   journal/completion saves, in-memory continuity, honest durability status,
   recovery persistence, invalid fetched-plan fatal recovery, non-200 and
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
-  copy/share, and
+  schedule-valid completion totals, copy/share, and
   `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
@@ -37,12 +37,13 @@ Last updated: 2026-08-25 (ChristoDay Cycle 41)
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.25.2`.
+- Deployment version: `2026.08.25.3`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Count only actual plan-reading completions | Correctness / reliability | Medium: hydrated weekend and pre-start flags inflated progress even though those screens cannot be completed | Small / low | One valid reading remains counted; impossible records remain preserved but excluded | Completed in Cycle 42 |
 | — | Exercise an unparseable 200 plan body in a real browser | Verification / reliability | Low: 404 and schema-invalid JSON reached fatal recovery, but a proxy-style HTML body shared that surface without a dedicated journey | Small / low | Controlled non-JSON 200, inert UI, safe fatal copy, and parse diagnostic | Completed in Cycle 41 |
 | — | Remove the 80-weekday horizon from Continue incomplete | Correctness / performance | Medium: older unfinished journals became undiscoverable as the plan aged | Small / low | Saved-entry selection and a >80-weekday Chromium resume | Completed in Cycle 40 |
 | — | Show weekday progress, yesterday's journal line, and Continue incomplete | UX / continuity | Medium | Small / low | Runtime UI, schedule occurrence field, and saved-state boundary | Completed in Cycle 39 |
@@ -68,6 +69,63 @@ Last updated: 2026-08-25 (ChristoDay Cycle 41)
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 42 — Count only actual plan-reading completions (2026-08-25)
+
+**Why this won:** Persisted state correctly retained every real calendar date,
+but the “days completed” total counted any entry whose `completed` flag was
+true. A stale or corrupt weekend or pre-plan record therefore inflated the
+statistic even though those views never expose the completion control. The
+fetched-plan and Bible render audit found their output-encoding boundaries
+already sound, making this the highest-impact reproduced gap.
+
+**Plan and success criteria**
+
+1. Seed one valid plan reading, one weekend, and one pre-start completion.
+2. Require the displayed total to count only the valid reading.
+3. Preserve all saved entries rather than deleting potentially useful journal
+   text during recovery.
+4. Run every deterministic, browser, offline, syntax, audit, and hosted gate.
+
+**Changes**
+
+- Derive the completion total only from valid dates that resolve against the
+  loaded plan as `kind === "reading"`.
+- Added a Chromium journey that proves one valid completion remains counted,
+  two impossible completions are excluded, and all three stored entries remain
+  intact.
+- Bumped the site and offline-cache stamp to `2026.08.25.3`.
+
+**Verification evidence**
+
+- Test-first: the old browser rendered `3` completed days instead of `1` for
+  the controlled saved state.
+- Schedule/data/schema 50, Bible 12, state 10, service-worker behavior, site
+  structure, workflow policy 25, recursive syntax, diff checks, and the
+  zero-vulnerability npm audit passed.
+- `CI=1 npm run test:browser`: 14/14 reading and installed-worker journeys
+  passed, up from 13.
+- Hosted CI run `32774432266` passed every Node 24 and Chromium gate in 1m6s;
+  Pages run `32774430527` deployed successfully, and the live site serves
+  version `2026.08.25.3`.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 10/10 | The total now follows the plan domain rather than any saved boolean |
+| Test coverage / verifiability | 5/10 | 10/10 | Valid, weekend, and pre-start records execute through hydration and UI |
+| Maintainability | 7/10 | 9/10 | One derived counter delegates date meaning to the schedule engine |
+| Performance / resources | 9/10 | 9/10 | A bounded device-local map gains one schedule check per completed entry |
+| Security / robustness | 8/10 | 9/10 | Corrupt or legacy flags cannot distort the public progress total |
+| User experience | 5/10 | 10/10 | “Days completed” now means days the app actually allows completing |
+
+**Lesson / process improvement:** Safe hydration and truthful aggregation are
+separate boundaries. Preserve recoverable user content, but derive statistics
+through the product's domain rules instead of trusting a persisted flag alone.
+
+**Next opportunity:** No higher-impact unblocked ChristoDay item is currently
+recorded. Rotate repositories and return when new runtime evidence appears.
 
 ### Cycle 41 — Browser-gate non-JSON plan recovery (2026-08-25)
 
