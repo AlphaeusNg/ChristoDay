@@ -179,6 +179,38 @@ test("keeps reading progress visible and reports denied device saves", async ({ 
   expect(saved.days["2026-06-16"].completed).toBe(true);
 });
 
+test("resumes the newest unfinished journal even when it is older than 80 weekdays", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "christoday.v1",
+      JSON.stringify({
+        translation: "NIV",
+        days: {
+          "2026-06-16": {
+            completed: false,
+            journal: "Return to the grace I saw in Matthew.",
+            translation: "NIV",
+          },
+          "2026-06-17": {
+            completed: true,
+            journal: "A completed later entry should not be resumed.",
+            translation: "NIV",
+          },
+        },
+      }),
+    );
+  });
+
+  await page.goto("./?d=2027-01-15&tr=NIV", { waitUntil: "domcontentloaded" });
+
+  const resume = page.locator("#btn-continue-incomplete");
+  await expect(resume).toBeVisible();
+  await expect(resume).toHaveText("Continue Tuesday, 16 June 2026");
+  await resume.click();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await expect(page.locator("#journal")).toHaveValue("Return to the grace I saw in Matthew.");
+});
+
 test("weekend and pre-start offer the next reading", async ({ page }) => {
   await page.goto("./", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#fatal")).toBeHidden();

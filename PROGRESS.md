@@ -3,11 +3,11 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cycle 38)
+Last updated: 2026-08-25 (ChristoDay Cycle 40)
 
 ## Current state
 
-- Deterministic weekday schedule with 49 passing schedule/data/schema tests.
+- Deterministic weekday schedule with 50 passing schedule/data/schema tests.
 - Live Bible client with 12 passing network/payload/cache/cancellation/passage
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
   50-chapter memory cache.
@@ -20,7 +20,8 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
   recovery persistence, invalid fetched-plan fatal recovery, non-200 plan
-  fetch fatal recovery, weekend next-step jumps, copy/share, and
+  fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
+  copy/share, and
   `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
@@ -36,13 +37,15 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.18.5`.
+- Deployment version: `2026.08.25.1`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
 | 1 | Exercise a network-aborted or unparseable plan body in a real browser | Verification / reliability | Low: 404 and invalid JSON now reach fatal recovery, but a dropped request or 200 non-JSON body still share that surface without a dedicated journey | Small / low | Controlled abort or non-JSON 200 plus the existing user-safe fatal copy | Planned |
+| — | Remove the 80-weekday horizon from Continue incomplete | Correctness / performance | Medium: older unfinished journals became undiscoverable as the plan aged | Small / low | Saved-entry selection and a >80-weekday Chromium resume | Completed in Cycle 40 |
+| — | Show weekday progress, yesterday's journal line, and Continue incomplete | UX / continuity | Medium | Small / low | Runtime UI, schedule occurrence field, and saved-state boundary | Completed in Cycle 39 |
 | — | Copy the visible passage, share today's reading, and deep-link date/translation | UX | High: visitors could not copy, share, or reopen a specific day | Small / low | Copy + Y, Web Share / clipboard fallback, `?d=` / `?tr=` boot and replaceState | Completed in Cycle 38 |
 | — | Lead phones with today's reading and give weekend/pre-start a next step | UX | High: hero + about + two-row toolbar buried Scripture; weekend was a tombstone | Medium / low | Compact date/streak line, details about, gold-outline toolbar, Preview Monday / Last Friday, Mon–Fri strip | Completed in Cycle 37 |
 | — | Exercise HTTP plan-fetch failure in a real browser | Verification / reliability | Low-medium: invalid JSON now reaches fatal recovery, but a non-200 plan response shares that surface without a dedicated journey | Small / low | Controlled 404 plan route, unbound UI, HTTP-status diagnostic, and existing user-safe fatal copy | Completed in Cycle 36 |
@@ -65,6 +68,64 @@ Last updated: 2026-08-18 (Cycle 160 across the projects workspace; ChristoDay Cy
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 40 — Resume unfinished entries without an age cutoff (2026-08-25)
+
+**Why this won:** The new Continue incomplete action walked back at most 80
+weekdays. As the ongoing plan aged, a legitimate older unfinished journal
+silently disappeared even though it remained saved on the device.
+
+**Plan and success criteria**
+
+1. Reproduce the cutoff in Chromium with an unfinished June 2026 entry viewed
+   from January 2027.
+2. Select the newest eligible saved entry before the viewed day without a
+   calendar-walk horizon.
+3. Verify the CTA label, navigation, and restored journal through the real UI,
+   then run every deterministic, browser, offline, syntax, and audit gate.
+
+**Changes**
+
+- Replaced the 80-iteration weekday walk with one pass over hydrated saved-day
+  entries, filtered to the plan range, past weekdays, nonempty journals, and
+  incomplete status; the newest ISO date wins.
+- Added a real Chromium journey with an unfinished entry more than 80 weekdays
+  old and a later completed decoy.
+- Bumped the site/offline cache version to `2026.08.25.1`.
+
+**Verification evidence**
+
+- Test-first: the old implementation left `#btn-continue-incomplete` hidden in
+  the January 2027 fixture.
+- Schedule/data/schema 50, Bible 12, state 10, service-worker 4 scenarios, site
+  structure, workflow policy 25, recursive syntax, and diff checks passed.
+- `CI=1 npm run test:browser`: 12/12 reading and installed-worker journeys passed.
+- `npm audit --audit-level=high`: zero vulnerabilities.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 4/10 | 10/10 | A saved unfinished entry no longer expires from the resume search |
+| Test coverage / verifiability | 4/10 | 10/10 | The long-horizon CTA, navigation, and journal restoration are browser-locked |
+| Maintainability | 6/10 | 9/10 | Selection operates directly on the state being queried, without a magic time bound |
+| Performance / resources | 6/10 | 9/10 | Work is proportional to saved entries rather than empty calendar days |
+| Security / robustness | 9/10 | 9/10 | Hydrated local-only state and text-only journal rendering remain unchanged |
+| User experience | 5/10 | 9/10 | Long-running users retain a dependable path back to unfinished reflection |
+
+**Lesson / process improvement:** Search the finite domain that owns the data.
+Walking calendar dates introduced both an arbitrary correctness horizon and
+work unrelated to the number of saved entries.
+
+**Next opportunity:** Browser-gate a 200 non-JSON plan response through the
+existing safe fatal recovery surface, then rotate repositories.
+
+### Cycle 39 — Show weekday progress and resume the last incomplete entry (2026-08-18)
+
+- Added weekday occurrence context, the previous weekday's journal line, and a
+  Continue incomplete CTA for saved unfinished reflections.
+- Shipped version `2026.08.18.6` in commit `b4094b1`; Cycle 40 subsequently
+  removed its initial 80-weekday search horizon.
 
 ### Cycle 38 — Copy, share, and deep-link today's reading (2026-08-18)
 

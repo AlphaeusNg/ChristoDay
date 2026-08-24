@@ -96,18 +96,22 @@
   }
 
   function lastIncompleteYmd(fromYmd) {
-    let ymd = previousWeekdayYmd(fromYmd);
     const start = plan?.meta?.startDate || "2026-06-15";
-    for (let i = 0; i < 80; i++) {
-      if (ymd < start) return "";
-      const day = state.days?.[ymd];
+    let latest = "";
+    for (const [ymd, day] of Object.entries(state.days || {})) {
       const w = ChristoSchedule.weekdayOfYmd(ymd);
-      if (w >= 1 && w <= 5 && day && !day.completed && String(day.journal || "").trim()) {
-        return ymd;
-      }
-      ymd = previousWeekdayYmd(ymd);
+      if (
+        ymd >= start &&
+        ymd < fromYmd &&
+        ymd > latest &&
+        w >= 1 &&
+        w <= 5 &&
+        day &&
+        !day.completed &&
+        String(day.journal || "").trim()
+      ) latest = ymd;
     }
-    return "";
+    return latest;
   }
 
   function renderYesterdayLine(ymd) {
