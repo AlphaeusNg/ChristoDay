@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-25 (ChristoDay Cycle 40)
+Last updated: 2026-08-25 (ChristoDay Cycle 41)
 
 ## Current state
 
@@ -19,8 +19,8 @@ Last updated: 2026-08-25 (ChristoDay Cycle 40)
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
-  recovery persistence, invalid fetched-plan fatal recovery, non-200 plan
-  fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
+  recovery persistence, invalid fetched-plan fatal recovery, non-200 and
+  non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
   copy/share, and
   `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
@@ -37,13 +37,13 @@ Last updated: 2026-08-25 (ChristoDay Cycle 40)
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.25.1`.
+- Deployment version: `2026.08.25.2`.
 
 ## Opportunity backlog
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
-| 1 | Exercise a network-aborted or unparseable plan body in a real browser | Verification / reliability | Low: 404 and invalid JSON now reach fatal recovery, but a dropped request or 200 non-JSON body still share that surface without a dedicated journey | Small / low | Controlled abort or non-JSON 200 plus the existing user-safe fatal copy | Planned |
+| — | Exercise an unparseable 200 plan body in a real browser | Verification / reliability | Low: 404 and schema-invalid JSON reached fatal recovery, but a proxy-style HTML body shared that surface without a dedicated journey | Small / low | Controlled non-JSON 200, inert UI, safe fatal copy, and parse diagnostic | Completed in Cycle 41 |
 | — | Remove the 80-weekday horizon from Continue incomplete | Correctness / performance | Medium: older unfinished journals became undiscoverable as the plan aged | Small / low | Saved-entry selection and a >80-weekday Chromium resume | Completed in Cycle 40 |
 | — | Show weekday progress, yesterday's journal line, and Continue incomplete | UX / continuity | Medium | Small / low | Runtime UI, schedule occurrence field, and saved-state boundary | Completed in Cycle 39 |
 | — | Copy the visible passage, share today's reading, and deep-link date/translation | UX | High: visitors could not copy, share, or reopen a specific day | Small / low | Copy + Y, Web Share / clipboard fallback, `?d=` / `?tr=` boot and replaceState | Completed in Cycle 38 |
@@ -68,6 +68,58 @@ Last updated: 2026-08-25 (ChristoDay Cycle 40)
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 41 — Browser-gate non-JSON plan recovery (2026-08-25)
+
+**Why this won:** A successful HTTP status does not guarantee that a static JSON
+asset contains JSON. A proxy, captive portal, or host error page could return
+HTML with status 200. The app claimed a safe fatal path, but the real-browser
+suite covered only a 404 and structurally invalid JSON.
+
+**Plan and success criteria**
+
+1. Fulfill `segments.json` with status 200, `text/html`, and an HTML body in the
+   controlled browser fixture.
+2. Verify the alert copy, inert reading controls, empty plan state, and a
+   developer-visible parse diagnostic.
+3. Keep runtime code unchanged if the existing boundary already behaves safely,
+   then run every deterministic, browser, offline, syntax, and audit gate.
+
+**Changes**
+
+- Added a Chromium journey for a 200 non-JSON plan response, including the
+  visible fatal recovery, unbound date change, empty internal plan, and retained
+  JSON parse diagnostic.
+- Bumped the site/offline cache version to `2026.08.25.2`; production runtime
+  behavior is otherwise unchanged.
+
+**Verification evidence**
+
+- The new targeted journey passed on its first run, confirming the existing
+  catch boundary already handles this response safely.
+- Schedule/data/schema 50, Bible 12, state 10, service-worker behavior, site
+  structure, workflow policy 25, recursive syntax, and diff checks passed.
+- `CI=1 npm run test:browser`: 13/13 reading and installed-worker journeys
+  passed, up from 12. `npm audit --audit-level=high` found zero vulnerabilities.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 8/10 | 9/10 | Existing safe recovery is now protected against regression |
+| Test coverage / verifiability | 5/10 | 9/10 | A real browser executes the status-200 parse-failure boundary |
+| Maintainability | 8/10 | 8/10 | The test follows the established controlled-route pattern |
+| Performance / resources | 10/10 | 10/10 | Runtime code is unchanged |
+| Security / robustness | 8/10 | 9/10 | Unexpected intermediary HTML cannot silently initialize partial state |
+| User experience | 9/10 | 9/10 | The existing concise recovery alert is now enforced |
+
+**Lesson / process improvement:** Exercise content type and payload parsing
+separately from HTTP status. A 200 response is transport success, not an
+application-level validity guarantee.
+
+**Next opportunity:** Rotate to Car-Type-Classification-Service, load its
+current state, and select the highest-value reliability improvement that does
+not depend on the blocked model re-export boundary.
 
 ### Cycle 40 — Resume unfinished entries without an age cutoff (2026-08-25)
 
