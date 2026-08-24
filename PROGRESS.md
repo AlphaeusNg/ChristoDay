@@ -101,6 +101,8 @@ suite covered only a 404 and structurally invalid JSON.
   structure, workflow policy 25, recursive syntax, and diff checks passed.
 - `CI=1 npm run test:browser`: 13/13 reading and installed-worker journeys
   passed, up from 12. `npm audit --audit-level=high` found zero vulnerabilities.
+- Hosted CI run `32763287352` passed every Node 24 and Chromium gate; Pages run
+  `32763286195` deployed successfully, and the live site serves `2026.08.25.2`.
 
 **Scores (change-specific)**
 
