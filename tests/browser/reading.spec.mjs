@@ -211,6 +211,38 @@ test("resumes the newest unfinished journal even when it is older than 80 weekda
   await expect(page.locator("#journal")).toHaveValue("Return to the grace I saw in Matthew.");
 });
 
+test("counts completed reading days without impossible saved dates", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "christoday.v1",
+      JSON.stringify({
+        translation: "NIV",
+        days: {
+          "2026-06-15": { completed: true, journal: "A real plan day.", translation: "NIV" },
+          "2026-06-20": {
+            completed: true,
+            journal: "A weekend cannot be completed.",
+            translation: "NIV",
+          },
+          "2026-06-08": {
+            completed: true,
+            journal: "Before the plan began.",
+            translation: "NIV",
+          },
+        },
+      }),
+    );
+  });
+
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("#reading-panel")).toBeVisible();
+  await expect(page.locator("#stat-done")).toHaveText("1");
+  expect(
+    await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("christoday.v1")).days)),
+  ).toEqual(["2026-06-15", "2026-06-20", "2026-06-08"]);
+});
+
 test("weekend and pre-start offer the next reading", async ({ page }) => {
   await page.goto("./", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#fatal")).toBeHidden();

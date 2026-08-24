@@ -82,7 +82,13 @@
   }
 
   function countCompleted() {
-    return Object.values(state.days || {}).filter((d) => d.completed).length;
+    if (!plan) return 0;
+    return Object.entries(state.days || {}).filter(
+      ([ymd, day]) =>
+        day?.completed &&
+        ChristoState.validYmd(ymd) &&
+        ChristoSchedule.resolveReading(plan, ymd).kind === "reading"
+    ).length;
   }
 
   function previousWeekdayYmd(fromYmd) {
