@@ -99,6 +99,10 @@
             <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)">Copy</button>
             <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false">Listen</button>
             <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
+            <span class="type-size" role="group" aria-label="Passage text size">
+              <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
+              <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
+            </span>
             <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
               <span aria-hidden="true">○</span> Mark complete
             </button>
@@ -154,7 +158,8 @@
       <p class="muted" style="margin-bottom:0">
         Keys: <span class="kbd">←</span><span class="kbd">→</span> days ·
         <span class="kbd">T</span> today · <span class="kbd">C</span> complete ·
-        <span class="kbd">Y</span> copy
+        <span class="kbd">Y</span> copy · <span class="kbd">L</span> listen ·
+        <span class="kbd">−</span><span class="kbd">+</span> size
       </p>
     </details>
   </main>

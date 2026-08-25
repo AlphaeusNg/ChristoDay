@@ -544,3 +544,28 @@ test("reads the visible passage aloud and stops on the next Listen press", async
   await page.keyboard.press("l");
   await expect(page.locator("#btn-listen")).toHaveText("Stop");
 });
+
+test("resizes the passage and remembers the choice", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "christoday.v1",
+      JSON.stringify({ translation: "NIV", days: {}, passageSize: "lg" }),
+    );
+  });
+
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
+  await expect(page.locator("#btn-type-larger")).toBeDisabled();
+  await expect(page.locator("#btn-type-smaller")).toBeEnabled();
+
+  await page.locator("#btn-type-smaller").click();
+  await expect(page.locator("html")).toHaveAttribute("data-passage-size", "md");
+  await expect(page.locator("#action-status")).toHaveText("Default passage text.");
+  await page.keyboard.press("-");
+  await expect(page.locator("html")).toHaveAttribute("data-passage-size", "sm");
+  await expect(page.locator("#btn-type-smaller")).toBeDisabled();
+  await expect(page.locator("#action-status")).toHaveText("Smaller passage text.");
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
+  expect(saved.passageSize).toBe("sm");
+});

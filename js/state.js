@@ -19,14 +19,19 @@
     return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   }
 
+  function validPassageSize(value) {
+    return value === "sm" || value === "lg" ? value : "md";
+  }
+
   function defaultState() {
-    return { translation: "NIV", days: {} };
+    return { translation: "NIV", days: {}, passageSize: "md" };
   }
 
   function hydrateState(saved) {
     const hydrated = defaultState();
     if (!isRecord(saved)) return hydrated;
     hydrated.translation = validTranslation(saved.translation);
+    hydrated.passageSize = validPassageSize(saved.passageSize);
     if (!isRecord(saved.days)) return hydrated;
 
     for (const [ymd, value] of Object.entries(saved.days)) {
@@ -80,5 +85,6 @@
     saveState,
     ensureDay,
     validYmd,
+    validPassageSize,
   };
 })(typeof window !== "undefined" ? window : globalThis);

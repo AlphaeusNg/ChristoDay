@@ -175,6 +175,7 @@
       ? requestedYmd
       : ChristoSchedule.partsInSingapore().ymd;
     bindUi();
+    applyPassageSize(state.passageSize);
     await renderDay(currentYmd, { syncUrl: hadDeepLink });
     $("#site-version").textContent = SITE_VERSION?.id || "";
   }
@@ -197,6 +198,8 @@
     $("#btn-share")?.addEventListener("click", () => {
       shareReading().catch(() => {});
     });
+    $("#btn-type-smaller")?.addEventListener("click", () => shiftPassageSize(-1));
+    $("#btn-type-larger")?.addEventListener("click", () => shiftPassageSize(1));
     $("#journal")?.addEventListener("input", (e) => {
       const day = ensureDay(currentYmd);
       day.journal = e.target.value;
@@ -238,7 +241,44 @@
       if ((e.key === "l" || e.key === "L") && !e.ctrlKey && !e.metaKey && !e.altKey) {
         toggleListen();
       }
+      if (e.key === "-" || e.key === "_") {
+        e.preventDefault();
+        shiftPassageSize(-1);
+      }
+      if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        shiftPassageSize(1);
+      }
     });
+  }
+
+  const PASSAGE_SIZES = ["sm", "md", "lg"];
+
+  function applyPassageSize(size) {
+    const next = ChristoState.validPassageSize
+      ? ChristoState.validPassageSize(size)
+      : size === "sm" || size === "lg"
+        ? size
+        : "md";
+    state.passageSize = next;
+    document.documentElement.setAttribute("data-passage-size", next);
+    const smaller = $("#btn-type-smaller");
+    const larger = $("#btn-type-larger");
+    if (smaller) smaller.disabled = next === "sm";
+    if (larger) larger.disabled = next === "lg";
+    return next;
+  }
+
+  function shiftPassageSize(delta) {
+    const current = applyPassageSize(state.passageSize);
+    const index = PASSAGE_SIZES.indexOf(current);
+    const next = PASSAGE_SIZES[Math.max(0, Math.min(PASSAGE_SIZES.length - 1, index + delta))];
+    if (next === current) return;
+    applyPassageSize(next);
+    saveState();
+    announceAction(
+      next === "sm" ? "Smaller passage text." : next === "lg" ? "Larger passage text." : "Default passage text."
+    );
   }
 
   function currentTranslation() {

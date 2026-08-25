@@ -83,6 +83,8 @@ assert.match(index, /id="btn-preview-monday"/, "preview Monday control remains")
 assert.match(index, /id="btn-copy"/, "copy passage control remains");
 assert.match(index, /id="btn-listen"/, "listen passage control remains");
 assert.match(index, /id="btn-share"/, "share reading control remains");
+assert.match(index, /id="btn-type-smaller"/, "smaller passage text control remains");
+assert.match(index, /id="btn-type-larger"/, "larger passage text control remains");
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
@@ -107,6 +109,8 @@ assert.match(app, /navigator\.share/, "share must prefer the Web Share API");
 assert.match(app, /clipboard\.writeText/, "copy/share must write to the clipboard");
 assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
 assert.match(app, /key === "l"/, "L reads the visible passage aloud");
+assert.match(app, /shiftPassageSize/, "passage size can be changed from the reader");
+assert.match(app, /data-passage-size/, "passage size is applied on the document");
 
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`

@@ -45,3 +45,4 @@ npm run test:browser
 - Schedule must stay deterministic; tests cover start week + Jude rotation
 - Invalid or unreachable fetched plan data must stay on the user-safe fatal recovery surface
 - Do not ship secrets; journal is localStorage only
+- Passage size (A−/A+, −/+) persists on-device with journal/translation state

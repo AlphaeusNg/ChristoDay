@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-25 (ChristoDay Cycle 43)
+Last updated: 2026-08-25 (ChristoDay Cycle 44)
 
 ## Current state
 
@@ -11,8 +11,9 @@ Last updated: 2026-08-25 (ChristoDay Cycle 43)
 - Live Bible client with 12 passing network/payload/cache/cancellation/passage
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
   50-chapter memory cache.
-- Persisted journal/completion state with 10 passing hydration/persistence cases
-  and non-throwing save failure handling.
+- Persisted journal/completion state with 13 passing hydration/persistence cases
+  and non-throwing save failure handling. Passage size is a device-local
+  preference beside translation.
 - Service-worker runtime behavior has four deterministic execution scenarios
   plus a production-mounted installed-worker journey covering scope, cache
   ownership, event lifetime, network/cache failures, and offline reload.
@@ -21,24 +22,25 @@ Last updated: 2026-08-25 (ChristoDay Cycle 43)
   journal/completion saves, in-memory continuity, honest durability status,
   recovery persistence, invalid fetched-plan fatal recovery, non-200 and
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
-  schedule-valid completion totals, copy/share/listen, and
+  schedule-valid completion totals, copy/share/listen/size, and
   `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
-- Reading days expose Copy (Y), Listen (L), and Share. Copy writes the visible
-  reference plus passage text; Listen reads it aloud and stops on a second press
-  or day change; Share uses the Web Share API when present and otherwise copies
-  date + reference + URL. `?d=YYYY-MM-DD` and optional `?tr=NIV|ESV|NKJV|WEB`
-  open that day/translation; invalid dates fall back to today; date and
-  translation changes `replaceState` so a copied URL matches the screen.
+- Reading days expose Copy (Y), Listen (L), Share, and A−/A+ passage size.
+  Copy writes the visible reference plus passage text; Listen reads it aloud
+  and stops on a second press or day change; Share uses the Web Share API when
+  present and otherwise copies date + reference + URL. `?d=YYYY-MM-DD` and
+  optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
+  back to today; date and translation changes `replaceState` so a copied URL
+  matches the screen. Passage size persists on-device.
+- Deployment version: `2026.08.25.5`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.25.4`.
 
 ## Opportunity backlog
 
@@ -70,6 +72,17 @@ Last updated: 2026-08-25 (ChristoDay Cycle 43)
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 44 — Resize today's passage (2026-08-25)
+
+**Why this won:** Listen helps commuters, but readers still had one fixed type
+size. Phone Scripture was cramped; desktop was small for tired eyes.
+
+**Changes**
+
+- A− / A+ (and − / +) cycle small, default, and large passage text.
+- Size persists with journal state. Unknown values fall back to default.
+- Version `2026.08.25.5`.
 
 ### Cycle 43 — Read today's passage aloud (2026-08-25)
 

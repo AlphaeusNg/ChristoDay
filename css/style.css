@@ -1,4 +1,5 @@
 :root {
+  --passage-size: 1.12rem;
   --ink: #0a0f1c;
   --bg: #0a0f1c;
   --panel: rgba(15, 23, 42, 0.82);
@@ -328,9 +329,33 @@ select.toolbar-pill {
 
 .passage-body {
   font-family: var(--serif);
-  font-size: 1.12rem;
+  font-size: var(--passage-size);
   line-height: 1.85;
   color: #dbe4f0;
+}
+
+html[data-passage-size="sm"] {
+  --passage-size: 1rem;
+}
+
+html[data-passage-size="lg"] {
+  --passage-size: 1.4rem;
+}
+
+.type-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.type-size .btn {
+  min-width: 2.2rem;
+  font-family: var(--serif);
+  font-weight: 600;
+}
+
+.type-size .btn:disabled {
+  opacity: 0.45;
 }
 .passage-body .vnum {
   font-family: var(--mono);
@@ -589,7 +614,14 @@ textarea:focus {
     padding: 0.4rem 0.62rem;
     font-size: 0.82rem;
   }
-  .passage-body {
-    font-size: 1.05rem;
+  html[data-passage-size="sm"] {
+    --passage-size: 0.98rem;
+  }
+  html:not([data-passage-size]),
+  html[data-passage-size="md"] {
+    --passage-size: 1.05rem;
+  }
+  html[data-passage-size="lg"] {
+    --passage-size: 1.28rem;
   }
 }
