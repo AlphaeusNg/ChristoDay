@@ -504,3 +504,43 @@ test("uses the Web Share API when it is available", async ({ page }) => {
   expect(shares[0].url).toMatch(/d=2026-06-16/);
   expect(shares[0].url).toMatch(/tr=WEB/);
 });
+
+test("reads the visible passage aloud and stops on the next Listen press", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__spoken = [];
+    window.__cancelled = 0;
+    const fake = {
+      speak(utterance) {
+        window.__spoken.push(String(utterance && utterance.text || ""));
+      },
+      cancel() {
+        window.__cancelled += 1;
+      },
+    };
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      get() {
+        return fake;
+      },
+    });
+  });
+
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#action-status")).toHaveText("Reading aloud…");
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "true");
+  const spoken = await page.evaluate(() => window.__spoken.at(-1));
+  expect(spoken).toContain("Matthew 1:1-17");
+  expect(spoken).toContain("NIV book 40 chapter 1 verse 1");
+
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(0);
+
+  await page.keyboard.press("l");
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+});

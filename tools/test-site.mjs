@@ -81,6 +81,7 @@ assert.match(index, /id="fatal"/, "fatal recovery id remains");
 assert.match(index, /id="weekend-panel"/, "weekend panel id remains");
 assert.match(index, /id="btn-preview-monday"/, "preview Monday control remains");
 assert.match(index, /id="btn-copy"/, "copy passage control remains");
+assert.match(index, /id="btn-listen"/, "listen passage control remains");
 assert.match(index, /id="btn-share"/, "share reading control remains");
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 
@@ -104,6 +105,8 @@ assert.match(app, /params\.get\("tr"\)/, "boot must read the tr deep-link");
 assert.match(app, /history\.replaceState/, "date/translation changes must update the URL");
 assert.match(app, /navigator\.share/, "share must prefer the Web Share API");
 assert.match(app, /clipboard\.writeText/, "copy/share must write to the clipboard");
+assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
+assert.match(app, /key === "l"/, "L reads the visible passage aloud");
 
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`

@@ -15,6 +15,7 @@
   let renderSeq = 0;
   let passageController = null;
   let actionStatusTimer = 0;
+  let speaking = false;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -190,6 +191,9 @@
     $("#btn-copy")?.addEventListener("click", () => {
       copyVisiblePassage().catch(() => {});
     });
+    $("#btn-listen")?.addEventListener("click", () => {
+      toggleListen();
+    });
     $("#btn-share")?.addEventListener("click", () => {
       shareReading().catch(() => {});
     });
@@ -230,6 +234,9 @@
       if (e.key === "c" || e.key === "C") toggleComplete();
       if ((e.key === "y" || e.key === "Y") && !e.ctrlKey && !e.metaKey && !e.altKey) {
         copyVisiblePassage().catch(() => {});
+      }
+      if ((e.key === "l" || e.key === "L") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        toggleListen();
       }
     });
   }
@@ -412,9 +419,67 @@
     $("#stat-done").textContent = String(countCompleted());
   }
 
+  function stopListening() {
+    speaking = false;
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
+    }
+    const btn = $("#btn-listen");
+    if (btn) {
+      btn.setAttribute("aria-pressed", "false");
+      btn.textContent = "Listen";
+    }
+  }
+
+  function toggleListen() {
+    const readingEl = $("#reading-panel");
+    if (!readingEl || readingEl.hidden) return;
+    if (speaking) {
+      stopListening();
+      announceAction("Stopped reading.");
+      return;
+    }
+    const text = visiblePassageText();
+    if (!text) {
+      announceAction("Nothing to read yet.");
+      return;
+    }
+    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+      announceAction("Speech is not available on this device.");
+      return;
+    }
+    stopListening();
+    const utterance = new window.SpeechSynthesisUtterance();
+    utterance.text = text;
+    utterance.rate = 0.92;
+    utterance.onend = () => {
+      speaking = false;
+      const btn = $("#btn-listen");
+      if (btn) {
+        btn.setAttribute("aria-pressed", "false");
+        btn.textContent = "Listen";
+      }
+    };
+    utterance.onerror = () => {
+      speaking = false;
+      announceAction("Could not read passage.");
+    };
+    speaking = true;
+    const btn = $("#btn-listen");
+    if (btn) {
+      btn.setAttribute("aria-pressed", "true");
+      btn.textContent = "Stop";
+    }
+    window.speechSynthesis.speak(utterance);
+    announceAction("Reading aloud…");
+  }
+
   async function renderDay(ymd, options = {}) {
     const seq = ++renderSeq;
     currentYmd = ymd;
+    stopListening();
     const reading = ChristoSchedule.resolveReading(plan, ymd);
     const datePick = $("#date-pick");
     if (datePick) datePick.value = ymd;

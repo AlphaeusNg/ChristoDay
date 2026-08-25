@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-25 (ChristoDay Cycle 42)
+Last updated: 2026-08-25 (ChristoDay Cycle 43)
 
 ## Current state
 
@@ -21,13 +21,14 @@ Last updated: 2026-08-25 (ChristoDay Cycle 42)
   journal/completion saves, in-memory continuity, honest durability status,
   recovery persistence, invalid fetched-plan fatal recovery, non-200 and
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
-  schedule-valid completion totals, copy/share, and
+  schedule-valid completion totals, copy/share/listen, and
   `?d=` / `?tr=` deep-links.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
-- Reading days expose Copy (Y) and Share. Copy writes the visible reference plus
-  passage text; Share uses the Web Share API when present and otherwise copies
+- Reading days expose Copy (Y), Listen (L), and Share. Copy writes the visible
+  reference plus passage text; Listen reads it aloud and stops on a second press
+  or day change; Share uses the Web Share API when present and otherwise copies
   date + reference + URL. `?d=YYYY-MM-DD` and optional `?tr=NIV|ESV|NKJV|WEB`
   open that day/translation; invalid dates fall back to today; date and
   translation changes `replaceState` so a copied URL matches the screen.
@@ -37,7 +38,7 @@ Last updated: 2026-08-25 (ChristoDay Cycle 42)
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
-- Deployment version: `2026.08.25.3`.
+- Deployment version: `2026.08.25.4`.
 
 ## Opportunity backlog
 
@@ -69,6 +70,18 @@ Last updated: 2026-08-25 (ChristoDay Cycle 42)
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 43 — Read today's passage aloud (2026-08-25)
+
+**Why this won:** Copy and Share already get the text off the screen. Commuters
+and listeners still had to stare at the phone. VerseKeep already reads verses;
+ChristoDay's visible passage did not.
+
+**Changes**
+
+- Listen (L) speaks the visible reference plus passage via Web Speech.
+- A second press or day change stops reading. Missing speech APIs stay honest.
+- Version `2026.08.25.4`.
 
 ### Cycle 42 — Count only actual plan-reading completions (2026-08-25)
 
