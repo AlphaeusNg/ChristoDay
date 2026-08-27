@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-25 (ChristoDay Cycle 44)
+Last updated: 2026-08-28 (ChristoDay Cycle 45)
 
 ## Current state
 
@@ -23,7 +23,8 @@ Last updated: 2026-08-25 (ChristoDay Cycle 44)
   recovery persistence, invalid fetched-plan fatal recovery, non-200 and
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
   schedule-valid completion totals, copy/share/listen/size, and
-  `?d=` / `?tr=` deep-links.
+  `?d=` / `?tr=` deep-links. Listen coverage includes explicit stop, natural
+  completion, and speech-engine failure state.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
@@ -34,7 +35,7 @@ Last updated: 2026-08-25 (ChristoDay Cycle 44)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.08.25.5`.
+- Deployment version: `2026.08.28.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -46,6 +47,7 @@ Last updated: 2026-08-25 (ChristoDay Cycle 44)
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Reset Listen controls when speech synthesis fails | Correctness / accessibility | Medium: the engine stopped while the control still claimed `Stop` and stayed pressed | Small / low | A real Chromium speech error now restores `Listen` and `aria-pressed=false` | Completed in Cycle 45 |
 | — | Count only actual plan-reading completions | Correctness / reliability | Medium: hydrated weekend and pre-start flags inflated progress even though those screens cannot be completed | Small / low | One valid reading remains counted; impossible records remain preserved but excluded | Completed in Cycle 42 |
 | — | Exercise an unparseable 200 plan body in a real browser | Verification / reliability | Low: 404 and schema-invalid JSON reached fatal recovery, but a proxy-style HTML body shared that surface without a dedicated journey | Small / low | Controlled non-JSON 200, inert UI, safe fatal copy, and parse diagnostic | Completed in Cycle 41 |
 | — | Remove the 80-weekday horizon from Continue incomplete | Correctness / performance | Medium: older unfinished journals became undiscoverable as the plan aged | Small / low | Saved-entry selection and a >80-weekday Chromium resume | Completed in Cycle 40 |
@@ -72,6 +74,62 @@ Last updated: 2026-08-25 (ChristoDay Cycle 44)
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 45 — Keep Listen state truthful on speech failures (2026-08-28)
+
+**Why this won:** The speech-error callback cleared only the internal boolean.
+The visible control remained `Stop` with `aria-pressed=true`, so it advertised
+an active reading after the browser had already stopped and the next press
+started another reading instead of stopping one.
+
+**Plan and success criteria**
+
+1. Reproduce a speech-engine error through the existing Chromium journey.
+2. Restore the same idle text and pressed state used by manual stop and natural
+   completion.
+3. Keep all three lifecycle exits behind one small state renderer.
+4. Pass every deterministic, offline, browser, syntax, and dependency gate.
+
+**Changes**
+
+- Added one `renderListeningState()` boundary for the internal `speaking`
+  flag, button label, and `aria-pressed` value.
+- Routed manual stop, natural completion, and speech error through that
+  boundary while retaining the existing error announcement.
+- Extended the real-browser speech fixture to execute all three exits and
+  require the exact idle control state after completion and failure.
+- Bumped the site/offline-cache version to `2026.08.28.1`.
+
+**Verification evidence**
+
+- Test-first: after invoking the controlled utterance error, Chromium observed
+  `Stop` and `aria-pressed=true` until timeout instead of the required idle
+  state.
+- Schedule/data/schema 50, Bible 12, state 13, service-worker behavior, site
+  structure with 11 precache entries, workflow policy 25, recursive syntax,
+  JSON parsing, diff checks, and the zero-vulnerability npm audit pass.
+- `CI=1 npm run test:browser`: all 16 reading and installed-worker journeys
+  pass in 8.2 seconds; the focused stop/completion/error journey also passes
+  independently.
+
+**Scores (change-specific)**
+
+| Dimension | Before | After | Evidence |
+|---|---:|---:|---|
+| Correctness / reliability | 5/10 | 10/10 | Internal and visible speech state leave every lifecycle path together |
+| Test coverage / verifiability | 6/10 | 10/10 | Real utterance callbacks cover stop, end, and error outcomes |
+| Maintainability | 6/10 | 9/10 | One renderer owns the three coupled state fields |
+| Accessibility / user experience | 4/10 | 10/10 | Button text and pressed semantics remain truthful after failure |
+| Performance / resources | 10/10 | 10/10 | The refactor adds no timers, requests, or persistent work |
+| Security / robustness | 9/10 | 9/10 | No trust boundary changed |
+
+**Lesson / process improvement:** An async media API has more terminal paths
+than its happy-path callback. Keep internal state, visible copy, and accessible
+state in one transition function, then execute every exit through the real
+browser API seam.
+
+**Next opportunity:** No higher-impact unblocked ChristoDay item is currently
+recorded. Rotate repositories and return when new runtime evidence appears.
 
 ### Cycle 44 — Resize today's passage (2026-08-25)
 

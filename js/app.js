@@ -459,18 +459,22 @@
     $("#stat-done").textContent = String(countCompleted());
   }
 
+  function renderListeningState(active) {
+    speaking = active;
+    const btn = $("#btn-listen");
+    if (btn) {
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+      btn.textContent = active ? "Stop" : "Listen";
+    }
+  }
+
   function stopListening() {
-    speaking = false;
     try {
       window.speechSynthesis?.cancel();
     } catch {
       /* ignore */
     }
-    const btn = $("#btn-listen");
-    if (btn) {
-      btn.setAttribute("aria-pressed", "false");
-      btn.textContent = "Listen";
-    }
+    renderListeningState(false);
   }
 
   function toggleListen() {
@@ -495,23 +499,13 @@
     utterance.text = text;
     utterance.rate = 0.92;
     utterance.onend = () => {
-      speaking = false;
-      const btn = $("#btn-listen");
-      if (btn) {
-        btn.setAttribute("aria-pressed", "false");
-        btn.textContent = "Listen";
-      }
+      renderListeningState(false);
     };
     utterance.onerror = () => {
-      speaking = false;
+      renderListeningState(false);
       announceAction("Could not read passage.");
     };
-    speaking = true;
-    const btn = $("#btn-listen");
-    if (btn) {
-      btn.setAttribute("aria-pressed", "true");
-      btn.textContent = "Stop";
-    }
+    renderListeningState(true);
     window.speechSynthesis.speak(utterance);
     announceAction("Reading aloud…");
   }

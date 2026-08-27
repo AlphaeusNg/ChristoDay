@@ -505,13 +505,15 @@ test("uses the Web Share API when it is available", async ({ page }) => {
   expect(shares[0].url).toMatch(/tr=WEB/);
 });
 
-test("reads the visible passage aloud and stops on the next Listen press", async ({ page }) => {
+test("reads aloud, stops, and resets after completion or speech errors", async ({ page }) => {
   await page.addInitScript(() => {
     window.__spoken = [];
+    window.__utterances = [];
     window.__cancelled = 0;
     const fake = {
       speak(utterance) {
         window.__spoken.push(String(utterance && utterance.text || ""));
+        window.__utterances.push(utterance);
       },
       cancel() {
         window.__cancelled += 1;
@@ -543,6 +545,16 @@ test("reads the visible passage aloud and stops on the next Listen press", async
 
   await page.keyboard.press("l");
   await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await page.evaluate(() => window.__utterances.at(-1).onend());
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
+
+  await page.keyboard.press("l");
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await page.evaluate(() => window.__utterances.at(-1).onerror());
+  await expect(page.locator("#action-status")).toHaveText("Could not read passage.");
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
 });
 
 test("resizes the passage and remembers the choice", async ({ page }) => {
