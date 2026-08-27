@@ -111,6 +111,9 @@ started another reading instead of stopping one.
 - `CI=1 npm run test:browser`: all 16 reading and installed-worker journeys
   pass in 8.2 seconds; the focused stop/completion/error journey also passes
   independently.
+- Hosted CI run `33097844320` passed every gate in 46 seconds; Pages run
+  `33097843059` deployed successfully. The public site serves version
+  `2026.08.28.1` with the centralized completion/error reset.
 
 **Scores (change-specific)**
 
