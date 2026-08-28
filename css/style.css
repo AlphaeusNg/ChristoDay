@@ -537,7 +537,7 @@ textarea:focus {
   vertical-align: middle;
 }
 .about-card[open] > summary .about-title::after {
-  content: "\u2212";
+  content: "−";
 }
 .about-card[open] > summary {
   margin-bottom: 0.5rem;
