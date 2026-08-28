@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const redLetterSource = readFileSync(join(root, "js/red-letter.js"), "utf8");
 const source = readFileSync(join(root, "js/bible.js"), "utf8");
 
 function loadBible(fetchImpl, timers = {}) {
@@ -18,6 +19,7 @@ function loadBible(fetchImpl, timers = {}) {
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(redLetterSource, sandbox);
   vm.runInContext(source, sandbox);
   return sandbox.window.ChristoBible;
 }
@@ -100,17 +102,29 @@ function loadBible(fetchImpl, timers = {}) {
 }
 
 {
-  const wrapped = loadBible(async () => ({ ok: true, json: async () => [] })).wrapWordsOfJesus(
-    "\u201cBlessed are the poor in spirit",
-    false
+  const bible = loadBible(async () => ({ ok: true, json: async () => [] }));
+  const temptation = bible.wrapWordsOfJesus(
+    "The tempter said, \u201cIf you are the Son of God, tell these stones to become bread.\u201d",
+    "matthew",
+    4,
+    3
   );
-  assert.match(wrapped.html, /<span class="wj">Blessed are the poor in spirit<\/span>/);
-  assert.equal(wrapped.inSpeech, true);
-  const continued = loadBible(async () => ({ ok: true, json: async () => [] })).wrapWordsOfJesus(
+  assert.doesNotMatch(temptation, /class="wj"/, "the tempter's quotation must not be red");
+  const reply = bible.wrapWordsOfJesus(
+    "Jesus answered, <i>\u201cIt is written: Man shall not live on bread alone.\u201d</i>",
+    "matthew",
+    4,
+    4
+  );
+  assert.match(reply, /Jesus answered, <i><span class="wj">\u201cIt is written:/);
+  assert.match(reply, /<\/span><\/i>$/);
+  const continued = bible.wrapWordsOfJesus(
     "for theirs is the kingdom of heaven.",
-    true
+    "matthew",
+    5,
+    4
   );
-  assert.match(continued.html, /^<span class="wj">for theirs is the kingdom of heaven\.<\/span>$/);
+  assert.match(continued, /^<span class="wj">for theirs is the kingdom of heaven\.<\/span>$/);
 }
 
 {
@@ -131,6 +145,16 @@ function loadBible(fetchImpl, timers = {}) {
   assert.match(passage.html, /class="fn-mark"/);
   assert.match(passage.verses[0].commentHtml, /data-ref="NKJV\/20\/16\/19"/);
   assert.match(passage.verses[0].commentHtml, /Prov\. 16:19/);
+  assert.match(passage.html, /<button type="button" class="vnum"/);
+}
+
+{
+  const bible = loadBible(async () => ({ ok: true, json: async () => [] }));
+  const comment = bible.rewriteCommentHtml(
+    '<button onclick="alert(1)">unsafe</button> <a href="/ESV/43/3/16" onclick="alert(2)">John 3:16</a>'
+  );
+  assert.doesNotMatch(comment, /onclick|alert\(/);
+  assert.match(comment, /data-ref="ESV\/43\/3\/16"/);
 }
 
 {
@@ -254,4 +278,4 @@ function loadBible(fetchImpl, timers = {}) {
   assert.match(requestedUrls[0], /\/1\/$/);
 }
 
-console.log("test-bible.mjs: 15 network, payload, cache, cancellation, red-letter, and passage cases ok");
+console.log("test-bible.mjs: 16 network, payload, cache, cancellation, red-letter, and passage cases ok");

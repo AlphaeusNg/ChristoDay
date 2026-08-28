@@ -58,6 +58,7 @@ for (const reference of precache) {
 const requiredRuntime = [
   "./js/version.js",
   "./js/schedule.js",
+  "./js/red-letter.js",
   "./js/bible.js",
   "./js/state.js",
   "./js/app.js",
@@ -68,6 +69,10 @@ for (const reference of requiredRuntime) {
 }
 
 const index = readFileSync(join(root, "index.html"), "utf8");
+assert(
+  index.indexOf('src="js/red-letter.js"') < index.indexOf('src="js/bible.js"'),
+  "red-letter.js must load before bible.js"
+);
 assert(
   index.indexOf('src="js/state.js"') < index.indexOf('src="js/app.js"'),
   "state.js must load before app.js"
@@ -83,8 +88,8 @@ assert.match(css, /\.passage-body \.wj/, "words of Jesus are styled in red");
 assert.match(css, /\.ref-popover/, "reference popover styles remain");
 assert.match(
   readFileSync(join(root, "js/bible.js"), "utf8"),
-  /wrapWordsOfJesus/,
-  "Bible client wraps words of Jesus"
+  /ChristoRedLetter/,
+  "Bible client uses red-letter speaker boundaries"
 );
 assert.match(index, /id="fatal"/, "fatal recovery id remains");
 assert.match(index, /id="weekend-panel"/, "weekend panel id remains");

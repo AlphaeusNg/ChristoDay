@@ -99,6 +99,10 @@
             <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)">Copy</button>
             <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false">Listen</button>
             <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
+            <label class="share-note" for="include-share-note">
+              <input type="checkbox" id="include-share-note" />
+              Include my note
+            </label>
             <span class="type-size" role="group" aria-label="Passage text size">
               <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
               <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
@@ -114,6 +118,7 @@
           <span id="weekday-progress"></span>
           <span id="time-est">≈ 5–10 minutes</span>
           <span>Translation: <strong id="passage-tr-label">—</strong></span>
+          <span class="red-letter-legend"><span aria-hidden="true">Jesus’ words</span><span class="sr-only">Words of Jesus appear in red</span></span>
           <span id="tomorrow-note"></span>
         </div>
         <p id="yesterday-line" class="muted" hidden></p>
@@ -201,6 +206,7 @@
   <script src="https://alphaeusng.github.io/js/kofi-support.js?v=2026.07.24.10" data-auto-footer defer></script>
   <script src="js/version.js"></script>
   <script src="js/schedule.js"></script>
+  <script src="js/red-letter.js"></script>
   <script src="js/bible.js"></script>
   <script src="js/state.js"></script>
   <script src="js/app.js"></script>

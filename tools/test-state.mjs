@@ -18,7 +18,7 @@ assert.equal(stateApi.validYmd("2026-13-01"), false);
 
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.hydrateState(null))),
-  { translation: "NIV", days: {}, passageSize: "md" }
+  { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false }
 );
 
 const hydrated = stateApi.hydrateState({
@@ -51,6 +51,9 @@ assert.equal(
   stateApi.hydrateState({ translation: "ESV", passageSize: "sm", days: {} }).passageSize,
   "sm"
 );
+assert.equal(stateApi.hydrateState({ includeShareNote: true }).includeShareNote, true);
+assert.equal(stateApi.hydrateState({ includeShareNote: "yes" }).includeShareNote, false);
+assert.equal(stateApi.hydrateState(null).includeShareNote, false);
 
 const created = stateApi.ensureDay(malformed, "2026-08-11");
 assert.deepEqual(JSON.parse(JSON.stringify(created)), {
@@ -62,7 +65,7 @@ assert.deepEqual(JSON.parse(JSON.stringify(created)), {
 const corruptStorage = { getItem: () => "{bad-json" };
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.loadState(corruptStorage))),
-  { translation: "NIV", days: {}, passageSize: "md" }
+  { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false }
 );
 
 let saved;
@@ -74,4 +77,4 @@ assert.equal(
   false
 );
 
-console.log("test-state.mjs: 13 hydration and persistence cases ok");
+console.log("test-state.mjs: 16 hydration and persistence cases ok");

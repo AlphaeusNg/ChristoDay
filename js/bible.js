@@ -316,53 +316,29 @@
     };
   }
 
-  function wrapWordsOfJesus(html, inSpeech = false) {
-    let out = "";
-    let speech = !!inSpeech;
-    if (speech) out += '<span class="wj">';
-    for (let i = 0; i < html.length; i += 1) {
-      const ch = html[i];
-      if (ch === "<") {
-        const end = html.indexOf(">", i);
-        const tag = end === -1 ? html.slice(i) : html.slice(i, end + 1);
-        out += tag;
-        i = end === -1 ? html.length : end;
-        continue;
-      }
-      const openQuote = ch === "\u201C" || (ch === '"' && !speech);
-      const closeQuote = ch === "\u201D" || (ch === '"' && speech);
-      if (openQuote && !speech) {
-        speech = true;
-        out += `${ch}<span class="wj">`;
-        continue;
-      }
-      if (openQuote && speech) {
-        out += ch;
-        continue;
-      }
-      if (closeQuote && speech) {
-        out += `</span>${ch}`;
-        speech = false;
-        continue;
-      }
-      out += ch;
-    }
-    if (speech) out += "</span>";
-    return { html: out, inSpeech: speech };
+  function wrapWordsOfJesus(html, bookKey, chapter, verse) {
+    if (!GOSPEL_BOOKS.has(bookKey)) return html;
+    return global.ChristoRedLetter?.renderHtml?.(html, bookKey, chapter, verse) || html;
   }
 
   function rewriteCommentHtml(raw) {
     if (!raw) return "";
+    const links = [];
     let html = String(raw).replace(/<br\s*\/?>/gi, "<br>");
     html = html.replace(
       /<a\s+[^>]*href\s*=\s*['"]\/?([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/gi,
       (_, href, label) => {
         const ref = String(href || "").replace(/^\/+/, "");
         if (!parseRemoteRef(ref)) return escapeHtml(stripHtml(label));
-        return `<button type="button" class="xref-link" data-ref="${escapeHtml(ref)}">${escapeHtml(stripHtml(label))}</button>`;
+        const token = `CHRISTOREF${links.length}TOKEN`;
+        links.push(
+          `<button type="button" class="xref-link" data-ref="${escapeHtml(ref)}">${escapeHtml(stripHtml(label))}</button>`
+        );
+        return token;
       }
     );
-    html = html.replace(/<(?!\/?(?:i|br|button)\b)[^>]+>/gi, "");
+    html = html.replace(/<(?!\/?(?:i|br)\b)[^>]+>/gi, "");
+    html = html.replace(/CHRISTOREF(\d+)TOKEN/g, (_, index) => links[Number(index)] || "");
     return html.trim();
   }
 
@@ -396,7 +372,7 @@
     const note = verse.commentHtml
       ? `<sup class="fn"><button type="button" class="fn-mark" data-verse-key="${verse.chapter}:${verse.verse}" aria-label="Cross references for ${verse.chapter}:${verse.verse}">†</button></sup>`
       : "";
-    return `${heading}<span class="verse" data-chapter="${verse.chapter}" data-verse="${verse.verse}"><sup class="vnum" title="Copy ${verse.chapter}:${verse.verse}">${verse.chapter}:${verse.verse}</sup> ${verse.html}${note}</span>`;
+    return `${heading}<span class="verse" data-chapter="${verse.chapter}" data-verse="${verse.verse}"><button type="button" class="vnum" title="Copy ${verse.chapter}:${verse.verse}" aria-label="Copy ${verse.chapter}:${verse.verse}">${verse.chapter}:${verse.verse}</button> ${verse.html}${note}</span>`;
   }
 
   /**
@@ -413,9 +389,6 @@
 
     const tr = TRANSLATIONS[translation] ? translation : "NIV";
     const collected = [];
-    let inSpeech = false;
-    const gospel = GOSPEL_BOOKS.has(bookKey);
-
     for (const range of ranges) {
       const chapterData = await fetchChapter(
         tr,
@@ -430,12 +403,7 @@
         if (n >= range.verseFrom && n <= range.verseTo) {
           const sanitized = sanitizeVerseHtml(v.text || "");
           const split = splitSectionHeading(sanitized);
-          let bodyHtml = split.body;
-          if (gospel) {
-            const wrapped = wrapWordsOfJesus(bodyHtml, inSpeech);
-            bodyHtml = wrapped.html;
-            inSpeech = wrapped.inSpeech;
-          }
+          const bodyHtml = wrapWordsOfJesus(split.body, bookKey, range.chapter, n);
           collected.push({
             chapter: range.chapter,
             verse: n,

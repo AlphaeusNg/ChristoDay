@@ -8,7 +8,7 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
 ## Current state
 
 - Deterministic weekday schedule with 50 passing schedule/data/schema tests.
-- Live Bible client with 15 passing network/payload/cache/cancellation/red-letter
+- Live Bible client with 16 passing network/payload/cache/cancellation/red-letter
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
   50-chapter memory cache. Gospel speech is wrapped in red, verse numbers copy,
   and chapter comments become cross-reference popovers.
@@ -36,7 +36,7 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.08.28.3`.
+- Deployment version: `2026.08.28.4`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -53,9 +53,10 @@ narration and chapter comments never reached the page.
 
 ### Changes
 
-- Keep safe italics/breaks, wrap gospel quotation in `.wj`, and surface
+- Keep safe italics/breaks, use public-domain Jesus-speaker verse boundaries
+  instead of treating every gospel quotation as Jesus, wrap his words in `.wj`, and surface
   bolls.life cross-references as `†` markers plus a popover preview.
-- Verse numbers copy that verse. Version `2026.08.28.3`.
+- Verse numbers copy that verse. Version `2026.08.28.4`.
 
 ## Opportunity backlog
 

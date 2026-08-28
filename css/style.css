@@ -342,6 +342,22 @@ html[data-passage-size="lg"] {
   --passage-size: 1.4rem;
 }
 
+.share-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.share-note input {
+  margin: 0;
+  accent-color: var(--gold);
+}
+
 .type-size {
   display: inline-flex;
   align-items: center;
@@ -358,6 +374,9 @@ html[data-passage-size="lg"] {
   opacity: 0.45;
 }
 .passage-body .vnum {
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: var(--mono);
   font-size: 0.68rem;
   color: var(--gold);
@@ -371,6 +390,10 @@ html[data-passage-size="lg"] {
 }
 
 .passage-body .wj {
+  color: #e07070;
+}
+
+.red-letter-legend {
   color: #e07070;
 }
 
