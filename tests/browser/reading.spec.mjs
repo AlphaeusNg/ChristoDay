@@ -13,7 +13,9 @@ test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const bibleRequest = /^\/get-text\/([^/]+)\/(\d+)\/(\d+)\/?$/.exec(url.pathname);
+    const bibleRequest = /^\/get-(?:text|chapter)\/([^/]+)\/(\d+)\/(\d+)\/(?:(\d+(?:-\d+)?)\/?)?$/.exec(
+      url.pathname
+    );
     if (url.hostname === "bolls.life" && bibleRequest) {
       const [, translation, bookId, chapter] = bibleRequest;
       if (translation === "NIV" && bookId === "41" && chapter === "1") {
@@ -66,10 +68,12 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-tr-label")).toHaveText("NIV");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-body .verse")).toHaveCount(17);
+  await expect(page.locator("#passage-body .vnum").first()).toBeVisible();
   await expect(page).toHaveURL(/d=2026-06-16/);
 
   const slowNivRequest = page.waitForRequest((request) =>
-    request.url().includes("/get-text/NIV/41/1/")
+    /\/get-(?:text|chapter)\/NIV\/41\/1\//.test(request.url())
   );
   await page.locator("#btn-next").click();
   await slowNivRequest;
@@ -93,7 +97,7 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
 });
 
 test("keeps the reading usable when live passage text fails", async ({ page }) => {
-  await page.route(/\/get-text\/NIV\/40\/1\/$/, async (route) => {
+  await page.route(/\/get-(?:text|chapter)\/NIV\/40\/1\/$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",

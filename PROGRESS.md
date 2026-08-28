@@ -3,14 +3,15 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-28 (ChristoDay Cycle 45)
+Last updated: 2026-08-28 (ChristoDay Cycle 46)
 
 ## Current state
 
 - Deterministic weekday schedule with 50 passing schedule/data/schema tests.
-- Live Bible client with 12 passing network/payload/cache/cancellation/passage
+- Live Bible client with 15 passing network/payload/cache/cancellation/red-letter
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
-  50-chapter memory cache.
+  50-chapter memory cache. Gospel speech is wrapped in red, verse numbers copy,
+  and chapter comments become cross-reference popovers.
 - Persisted journal/completion state with 13 passing hydration/persistence cases
   and non-throwing save failure handling. Passage size is a device-local
   preference beside translation.
@@ -35,13 +36,26 @@ Last updated: 2026-08-28 (ChristoDay Cycle 45)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.08.28.1`.
+- Deployment version: `2026.08.28.3`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
+
+## Latest cycle: red-letter gospel text and reference popovers
+
+### Why this was selected
+
+The reader stripped Bible HTML to plain text, so Jesus' words looked like
+narration and chapter comments never reached the page.
+
+### Changes
+
+- Keep safe italics/breaks, wrap gospel quotation in `.wj`, and surface
+  bolls.life cross-references as `†` markers plus a popover preview.
+- Verse numbers copy that verse. Version `2026.08.28.3`.
 
 ## Opportunity backlog
 

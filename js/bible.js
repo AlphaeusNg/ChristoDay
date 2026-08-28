@@ -11,6 +11,75 @@
     philippians: 50,
     jude: 65,
   };
+  const GOSPEL_BOOKS = new Set(["matthew", "mark", "luke"]);
+  const BOOK_NAMES = {
+    1: "Genesis",
+    2: "Exodus",
+    3: "Leviticus",
+    4: "Numbers",
+    5: "Deuteronomy",
+    6: "Joshua",
+    7: "Judges",
+    8: "Ruth",
+    9: "1 Samuel",
+    10: "2 Samuel",
+    11: "1 Kings",
+    12: "2 Kings",
+    13: "1 Chronicles",
+    14: "2 Chronicles",
+    15: "Ezra",
+    16: "Nehemiah",
+    17: "Esther",
+    18: "Job",
+    19: "Psalm",
+    20: "Proverbs",
+    21: "Ecclesiastes",
+    22: "Song of Songs",
+    23: "Isaiah",
+    24: "Jeremiah",
+    25: "Lamentations",
+    26: "Ezekiel",
+    27: "Daniel",
+    28: "Hosea",
+    29: "Joel",
+    30: "Amos",
+    31: "Obadiah",
+    32: "Jonah",
+    33: "Micah",
+    34: "Nahum",
+    35: "Habakkuk",
+    36: "Zephaniah",
+    37: "Haggai",
+    38: "Zechariah",
+    39: "Malachi",
+    40: "Matthew",
+    41: "Mark",
+    42: "Luke",
+    43: "John",
+    44: "Acts",
+    45: "Romans",
+    46: "1 Corinthians",
+    47: "2 Corinthians",
+    48: "Galatians",
+    49: "Ephesians",
+    50: "Philippians",
+    51: "Colossians",
+    52: "1 Thessalonians",
+    53: "2 Thessalonians",
+    54: "1 Timothy",
+    55: "2 Timothy",
+    56: "Titus",
+    57: "Philemon",
+    58: "Hebrews",
+    59: "James",
+    60: "1 Peter",
+    61: "2 Peter",
+    62: "1 John",
+    63: "2 John",
+    64: "3 John",
+    65: "Jude",
+    66: "Revelation",
+  };
 
   const TRANSLATIONS = {
     NIV: { code: "NIV", label: "NIV" },
@@ -69,7 +138,13 @@
     if (!rawVerses) throw new Error("Bible API returned invalid chapter data");
     return rawVerses
       .filter((verse) => verse && typeof verse === "object")
-      .map((verse) => ({ verse: Number(verse.verse), text: verse.text }))
+      .map((verse) => {
+        const row = { verse: Number(verse.verse), text: verse.text };
+        if (typeof verse.comment === "string" && verse.comment) {
+          row.comment = verse.comment;
+        }
+        return row;
+      })
       .filter(
         (verse) =>
           Number.isInteger(verse.verse) && verse.verse > 0 && typeof verse.text === "string"
@@ -83,7 +158,6 @@
   }
 
   async function requestChapter(translation, bookId, chapter, timeoutMs, requestSignal) {
-    const url = `https://bolls.life/get-text/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
     const controller = new AbortController();
     let timedOut = false;
     const cancelRequest = () => controller.abort();
@@ -94,9 +168,22 @@
       controller.abort();
     }, timeoutMs);
     try {
-      const res = await fetch(url, { mode: "cors", signal: controller.signal });
-      if (!res.ok) throw new Error(`Bible fetch failed (${res.status})`);
-      const payload = await res.json();
+      const base = `https://bolls.life`;
+      const suffix = `/${encodeURIComponent(translation)}/${bookId}/${chapter}/`;
+      const chapterUrl = `${base}/get-chapter${suffix}`;
+      const textUrl = `${base}/get-text${suffix}`;
+      const res = await fetch(chapterUrl, { mode: "cors", signal: controller.signal });
+      if (res.ok) {
+        const payload = await res.json();
+        if (controller.signal.aborted) {
+          throw timedOut ? new Error("Bible fetch timed out") : cancellationError();
+        }
+        return normalizeChapterData(payload);
+      }
+      if (res.status !== 404) throw new Error(`Bible fetch failed (${res.status})`);
+      const fallback = await fetch(textUrl, { mode: "cors", signal: controller.signal });
+      if (!fallback.ok) throw new Error(`Bible fetch failed (${fallback.status})`);
+      const payload = await fallback.json();
       if (controller.signal.aborted) {
         throw timedOut ? new Error("Bible fetch timed out") : cancellationError();
       }
@@ -189,50 +276,6 @@
     chapterRequests.clear();
   }
 
-  /**
-   * @param {{ signal?: AbortSignal }} options
-   * @returns {Promise<{ text: string, html: string, translation: string, verses: Array }>}
-   */
-  async function fetchPassage(bookKey, ref, translation = "NIV", options = {}) {
-    const signal = options?.signal;
-    if (signal?.aborted) throw cancellationError();
-    const bookId = BOOK_IDS[bookKey];
-    if (!bookId) throw new Error("Unknown book");
-    const ranges = parseRef(ref);
-    if (!ranges.length) throw new Error("Could not parse reference: " + ref);
-
-    const tr = TRANSLATIONS[translation] ? translation : "NIV";
-    const collected = [];
-
-    for (const range of ranges) {
-      const chapterData = await fetchChapter(
-        tr,
-        bookId,
-        range.chapter,
-        FETCH_TIMEOUT_MS,
-        signal
-      );
-      if (signal?.aborted) throw cancellationError();
-      // bolls returns array of { pk, verse, text }
-      for (const v of chapterData) {
-        const n = Number(v.verse);
-        if (n >= range.verseFrom && n <= range.verseTo) {
-          collected.push({ chapter: range.chapter, verse: n, text: stripHtml(v.text || "") });
-        }
-      }
-    }
-
-    if (!collected.length) throw new Error("Bible API returned no verses for passage");
-    if (signal?.aborted) throw cancellationError();
-
-    const text = collected.map((v) => v.text).join(" ");
-    const html = collected
-      .map((v) => `<sup class="vnum">${v.chapter}:${v.verse}</sup> ${escapeHtml(v.text)}`)
-      .join(" ");
-
-    return { text, html, translation: tr, verses: collected };
-  }
-
   function stripHtml(s) {
     return String(s)
       .replace(/<[^>]+>/g, "")
@@ -252,15 +295,206 @@
       .replace(/"/g, "&quot;");
   }
 
+  function sanitizeVerseHtml(raw) {
+    return String(raw || "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/<br\s*\/?>/gi, "<br>")
+      .replace(/<\/?(?:i|em)\b[^>]*>/gi, (tag) => (/^<\//.test(tag) ? "</i>" : "<i>"))
+      .replace(/<(?!\/?(?:i|br)\b)[^>]+>/gi, "");
+  }
+
+  function splitSectionHeading(html) {
+    const match = /<br\s*\/?>/i.exec(html);
+    if (!match || match.index <= 0) return { heading: "", body: html };
+    const lead = stripHtml(html.slice(0, match.index));
+    if (!lead || lead.length > 48) return { heading: "", body: html };
+    if (/[.?!;:]$/.test(lead)) return { heading: "", body: html };
+    if (/^[\u201C"]/.test(lead)) return { heading: "", body: html };
+    return {
+      heading: lead,
+      body: html.slice(match.index + match[0].length),
+    };
+  }
+
+  function wrapWordsOfJesus(html, inSpeech = false) {
+    let out = "";
+    let speech = !!inSpeech;
+    if (speech) out += '<span class="wj">';
+    for (let i = 0; i < html.length; i += 1) {
+      const ch = html[i];
+      if (ch === "<") {
+        const end = html.indexOf(">", i);
+        const tag = end === -1 ? html.slice(i) : html.slice(i, end + 1);
+        out += tag;
+        i = end === -1 ? html.length : end;
+        continue;
+      }
+      const openQuote = ch === "\u201C" || (ch === '"' && !speech);
+      const closeQuote = ch === "\u201D" || (ch === '"' && speech);
+      if (openQuote && !speech) {
+        speech = true;
+        out += `${ch}<span class="wj">`;
+        continue;
+      }
+      if (openQuote && speech) {
+        out += ch;
+        continue;
+      }
+      if (closeQuote && speech) {
+        out += `</span>${ch}`;
+        speech = false;
+        continue;
+      }
+      out += ch;
+    }
+    if (speech) out += "</span>";
+    return { html: out, inSpeech: speech };
+  }
+
+  function rewriteCommentHtml(raw) {
+    if (!raw) return "";
+    let html = String(raw).replace(/<br\s*\/?>/gi, "<br>");
+    html = html.replace(
+      /<a\s+[^>]*href\s*=\s*['"]\/?([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/gi,
+      (_, href, label) => {
+        const ref = String(href || "").replace(/^\/+/, "");
+        if (!parseRemoteRef(ref)) return escapeHtml(stripHtml(label));
+        return `<button type="button" class="xref-link" data-ref="${escapeHtml(ref)}">${escapeHtml(stripHtml(label))}</button>`;
+      }
+    );
+    html = html.replace(/<(?!\/?(?:i|br|button)\b)[^>]+>/gi, "");
+    return html.trim();
+  }
+
+  function parseRemoteRef(ref) {
+    const match = /^([A-Za-z0-9]+)\/(\d+)\/(\d+)(?:\/(\d+(?:-\d+)?))?$/.exec(
+      String(ref || "").replace(/^\/+/, "")
+    );
+    if (!match) return null;
+    const verseToken = match[4] || "";
+    const verseParts = verseToken.split("-").map(Number);
+    return {
+      translation: match[1],
+      bookId: Number(match[2]),
+      chapter: Number(match[3]),
+      verseFrom: verseParts[0] || 1,
+      verseTo: verseParts[1] || verseParts[0] || 1,
+      label: formatRemoteRefLabel(Number(match[2]), Number(match[3]), verseToken),
+    };
+  }
+
+  function formatRemoteRefLabel(bookId, chapter, verseToken) {
+    const book = BOOK_NAMES[bookId] || `Book ${bookId}`;
+    if (!verseToken) return `${book} ${chapter}`;
+    return `${book} ${chapter}:${verseToken}`;
+  }
+
+  function verseMarkup(verse) {
+    const heading = verse.heading
+      ? `<span class="section-head">${escapeHtml(verse.heading)}</span>`
+      : "";
+    const note = verse.commentHtml
+      ? `<sup class="fn"><button type="button" class="fn-mark" data-verse-key="${verse.chapter}:${verse.verse}" aria-label="Cross references for ${verse.chapter}:${verse.verse}">†</button></sup>`
+      : "";
+    return `${heading}<span class="verse" data-chapter="${verse.chapter}" data-verse="${verse.verse}"><sup class="vnum" title="Copy ${verse.chapter}:${verse.verse}">${verse.chapter}:${verse.verse}</sup> ${verse.html}${note}</span>`;
+  }
+
+  /**
+   * @param {{ signal?: AbortSignal }} options
+   * @returns {Promise<{ text: string, html: string, translation: string, verses: Array }>}
+   */
+  async function fetchPassage(bookKey, ref, translation = "NIV", options = {}) {
+    const signal = options?.signal;
+    if (signal?.aborted) throw cancellationError();
+    const bookId = BOOK_IDS[bookKey];
+    if (!bookId) throw new Error("Unknown book");
+    const ranges = parseRef(ref);
+    if (!ranges.length) throw new Error("Could not parse reference: " + ref);
+
+    const tr = TRANSLATIONS[translation] ? translation : "NIV";
+    const collected = [];
+    let inSpeech = false;
+    const gospel = GOSPEL_BOOKS.has(bookKey);
+
+    for (const range of ranges) {
+      const chapterData = await fetchChapter(
+        tr,
+        bookId,
+        range.chapter,
+        FETCH_TIMEOUT_MS,
+        signal
+      );
+      if (signal?.aborted) throw cancellationError();
+      for (const v of chapterData) {
+        const n = Number(v.verse);
+        if (n >= range.verseFrom && n <= range.verseTo) {
+          const sanitized = sanitizeVerseHtml(v.text || "");
+          const split = splitSectionHeading(sanitized);
+          let bodyHtml = split.body;
+          if (gospel) {
+            const wrapped = wrapWordsOfJesus(bodyHtml, inSpeech);
+            bodyHtml = wrapped.html;
+            inSpeech = wrapped.inSpeech;
+          }
+          collected.push({
+            chapter: range.chapter,
+            verse: n,
+            text: stripHtml(v.text || ""),
+            html: bodyHtml,
+            heading: split.heading,
+            comment: v.comment || "",
+            commentHtml: rewriteCommentHtml(v.comment || ""),
+          });
+        }
+      }
+    }
+
+    if (!collected.length) throw new Error("Bible API returned no verses for passage");
+    if (signal?.aborted) throw cancellationError();
+
+    const text = collected.map((v) => v.text).join(" ");
+    const html = collected.map((v) => verseMarkup(v)).join(" ");
+
+    return { text, html, translation: tr, verses: collected };
+  }
+
+  async function fetchVersePreview(ref, options = {}) {
+    const parsed = parseRemoteRef(ref);
+    if (!parsed) throw new Error("Unknown reference");
+    const chapter = await fetchChapter(
+      parsed.translation,
+      parsed.bookId,
+      parsed.chapter,
+      FETCH_TIMEOUT_MS,
+      options.signal
+    );
+    const verses = chapter.filter(
+      (verse) => verse.verse >= parsed.verseFrom && verse.verse <= parsed.verseTo
+    );
+    if (!verses.length) throw new Error("No verse text for that reference");
+    return {
+      label: parsed.label,
+      translation: parsed.translation,
+      text: verses.map((verse) => stripHtml(verse.text || "")).join(" "),
+    };
+  }
+
   global.ChristoBible = {
     BOOK_IDS,
+    BOOK_NAMES,
+    GOSPEL_BOOKS,
     TRANSLATIONS,
     FETCH_TIMEOUT_MS,
     MAX_CACHED_CHAPTERS,
     parseRef,
+    parseRemoteRef,
     normalizeChapterData,
+    sanitizeVerseHtml,
+    wrapWordsOfJesus,
+    rewriteCommentHtml,
     fetchChapter,
     fetchPassage,
+    fetchVersePreview,
     clearChapterCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);
