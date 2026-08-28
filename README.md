@@ -1,76 +1,42 @@
 # ChristoDay
 
-**Christ-centered weekday gospel reading** — 5–10 minute natural segments through Matthew, Mark, Luke, Philippians, and Jude.
+Christ-centered **weekday gospel reading** in 5–10 minute natural segments (Matthew, Mark, Luke, Philippians, and Jude).
 
-**Live (after GitHub Pages):** https://alphaeusng.github.io/ChristoDay/  
-**Author:** [Alphaeus Ng](https://alphaeusng.github.io/)
+**[Open ChristoDay](https://alphaeusng.github.io/ChristoDay/)** · [Alphaeus Ng](https://alphaeusng.github.io/)
 
-## Why this exists
+The live site *is* the demo. Today's weekday passage is already picked for you.
 
-Most reading plans measure *chapters finished*. ChristoDay measures *Christ seen*:
+## Why it exists
 
-- Fixed weekday map (Mon Jude · Tue Matthew · Wed Mark · Thu Philippians · Fri Luke)
-- Weekends are rest — not guilt
-- Asia/Singapore timezone (deterministic schedule math)
-- Live Scripture (optional) + private on-device journal + streaks
-- Reflection prompts that push toward Jesus’ person, work, and gospel glory
+Most plans measure chapters finished. ChristoDay measures *Christ seen*.
 
-Pairs with:
+- Fixed weekday map: Mon Jude · Tue Matthew · Wed Mark · Thu Philippians · Fri Luke
+- Weekends are rest, not guilt
+- Schedule math is Asia/Singapore
+- Optional live Scripture, a private on-device journal, and streaks
+- Prompts aimed at Jesus' person, work, and gospel glory
 
-- [VerseKeep](https://alphaeusng.github.io/VerseKeep/) — memory practice  
-- [Seeking Biblical Truth](https://alphaeusng.github.io/pages/seeking-biblical-truth/) — study vault  
+Pairs with [VerseKeep](https://alphaeusng.github.io/VerseKeep/) for memory practice.
 
-## Stack
+## Try it
 
-Zero-build static site: HTML / CSS / JS. GitHub Pages from `main` / root.
+1. Open **[ChristoDay](https://alphaeusng.github.io/ChristoDay/)**.
+2. Read today's segment (or jump to another weekday).
+3. Use a reflection prompt, then write in the journal if you want. Journal and completion stay on this device only. Nothing is uploaded.
+4. Come back tomorrow. Streaks follow the Singapore calendar. Saturday and Sunday are rest.
 
-## Local
+Plan epoch starts **2026-06-15** (Monday, SGT). Segments live in `data/segments.json`.
+
+## Develop
+
+Zero-build HTML/CSS/JS. GitHub Pages from `main` / root.
 
 ```bash
-cd /home/alph/projects/ChristoDay
 npm ci --ignore-scripts
 python3 -m http.server 8091
 # http://127.0.0.1:8091/
 
-node tools/test-schedule.mjs
-node tools/test-bible.mjs
-node tools/test-state.mjs
-node tools/test-site.mjs
-node tools/test-service-worker.mjs
-node tools/test-workflow.mjs
-find js tools tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z | xargs -0 -n1 node --check
-node --check sw.js
-node --check playwright.config.mjs
-npx playwright install chromium
 npm run test:browser
 ```
-
-The locked Playwright suite boots the real page with controlled Bible API
-responses, navigates from Matthew to Mark, overlaps an obsolete NIV request
-with a newer ESV selection, and verifies the new translation remains rendered
-and persisted without browser errors. It forces a malformed live-passage
-response, proves the reference-only reading, journal, and completion controls
-remain usable, then verifies another translation restores live text. It also
-denies journal storage, proves journal/completion progress and honest durability guidance survive day
-navigation, then verifies a later permitted write makes the full entry durable.
-It also serves a structurally invalid plan payload and a non-200 `segments.json`
-response, proves the user-safe fatal recovery surface in both cases, and treats
-the matching plan-load diagnostics as the only expected console errors.
-A separate worker-enabled context installs
-the offline shell at the production-like `/ChristoDay/` path, verifies that
-unrelated same-origin caches survive activation and cannot answer ChristoDay
-requests, rejects out-of-scope runtime writes, disconnects Chromium, and reloads
-a working reference-only reading from the service-worker cache. External assets
-remain controlled and deterministic; the deployed app remains zero-build.
-
-## Plan epoch
-
-Start date: **2026-06-15** (Monday, Asia/Singapore). Segment lists live in `data/segments.json`.
-
-## Privacy
-
-Journal and completion state stay in `localStorage` on your device. Nothing is uploaded.
-
-## License
 
 MIT © 2026 Alphaeus Ng
