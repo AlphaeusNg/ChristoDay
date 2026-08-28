@@ -25,18 +25,6 @@ Pairs with [VerseKeep](https://alphaeusng.github.io/VerseKeep/) for memory pract
 3. Use a reflection prompt, then write in the journal if you want. Journal and completion stay on this device only. Nothing is uploaded.
 4. Come back tomorrow. Streaks follow the Singapore calendar. Saturday and Sunday are rest.
 
-Plan epoch starts **2026-06-15** (Monday, SGT). Segments live in `data/segments.json`.
-
-## Develop
-
-Zero-build HTML/CSS/JS. GitHub Pages from `main` / root.
-
-```bash
-npm ci --ignore-scripts
-python3 -m http.server 8091
-# http://127.0.0.1:8091/
-
-npm run test:browser
-```
+Working in this repo? See **[AGENTS.md](AGENTS.md)** for schedule math, tests, and conventions.
 
 MIT © 2026 Alphaeus Ng
