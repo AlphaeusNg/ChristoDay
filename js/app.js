@@ -596,6 +596,10 @@
   }
 
   async function loadPassage(seq) {
+    if (speaking) {
+      stopListening();
+      announceAction("Stopped reading.");
+    }
     const reading = ChristoSchedule.resolveReading(plan, currentYmd);
     if (reading.kind !== "reading") return;
 

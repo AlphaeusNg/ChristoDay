@@ -555,6 +555,18 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   await expect(page.locator("#action-status")).toHaveText("Could not read passage.");
   await expect(page.locator("#btn-listen")).toHaveText("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
+
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  const spokenCount = await page.evaluate(() => window.__spoken.length);
+  const cancelledBeforeTranslation = await page.evaluate(() => window.__cancelled);
+  await page.locator("#translation").selectOption("ESV");
+  await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeTranslation);
+  expect(await page.evaluate(() => window.__spoken.length)).toBe(spokenCount);
+  await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
 });
 
 test("resizes the passage and remembers the choice", async ({ page }) => {
