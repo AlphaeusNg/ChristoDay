@@ -125,6 +125,13 @@ function loadBible(fetchImpl, timers = {}) {
     4
   );
   assert.match(continued, /^<span class="wj">for theirs is the kingdom of heaven\.<\/span>$/);
+  const closingVerse = bible.wrapWordsOfJesus(
+    '<i>and whoever loses their life for my sake will find it.\u201d</i> The disciples listened.',
+    "matthew",
+    10,
+    39
+  );
+  assert.match(closingVerse, /^<span class="wj"><i>.*\u201d<\/i><\/span> The disciples listened\.$/);
 }
 
 {

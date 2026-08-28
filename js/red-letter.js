@@ -32,12 +32,23 @@
   function renderHtml(html, bookKey, chapter, verse) {
     const value = String(html || "");
     if (!redVerses.has(`${bookKey}.${chapter}.${verse}`)) return value;
-    const open = value.search(/[\u201C"]/);
+    const curlyOpen = value.indexOf("\u201C");
     const curlyClose = value.lastIndexOf("\u201D");
+    const straightOpen = value.indexOf('"');
     const straightClose = value.lastIndexOf('"');
+    const open = curlyOpen >= 0
+      ? curlyOpen
+      : straightOpen >= 0 && straightClose > straightOpen
+        ? straightOpen
+        : -1;
     const close = Math.max(curlyClose, straightClose);
     if (open >= 0 && close >= open) {
       return `${value.slice(0, open)}<span class="wj">${value.slice(open, close + 1)}</span>${value.slice(close + 1)}`;
+    }
+    if (close >= 0) {
+      let end = close + 1;
+      if (value.slice(end, end + 4).toLowerCase() === "</i>") end += 4;
+      return `<span class="wj">${value.slice(0, end)}</span>${value.slice(end)}`;
     }
     return `<span class="wj">${value}</span>`;
   }

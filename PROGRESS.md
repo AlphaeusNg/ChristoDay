@@ -36,7 +36,7 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.08.28.4`.
+- Deployment version: `2026.08.28.5`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -56,7 +56,9 @@ narration and chapter comments never reached the page.
 - Keep safe italics/breaks, use public-domain Jesus-speaker verse boundaries
   instead of treating every gospel quotation as Jesus, wrap his words in `.wj`, and surface
   bolls.life cross-references as `†` markers plus a popover preview.
-- Verse numbers copy that verse. Version `2026.08.28.4`.
+- Verse numbers copy that verse. Continuation verses stop the red span at a
+  closing quotation so following narrator text remains distinct. Version
+  `2026.08.28.5`.
 
 ## Opportunity backlog
 
