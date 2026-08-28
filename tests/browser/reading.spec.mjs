@@ -484,6 +484,40 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   expect(copied).toMatch(/tr=NIV/);
 });
 
+test("includes the journal note in share only when opted in", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__copied = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          window.__copied.push(text);
+        },
+        readText: async () => window.__copied[window.__copied.length - 1] || "",
+      },
+    });
+  });
+
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#include-share-note")).not.toBeChecked();
+  await page.locator("#journal").fill("Christ is the true King in this genealogy.");
+  await page.locator("#btn-share").click();
+  await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
+  let copied = await page.evaluate(() => window.__copied.at(-1));
+  expect(copied).toContain("Tuesday, 16 June 2026");
+  expect(copied).toContain("Matthew 1:1-17");
+  expect(copied).toMatch(/d=2026-06-16/);
+  expect(copied).not.toContain("Christ is the true King");
+
+  await page.locator("#include-share-note").check();
+  await page.locator("#btn-share").click();
+  copied = await page.evaluate(() => window.__copied.at(-1));
+  expect(copied).toContain("Matthew 1:1-17");
+  expect(copied).toContain("Christ is the true King in this genealogy.");
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
+  expect(saved.includeShareNote).toBe(true);
+});
+
 test("uses the Web Share API when it is available", async ({ page }) => {
   await page.addInitScript(() => {
     window.__shares = [];
