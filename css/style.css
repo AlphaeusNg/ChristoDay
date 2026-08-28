@@ -342,6 +342,22 @@ html[data-passage-size="lg"] {
   --passage-size: 1.4rem;
 }
 
+.share-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.share-note input {
+  margin: 0;
+  accent-color: var(--gold);
+}
+
 .type-size {
   display: inline-flex;
   align-items: center;
@@ -521,7 +537,7 @@ textarea:focus {
   vertical-align: middle;
 }
 .about-card[open] > summary .about-title::after {
-  content: "−";
+  content: "\u2212";
 }
 .about-card[open] > summary {
   margin-bottom: 0.5rem;
