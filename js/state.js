@@ -24,7 +24,7 @@
   }
 
   function defaultState() {
-    return { translation: "NIV", days: {}, passageSize: "md" };
+    return { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false };
   }
 
   function hydrateState(saved) {
@@ -32,6 +32,7 @@
     if (!isRecord(saved)) return hydrated;
     hydrated.translation = validTranslation(saved.translation);
     hydrated.passageSize = validPassageSize(saved.passageSize);
+    hydrated.includeShareNote = saved.includeShareNote === true;
     if (!isRecord(saved.days)) return hydrated;
 
     for (const [ymd, value] of Object.entries(saved.days)) {
