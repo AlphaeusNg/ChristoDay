@@ -176,6 +176,7 @@
       : ChristoSchedule.partsInSingapore().ymd;
     bindUi();
     applyPassageSize(state.passageSize);
+    applyShareNotePreference(state.includeShareNote);
     await renderDay(currentYmd, { syncUrl: hadDeepLink });
     $("#site-version").textContent = SITE_VERSION?.id || "";
   }
@@ -197,6 +198,10 @@
     });
     $("#btn-share")?.addEventListener("click", () => {
       shareReading().catch(() => {});
+    });
+    $("#include-share-note")?.addEventListener("change", (e) => {
+      applyShareNotePreference(e.target.checked);
+      saveState();
     });
     $("#btn-type-smaller")?.addEventListener("click", () => shiftPassageSize(-1));
     $("#btn-type-larger")?.addEventListener("click", () => shiftPassageSize(1));
@@ -353,13 +358,28 @@
     announceAction(ok ? "Copied passage." : "Could not copy passage.");
   }
 
+  function applyShareNotePreference(on) {
+    state.includeShareNote = on === true;
+    const box = $("#include-share-note");
+    if (box) box.checked = state.includeShareNote;
+    return state.includeShareNote;
+  }
+
+  function currentJournalNote() {
+    const fromState = String(state.days?.[currentYmd]?.journal || "").trim();
+    if (fromState) return fromState;
+    return String($("#journal")?.value || "").trim();
+  }
+
   function shareLine(url) {
     const display = currentYmd ? ChristoSchedule.formatDisplayDate(currentYmd) : "";
     const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
     const ref = reading?.kind === "reading"
       ? reading.fullRef
       : ($("#passage-ref")?.textContent || "").trim();
-    return [display, ref, url].filter(Boolean).join(" · ");
+    const line = [display, ref, url].filter(Boolean).join(" · ");
+    const note = state.includeShareNote ? currentJournalNote() : "";
+    return note ? line + "\n\n" + note : line;
   }
 
   async function shareReading() {
