@@ -95,7 +95,52 @@ function loadBible(fetchImpl, timers = {}) {
   assert.equal(passage.translation, "NIV");
   assert.equal(passage.text, "Before Jesus & disciples");
   assert.match(passage.html, /Jesus &amp; disciples/);
+  assert.match(passage.html, /<i>Before<\/i>/);
   assert.equal(passage.verses.length, 2);
+}
+
+{
+  const wrapped = loadBible(async () => ({ ok: true, json: async () => [] })).wrapWordsOfJesus(
+    "\u201cBlessed are the poor in spirit",
+    false
+  );
+  assert.match(wrapped.html, /<span class="wj">Blessed are the poor in spirit<\/span>/);
+  assert.equal(wrapped.inSpeech, true);
+  const continued = loadBible(async () => ({ ok: true, json: async () => [] })).wrapWordsOfJesus(
+    "for theirs is the kingdom of heaven.",
+    true
+  );
+  assert.match(continued.html, /^<span class="wj">for theirs is the kingdom of heaven\.<\/span>$/);
+}
+
+{
+  const bible = loadBible(async () => ({
+    ok: true,
+    json: async () => [
+      {
+        verse: 3,
+        text: "The Beatitudes<br/>\u201cBlessed are the poor in spirit",
+        comment: "<a href='/NKJV/20/16/19'>Prov. 16:19</a>",
+      },
+    ],
+  }));
+  const passage = await bible.fetchPassage("matthew", "5:3", "NKJV");
+  assert.match(passage.html, /class="section-head"/);
+  assert.match(passage.html, /The Beatitudes/);
+  assert.match(passage.html, /class="wj"/);
+  assert.match(passage.html, /class="fn-mark"/);
+  assert.match(passage.verses[0].commentHtml, /data-ref="NKJV\/20\/16\/19"/);
+  assert.match(passage.verses[0].commentHtml, /Prov\. 16:19/);
+}
+
+{
+  const parsed = loadBible(async () => ({ ok: true, json: async () => [] })).parseRemoteRef(
+    "NKJV/40/14/23"
+  );
+  assert.equal(parsed.bookId, 40);
+  assert.equal(parsed.chapter, 14);
+  assert.equal(parsed.verseFrom, 23);
+  assert.equal(parsed.label, "Matthew 14:23");
 }
 
 {
@@ -209,4 +254,4 @@ function loadBible(fetchImpl, timers = {}) {
   assert.match(requestedUrls[0], /\/1\/$/);
 }
 
-console.log("test-bible.mjs: 12 network, payload, cache, cancellation, and passage cases ok");
+console.log("test-bible.mjs: 15 network, payload, cache, cancellation, red-letter, and passage cases ok");

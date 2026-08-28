@@ -16,6 +16,8 @@
   let passageController = null;
   let actionStatusTimer = 0;
   let speaking = false;
+  let lastPassage = null;
+  let previewController = null;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -151,6 +153,7 @@
 
   async function init() {
     bindAutoHideHeader();
+    bindRefPopover();
     try {
       const res = await fetch("data/segments.json", { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -596,11 +599,17 @@
   }
 
   async function loadPassage(seq) {
+    if (speaking) {
+      stopListening();
+      announceAction("Stopped reading.");
+    }
     const reading = ChristoSchedule.resolveReading(plan, currentYmd);
     if (reading.kind !== "reading") return;
 
     const body = $("#passage-body");
     const status = $("#passage-status");
+    lastPassage = null;
+    hideRefPopover();
     body.innerHTML = "";
     status.textContent = "Loading Scripture…";
     status.hidden = false;
@@ -618,13 +627,17 @@
       const result = await request;
       if (controller.signal.aborted || seq !== renderSeq) return; // user navigated away
       if (!result.verses?.length) throw new Error("Empty passage");
+      lastPassage = result;
       body.innerHTML = result.html;
+      bindPassageReferences(body);
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
     } catch (err) {
       if (controller.signal.aborted || seq !== renderSeq) return;
       status.hidden = false;
       status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
+      lastPassage = null;
+      hideRefPopover();
       body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
         <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
       $("#passage-tr-label").textContent = "—";
@@ -637,6 +650,139 @@
     const controller = passageController;
     passageController = null;
     controller?.abort();
+  }
+
+  function hideRefPopover() {
+    previewController?.abort();
+    previewController = null;
+    const popover = $("#ref-popover");
+    if (!popover) return;
+    popover.hidden = true;
+    popover.removeAttribute("style");
+  }
+
+  function placeRefPopover(anchor) {
+    const popover = $("#ref-popover");
+    if (!popover || !anchor) return;
+    const box = anchor.getBoundingClientRect();
+    const width = Math.min(320, window.innerWidth - 24);
+    let left = box.left;
+    if (left + width > window.innerWidth - 12) left = window.innerWidth - width - 12;
+    if (left < 12) left = 12;
+    let top = box.bottom + 8;
+    popover.hidden = false;
+    popover.style.width = `${width}px`;
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+    const popBox = popover.getBoundingClientRect();
+    if (popBox.bottom > window.innerHeight - 8) {
+      top = Math.max(8, box.top - popBox.height - 8);
+      popover.style.top = `${top}px`;
+    }
+  }
+
+  function showRefPopover(anchor, title, bodyHtml) {
+    const popover = $("#ref-popover");
+    const heading = $("#ref-popover-title");
+    const body = $("#ref-popover-body");
+    if (!popover || !heading || !body) return;
+    heading.textContent = title;
+    body.innerHTML = bodyHtml;
+    placeRefPopover(anchor);
+  }
+
+  function verseRecord(chapter, verse) {
+    return lastPassage?.verses?.find(
+      (item) => Number(item.chapter) === Number(chapter) && Number(item.verse) === Number(verse)
+    );
+  }
+
+  async function copyVerse(chapter, verse) {
+    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
+    const record = verseRecord(chapter, verse);
+    if (!record) {
+      announceAction("Nothing to copy yet.");
+      return;
+    }
+    const book = reading?.bookLabel || "Passage";
+    const ok = await writeClipboard(`${book} ${chapter}:${verse}\n${record.text}`);
+    announceAction(ok ? `Copied ${book} ${chapter}:${verse}.` : "Could not copy verse.");
+  }
+
+  async function openCrossRef(anchor) {
+    const ref = anchor.getAttribute("data-ref") || "";
+    const parsed = ChristoBible.parseRemoteRef?.(ref);
+    showRefPopover(anchor, parsed?.label || "Reference", `<p class="muted">Loading…</p>`);
+    previewController?.abort();
+    const controller = new AbortController();
+    previewController = controller;
+    try {
+      const preview = await ChristoBible.fetchVersePreview(ref, { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      showRefPopover(
+        anchor,
+        `${preview.label} · ${preview.translation}`,
+        `<p>${escapeHtml(preview.text)}</p>`
+      );
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      showRefPopover(
+        anchor,
+        parsed?.label || "Reference",
+        `<p class="muted">${escapeHtml(error.message || "Could not load that verse.")}</p>`
+      );
+    }
+  }
+
+  function bindPassageReferences(root) {
+    if (!root || root.dataset.refsBound === "1") return;
+    root.dataset.refsBound = "1";
+    root.addEventListener("click", (event) => {
+      const vnum = event.target.closest?.(".vnum");
+      if (vnum && root.contains(vnum)) {
+        const verseEl = vnum.closest(".verse");
+        if (!verseEl) return;
+        copyVerse(verseEl.dataset.chapter, verseEl.dataset.verse);
+        return;
+      }
+      const mark = event.target.closest?.(".fn-mark");
+      if (mark && root.contains(mark)) {
+        const [chapter, verse] = String(mark.getAttribute("data-verse-key") || "").split(":");
+        const record = verseRecord(chapter, verse);
+        showRefPopover(
+          mark,
+          `Cross references · ${chapter}:${verse}`,
+          record?.commentHtml || "<p class='muted'>No references for this verse.</p>"
+        );
+        return;
+      }
+      const link = event.target.closest?.(".xref-link");
+      if (link && root.contains(link)) {
+        event.preventDefault();
+        openCrossRef(link);
+      }
+    });
+  }
+
+  function bindRefPopover() {
+    $("#ref-popover")?.addEventListener("click", (event) => {
+      const link = event.target.closest?.(".xref-link");
+      if (!link) return;
+      event.preventDefault();
+      openCrossRef(link);
+    });
+    $("#ref-popover-close")?.addEventListener("click", hideRefPopover);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hideRefPopover();
+    });
+    document.addEventListener("pointerdown", (event) => {
+      const popover = $("#ref-popover");
+      if (!popover || popover.hidden) return;
+      if (popover.contains(event.target)) return;
+      if (event.target.closest?.(".fn-mark, .xref-link, .vnum")) return;
+      hideRefPopover();
+    });
+    window.addEventListener("resize", hideRefPopover, { passive: true });
   }
 
   function escapeHtml(s) {

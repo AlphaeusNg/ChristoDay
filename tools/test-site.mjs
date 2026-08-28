@@ -77,6 +77,15 @@ assert.doesNotMatch(index, /class="hero"/, "first screen must not keep a hero ma
 assert.match(index, /id="date-pick"/, "toolbar date picker remains");
 assert.match(index, /id="translation"/, "toolbar translation select remains");
 assert.match(index, /id="reading-panel"/, "reading panel id remains");
+assert.match(index, /id="ref-popover"/, "reference popover remains");
+const css = readFileSync(join(root, "css/style.css"), "utf8");
+assert.match(css, /\.passage-body \.wj/, "words of Jesus are styled in red");
+assert.match(css, /\.ref-popover/, "reference popover styles remain");
+assert.match(
+  readFileSync(join(root, "js/bible.js"), "utf8"),
+  /wrapWordsOfJesus/,
+  "Bible client wraps words of Jesus"
+);
 assert.match(index, /id="fatal"/, "fatal recovery id remains");
 assert.match(index, /id="weekend-panel"/, "weekend panel id remains");
 assert.match(index, /id="btn-preview-monday"/, "preview Monday control remains");
