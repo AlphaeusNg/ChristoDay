@@ -1,12 +1,16 @@
 # AGENTS.md — ChristoDay
 
+Visitor-facing docs live in [README.md](README.md). This file is for agents and local workflow.
+
 **Live:** https://alphaeusng.github.io/ChristoDay/  
 **Local:** `/home/alph/projects/ChristoDay`  
 **Hub:** `/home/alph/projects/AGENTS.md`
 
 ## Purpose
 
-Weekday Christ-centered gospel reading plan (Matthew / Mark / Luke / Philippians / Jude). Static site.
+Weekday Christ-centered gospel reading plan (Matthew / Mark / Luke / Philippians / Jude). Static site. Plan epoch starts **2026-06-15** (Monday, Asia/Singapore). Segment lists live in `data/segments.json`.
+
+Weekday map: Mon Jude · Tue Matthew · Wed Mark · Thu Philippians · Fri Luke. Weekends are rest. Journal and completion state stay in `localStorage`. Nothing is uploaded.
 
 ## Structure
 
@@ -24,6 +28,7 @@ tools/test-schedule.mjs
 ## Commands
 
 ```bash
+cd /home/alph/projects/ChristoDay
 npm ci --ignore-scripts
 python3 -m http.server 8091
 node tools/test-schedule.mjs
@@ -38,6 +43,10 @@ node --check playwright.config.mjs
 npx playwright install chromium
 npm run test:browser
 ```
+
+## Tests
+
+Playwright boots the real page with controlled Bible API responses, navigates from Matthew to Mark, overlaps an obsolete NIV request with a newer ESV selection, and verifies the new translation remains rendered and persisted. It forces a malformed live-passage response, proves reference-only reading/journal/completion stay usable, then verifies another translation restores live text. It denies journal storage, proves progress and honest durability guidance survive day navigation, then verifies a later permitted write makes the full entry durable. Invalid plan payload and non-200 `segments.json` must stay on the user-safe fatal recovery surface. A worker-enabled context installs the offline shell at `/ChristoDay/`, verifies unrelated same-origin caches survive activation, rejects out-of-scope runtime writes, and reloads a working reference-only reading from the service-worker cache.
 
 ## Conventions
 
