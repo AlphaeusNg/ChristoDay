@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-08-28 (ChristoDay Cycle 46)
+Last updated: 2026-09-01 (ChristoDay Cycle 47)
 
 ## Current state
 
@@ -12,7 +12,7 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
   50-chapter memory cache. Gospel speech is wrapped in red, verse numbers copy,
   and chapter comments become cross-reference popovers.
-- Persisted journal/completion state with 13 passing hydration/persistence cases
+- Persisted journal/completion state with 16 passing hydration/persistence cases
   and non-throwing save failure handling. Passage size is a device-local
   preference beside translation.
 - Service-worker runtime behavior has four deterministic execution scenarios
@@ -25,7 +25,8 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
   schedule-valid completion totals, copy/share/listen/size, and
   `?d=` / `?tr=` deep-links. Listen coverage includes explicit stop, natural
-  completion, and speech-engine failure state.
+  completion, speech-engine failure state, and obsolete callbacks from a
+  cancelled utterance after its replacement starts.
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
@@ -36,7 +37,7 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.08.28.5`.
+- Deployment version: `2026.09.01.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -44,7 +45,36 @@ Last updated: 2026-08-28 (ChristoDay Cycle 46)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: red-letter gospel text and reference popovers
+## Latest cycle: keep replacement speech state immune to late callbacks
+
+### Why this was selected
+
+Browsers may deliver an `onend` or `onerror` callback after an utterance has
+been cancelled. If the visitor had already started listening again, that stale
+callback reset the active replacement's button to **Listen**, cleared its
+pressed state, or announced a false failure while speech continued.
+
+### Changes
+
+- Give each speech run an identity and retire it before cancellation, so only
+  the current utterance can complete or report an error.
+- Recover truthfully when `speechSynthesis.speak()` itself throws.
+- Extend the controlled Chromium lifecycle to start a replacement, deliver
+  late completion and error callbacks from the cancelled utterance, and prove
+  the replacement remains active until its own completion.
+- Bump the site/offline-cache version to `2026.09.01.1`.
+
+### Verification evidence
+
+- Test-first: the new browser assertion observed **Listen** and
+  `aria-pressed=false` immediately after the cancelled utterance's late
+  completion, even though its replacement was active.
+- The focused speech lifecycle journey passes with the generation guard.
+- Schedule/data/schema 50, Bible 16, state 16, service-worker behavior, site
+  structure with 12 precache entries, workflow policy 25, recursive syntax,
+  dependency audit, and all 17 Chromium reading/offline journeys pass.
+
+## Previous cycle: red-letter gospel text and reference popovers
 
 ### Why this was selected
 
@@ -64,6 +94,7 @@ narration and chapter comments never reached the page.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Ignore late callbacks from cancelled speech | Correctness / accessibility | Medium: an active replacement could be displayed as stopped or falsely failed | Small / low | Controlled cancelled utterance completes and errors after its replacement starts | Completed in Cycle 47 |
 | — | Reset Listen controls when speech synthesis fails | Correctness / accessibility | Medium: the engine stopped while the control still claimed `Stop` and stayed pressed | Small / low | A real Chromium speech error now restores `Listen` and `aria-pressed=false` | Completed in Cycle 45 |
 | — | Count only actual plan-reading completions | Correctness / reliability | Medium: hydrated weekend and pre-start flags inflated progress even though those screens cannot be completed | Small / low | One valid reading remains counted; impossible records remain preserved but excluded | Completed in Cycle 42 |
 | — | Exercise an unparseable 200 plan body in a real browser | Verification / reliability | Low: 404 and schema-invalid JSON reached fatal recovery, but a proxy-style HTML body shared that surface without a dedicated journey | Small / low | Controlled non-JSON 200, inert UI, safe fatal copy, and parse diagnostic | Completed in Cycle 41 |

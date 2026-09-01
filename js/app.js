@@ -16,6 +16,7 @@
   let passageController = null;
   let actionStatusTimer = 0;
   let speaking = false;
+  let speechRun = 0;
   let lastPassage = null;
   let previewController = null;
 
@@ -494,12 +495,20 @@
   }
 
   function stopListening() {
+    speechRun += 1;
     try {
       window.speechSynthesis?.cancel();
     } catch {
       /* ignore */
     }
     renderListeningState(false);
+  }
+
+  function finishListening(run, errorMessage = "") {
+    if (run !== speechRun) return;
+    speechRun += 1;
+    renderListeningState(false);
+    if (errorMessage) announceAction(errorMessage);
   }
 
   function toggleListen() {
@@ -520,19 +529,24 @@
       return;
     }
     stopListening();
+    const run = speechRun;
     const utterance = new window.SpeechSynthesisUtterance();
     utterance.text = text;
     utterance.rate = 0.92;
     utterance.onend = () => {
-      renderListeningState(false);
+      finishListening(run);
     };
     utterance.onerror = () => {
-      renderListeningState(false);
-      announceAction("Could not read passage.");
+      finishListening(run, "Could not read passage.");
     };
     renderListeningState(true);
-    window.speechSynthesis.speak(utterance);
-    announceAction("Reading aloud…");
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      finishListening(run, "Could not read passage.");
+      return;
+    }
+    if (run === speechRun && speaking) announceAction("Reading aloud…");
   }
 
   async function renderDay(ymd, options = {}) {

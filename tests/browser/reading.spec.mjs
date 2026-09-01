@@ -605,6 +605,19 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeTranslation);
   expect(await page.evaluate(() => window.__spoken.length)).toBe(spokenCount);
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
+
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  const replacementIndex = await page.evaluate(() => window.__utterances.length - 1);
+  await page.evaluate(() => window.__utterances.at(-2).onend());
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "true");
+  await page.evaluate(() => window.__utterances.at(-2).onerror());
+  await expect(page.locator("#action-status")).toHaveText("Reading aloud…");
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await page.evaluate((index) => window.__utterances[index].onend(), replacementIndex);
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
 });
 
 test("resizes the passage and remembers the choice", async ({ page }) => {
