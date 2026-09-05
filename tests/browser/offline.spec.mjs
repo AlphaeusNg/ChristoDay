@@ -93,6 +93,19 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   await expect(page.locator("#site-version")).toHaveText(expectedVersion);
   await expect(page.locator("#fatal")).toBeHidden();
 
+  const planOffline = await page.evaluate(async () => {
+    const response = await fetch("data/segments.json");
+    const plan = window.ChristoDayApp?.getPlan?.();
+    return {
+      ok: response.ok,
+      hasPlan: !!plan,
+      startDate: plan?.meta?.startDate || null,
+    };
+  });
+  expect(planOffline.ok, "default plan fetch must succeed from the worker while offline").toBe(true);
+  expect(planOffline.hasPlan, "validated plan must remain available offline").toBe(true);
+  expect(planOffline.startDate).toBe("2026-06-15");
+
   const datePicker = page.locator("#date-pick");
   await datePicker.fill("2026-06-16");
   await datePicker.dispatchEvent("change");
