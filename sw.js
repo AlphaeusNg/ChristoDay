@@ -4,6 +4,7 @@ importScripts("./js/version.js");
 const CACHE_PREFIX = "christoday-";
 const CACHE = `${CACHE_PREFIX}${self.SITE_VERSION.id}`;
 const SCOPE_URL = new URL(self.registration.scope);
+const PLAN_URL = new URL("./data/segments.json", SCOPE_URL).href;
 const PRECACHE = [
   "./",
   "./index.html",
@@ -48,6 +49,17 @@ self.addEventListener("fetch", (event) => {
     url.origin !== SCOPE_URL.origin ||
     !url.pathname.startsWith(SCOPE_URL.pathname)
   ) {
+    return;
+  }
+
+  // A stale valid plan must not mask a current invalid/non-200 response.
+  // Keep the install-time copy strictly as an offline fallback.
+  if (url.href === PLAN_URL) {
+    event.respondWith(
+      fetch(req).catch(() =>
+        caches.open(CACHE).then((cache) => cache.match(req))
+      )
+    );
     return;
   }
 

@@ -70,13 +70,17 @@ for (const reference of requiredRuntime) {
 
 const index = readFileSync(join(root, "index.html"), "utf8");
 const planPreloadIndex = index.indexOf('rel="preload" href="data/segments.json"');
+const biblePreconnectIndex = index.indexOf('rel="preconnect" href="https://bolls.life"');
 const workerRegistrationIndex = index.indexOf('navigator.serviceWorker.register("./sw.js")');
 const stylesheetIndex = index.indexOf('rel="stylesheet" href="css/style.css"');
 assert(planPreloadIndex >= 0, "reading plan must be preloaded");
+assert(biblePreconnectIndex >= 0, "Bible API connection must be warmed early");
 assert(workerRegistrationIndex >= 0, "service worker must be registered");
 assert(
-  planPreloadIndex < stylesheetIndex && workerRegistrationIndex < stylesheetIndex,
-  "plan preload and offline-shell install must start before render-blocking styles",
+  planPreloadIndex < stylesheetIndex &&
+    biblePreconnectIndex < stylesheetIndex &&
+    workerRegistrationIndex < stylesheetIndex,
+  "plan preload, Bible API connection, and offline-shell install must start before render-blocking styles",
 );
 assert.doesNotMatch(
   index,

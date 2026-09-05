@@ -8,7 +8,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = readFileSync(join(root, "sw.js"), "utf8");
 const scope = "https://alphaeusng.github.io/ChristoDay/";
 
-function createWorker({ cachedBody = null, networkBody = "network", networkFails = false, putFails = false } = {}) {
+function createWorker({
+  cachedBody = null,
+  networkBody = "network",
+  networkStatus = 200,
+  networkFails = false,
+  putFails = false,
+} = {}) {
   const listeners = new Map();
   const calls = { fetch: [], match: [], open: [], put: [] };
   const cache = {
@@ -53,7 +59,7 @@ function createWorker({ cachedBody = null, networkBody = "network", networkFails
     async fetch(request) {
       calls.fetch.push(request.url);
       if (networkFails) throw new Error("offline");
-      return new Response(networkBody, { status: 200 });
+      return new Response(networkBody, { status: networkStatus });
     },
   };
   vm.createContext(context);
@@ -107,6 +113,33 @@ function createWorker({ cachedBody = null, networkBody = "network", networkFails
 }
 
 {
+  const worker = createWorker({ cachedBody: "valid cached plan", networkBody: "missing", networkStatus: 404 });
+  const event = worker.dispatchFetch(`${scope}data/segments.json`);
+  const response = await event.responsePromises[0];
+  assert.equal(response.status, 404, "a non-200 plan response must reach the app");
+  assert.equal(await response.text(), "missing", "a cached plan must not mask a non-200 response");
+  assert.equal(worker.calls.match.length, 0, "online plan requests must not read the cache first");
+  assert.equal(worker.calls.put.length, 0, "runtime plan responses must not replace the offline plan");
+}
+
+{
+  const invalidPlan = '{"books":{}}';
+  const worker = createWorker({ cachedBody: "valid cached plan", networkBody: invalidPlan });
+  const event = worker.dispatchFetch(`${scope}data/segments.json`);
+  const response = await event.responsePromises[0];
+  assert.equal(await response.text(), invalidPlan, "an invalid 200 plan payload must reach app validation");
+  assert.equal(worker.calls.match.length, 0, "online invalid plans must not fall back to cache");
+}
+
+{
+  const worker = createWorker({ cachedBody: "offline plan", networkFails: true });
+  const event = worker.dispatchFetch(`${scope}data/segments.json`);
+  const response = await event.responsePromises[0];
+  assert.equal(await response.text(), "offline plan", "a rejected plan fetch uses the install-time copy");
+  assert.equal(worker.calls.match.length, 1, "offline plan fallback checks the current owned cache");
+}
+
+{
   const worker = createWorker({ networkBody: "still usable", putFails: true });
   const event = worker.dispatchFetch(`${scope}docs/NICHE.md`);
   const response = await event.responsePromises[0];
@@ -118,4 +151,4 @@ function createWorker({ cachedBody = null, networkBody = "network", networkFails
   );
 }
 
-console.log("test-service-worker.mjs: scope, ownership, lifetime, fallback, and write-failure cases passed");
+console.log("test-service-worker.mjs: scope, plan freshness, fallback, lifetime, and write-failure cases passed");
