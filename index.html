@@ -10,6 +10,12 @@
   <meta name="color-scheme" content="dark" />
   <link rel="canonical" href="https://alphaeusng.github.io/ChristoDay/" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preload" href="data/segments.json" as="fetch" crossorigin="anonymous" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(function () {});
+    }
+  </script>
   <meta property="og:title" content="ChristoDay" />
   <meta property="og:description" content="5–10 minute weekday readings that relentlessly point to Jesus." />
   <meta property="og:type" content="website" />
@@ -210,12 +216,5 @@
   <script src="js/bible.js"></script>
   <script src="js/state.js"></script>
   <script src="js/app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").catch(function () {});
-      });
-    }
-  </script>
 </body>
 </html>

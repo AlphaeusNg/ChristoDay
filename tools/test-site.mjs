@@ -69,6 +69,20 @@ for (const reference of requiredRuntime) {
 }
 
 const index = readFileSync(join(root, "index.html"), "utf8");
+const planPreloadIndex = index.indexOf('rel="preload" href="data/segments.json"');
+const workerRegistrationIndex = index.indexOf('navigator.serviceWorker.register("./sw.js")');
+const stylesheetIndex = index.indexOf('rel="stylesheet" href="css/style.css"');
+assert(planPreloadIndex >= 0, "reading plan must be preloaded");
+assert(workerRegistrationIndex >= 0, "service worker must be registered");
+assert(
+  planPreloadIndex < stylesheetIndex && workerRegistrationIndex < stylesheetIndex,
+  "plan preload and offline-shell install must start before render-blocking styles",
+);
+assert.doesNotMatch(
+  index,
+  /addEventListener\("load"[\s\S]{0,160}serviceWorker\.register/,
+  "service-worker registration must not wait for the full page load",
+);
 assert(
   index.indexOf('src="js/red-letter.js"') < index.indexOf('src="js/bible.js"'),
   "red-letter.js must load before bible.js"
@@ -102,6 +116,12 @@ assert.match(index, /id="btn-type-larger"/, "larger passage text control remains
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
+assert.match(app, /fetch\("data\/segments\.json"\)/, "app must reuse the preloaded plan response");
+assert.doesNotMatch(
+  app,
+  /fetch\("data\/segments\.json",\s*\{[^}]*cache:\s*"no-cache"/,
+  "plan fetch must not bypass the preload or browser cache",
+);
 const planValidationIndex = app.indexOf("ChristoSchedule.validatePlan(candidatePlan)");
 const planAssignmentIndex = app.indexOf("plan = candidatePlan");
 assert(planValidationIndex >= 0, "app.js must validate fetched plan data");

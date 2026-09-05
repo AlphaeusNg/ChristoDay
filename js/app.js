@@ -156,7 +156,7 @@
     bindAutoHideHeader();
     bindRefPopover();
     try {
-      const res = await fetch("data/segments.json", { cache: "no-cache" });
+      const res = await fetch("data/segments.json");
       if (!res.ok) throw new Error("HTTP " + res.status);
       const candidatePlan = await res.json();
       const validation = ChristoSchedule.validatePlan(candidatePlan);
