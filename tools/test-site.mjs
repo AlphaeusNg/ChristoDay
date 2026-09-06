@@ -140,6 +140,8 @@ assert(
   previousAbortIndex > passageRequestIndex,
   "app.js must subscribe the new passage before aborting the previous consumer"
 );
+assert.match(app, /prefetchNextReading\(reading, tr, seq\)/, "next weekday must prefetch after the current passage paints");
+assert.match(app, /previousPrefetchController\?\.abort\(\)/, "navigation must cancel obsolete next-day prefetch consumers");
 assert.match(app, /params\.get\("d"\)/, "boot must read the d deep-link");
 assert.match(app, /params\.get\("tr"\)/, "boot must read the tr deep-link");
 assert.match(app, /history\.replaceState/, "date/translation changes must update the URL");

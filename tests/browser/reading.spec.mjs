@@ -59,6 +59,9 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await expect(page.locator("#translation")).toBeVisible();
 
   const datePicker = page.locator("#date-pick");
+  const slowNivRequest = page.waitForRequest((request) =>
+    /\/get-(?:text|chapter)\/NIV\/41\/1\//.test(request.url())
+  );
   await datePicker.fill("2026-06-16");
   await datePicker.dispatchEvent("change");
 
@@ -72,11 +75,8 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await expect(page.locator("#passage-body .vnum").first()).toBeVisible();
   await expect(page).toHaveURL(/d=2026-06-16/);
 
-  const slowNivRequest = page.waitForRequest((request) =>
-    /\/get-(?:text|chapter)\/NIV\/41\/1\//.test(request.url())
-  );
-  await page.locator("#btn-next").click();
   await slowNivRequest;
+  await page.locator("#btn-next").click();
   await expect(datePicker).toHaveValue("2026-06-17");
   await expect(page.locator("#passage-ref")).toHaveText("Mark 1:1-8");
   await expect(page).toHaveURL(/d=2026-06-17/);
@@ -94,6 +94,20 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
   expect(saved.translation).toBe("ESV");
   expect(saved.days["2026-06-17"].translation).toBe("ESV");
+});
+
+test("prefetches the next weekday in the selected translation", async ({ page }) => {
+  const nextRequest = page.waitForRequest((request) =>
+    /\/get-(?:text|chapter)\/ESV\/41\/1\//.test(request.url())
+  );
+
+  await page.goto("./?d=2026-06-16&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
+
+  const request = await nextRequest;
+  expect(request.url()).toContain("/ESV/41/1/");
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
 });
 
 test("keeps the reading usable when live passage text fails", async ({ page }) => {

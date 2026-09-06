@@ -14,6 +14,7 @@
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
   let passageController = null;
+  let nextPassageController = null;
   let actionStatusTimer = 0;
   let speaking = false;
   let speechRun = 0;
@@ -652,13 +653,16 @@
 
     const tr = state.translation || "NIV";
     const previousController = passageController;
+    const previousPrefetchController = nextPassageController;
     const controller = new AbortController();
     passageController = controller;
+    nextPassageController = null;
     const request = ChristoBible.fetchPassage(reading.bookKey, reading.ref, tr, {
       signal: controller.signal,
     });
     // Subscribe first so same-chapter navigation keeps the shared fetch alive.
     previousController?.abort();
+    previousPrefetchController?.abort();
     try {
       const result = await request;
       if (controller.signal.aborted || seq !== renderSeq) return; // user navigated away
@@ -668,6 +672,7 @@
       bindPassageReferences(body);
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
+      prefetchNextReading(reading, tr, seq);
     } catch (err) {
       if (controller.signal.aborted || seq !== renderSeq) return;
       status.hidden = false;
@@ -682,10 +687,30 @@
     }
   }
 
+  function prefetchNextReading(reading, translation, seq) {
+    const nextReading = ChristoSchedule.resolveReading(plan, reading?.next?.ymd);
+    if (nextReading.kind !== "reading" || seq !== renderSeq) return;
+    const controller = new AbortController();
+    nextPassageController = controller;
+    ChristoBible.fetchPassage(
+      nextReading.bookKey,
+      nextReading.ref,
+      translation,
+      { signal: controller.signal }
+    ).catch(() => {
+      // Speculative failures stay silent; the normal reading path owns recovery.
+    }).finally(() => {
+      if (nextPassageController === controller) nextPassageController = null;
+    });
+  }
+
   function cancelPassageRequest() {
     const controller = passageController;
+    const prefetchController = nextPassageController;
     passageController = null;
+    nextPassageController = null;
     controller?.abort();
+    prefetchController?.abort();
   }
 
   function hideRefPopover() {
