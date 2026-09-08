@@ -20,7 +20,7 @@ function createWorker({
   const cache = {
     async addAll() {},
     async match(request) {
-      calls.match.push(request.url);
+      calls.match.push(typeof request === "string" ? request : request.url);
       return cachedBody == null ? undefined : new Response(cachedBody);
     },
     async put(request, response) {
@@ -65,11 +65,11 @@ function createWorker({
   vm.createContext(context);
   vm.runInContext(source, context, { filename: "sw.js" });
 
-  function dispatchFetch(url) {
+  function dispatchFetch(url, { mode = "cors" } = {}) {
     const responsePromises = [];
     const lifetimePromises = [];
     listeners.get("fetch")({
-      request: { method: "GET", url },
+      request: { method: "GET", mode, url },
       respondWith(promise) {
         responsePromises.push(Promise.resolve(promise));
       },
@@ -81,6 +81,23 @@ function createWorker({
   }
 
   return { calls, dispatchFetch };
+}
+
+{
+  const worker = createWorker({ cachedBody: "canonical shell", networkFails: true });
+  const event = worker.dispatchFetch(`${scope}?d=2026-06-17&tr=ESV`, { mode: "navigate" });
+  const response = await event.responsePromises[0];
+  assert.equal(await response.text(), "canonical shell", "an unseen offline deep link boots from the shell");
+  assert.deepEqual(
+    worker.calls.match,
+    [`${scope}index.html`],
+    "offline navigation falls back to the canonical shell instead of an exact query cache key",
+  );
+  assert.deepEqual(
+    worker.calls.fetch,
+    [`${scope}?d=2026-06-17&tr=ESV`],
+    "navigation remains network-first",
+  );
 }
 
 {
@@ -151,4 +168,4 @@ function createWorker({
   );
 }
 
-console.log("test-service-worker.mjs: scope, plan freshness, fallback, lifetime, and write-failure cases passed");
+console.log("test-service-worker.mjs: navigation, scope, plan freshness, fallback, lifetime, and write-failure cases passed");

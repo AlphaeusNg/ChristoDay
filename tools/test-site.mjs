@@ -47,6 +47,12 @@ assert.match(
   /event\.waitUntil\(networkPromise/,
   "runtime cache writes must extend the fetch event lifetime",
 );
+assert.match(worker, /req\.mode === "navigate"/, "document navigations need a dedicated offline path");
+assert.match(
+  worker,
+  /fetch\(req\)\.catch\(\(\) =>[\s\S]{0,120}cache\.match\(SHELL_URL\)/,
+  "document navigations must stay network-first and fall back to the canonical shell",
+);
 const precacheBlock = /const PRECACHE = \[([\s\S]*?)\];/.exec(worker)?.[1];
 assert(precacheBlock, "service worker must declare PRECACHE");
 const precache = [...precacheBlock.matchAll(/"([^"]+)"/g)].map((match) => match[1]);

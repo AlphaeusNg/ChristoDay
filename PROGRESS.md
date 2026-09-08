@@ -3,21 +3,24 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-01 (ChristoDay Cycle 47)
+Last updated: 2026-09-08 (ChristoDay Cycle 48)
 
 ## Current state
 
 - Deterministic weekday schedule with 50 passing schedule/data/schema tests.
 - Live Bible client with 16 passing network/payload/cache/cancellation/red-letter
   tests, a 10-second timeout, consumer-aware in-flight deduplication, and a
-  50-chapter memory cache. Gospel speech is wrapped in red, verse numbers copy,
-  and chapter comments become cross-reference popovers.
+  50-chapter memory cache. The next weekday is prefetched only after the current
+  passage paints, and obsolete prefetches are aborted. Gospel speech is wrapped
+  in red, verse numbers copy, and chapter comments become cross-reference
+  popovers.
 - Persisted journal/completion state with 16 passing hydration/persistence cases
   and non-throwing save failure handling. Passage size is a device-local
   preference beside translation.
-- Service-worker runtime behavior has four deterministic execution scenarios
-  plus a production-mounted installed-worker journey covering scope, cache
-  ownership, event lifetime, network/cache failures, and offline reload.
+- Service-worker runtime behavior has eight deterministic execution scenarios
+  plus two production-mounted installed-worker journeys covering scope, cache
+  ownership, event lifetime, network/cache failures, offline reload, and a
+  first-time dated/translated deep link recovered through the canonical shell.
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
@@ -37,7 +40,7 @@ Last updated: 2026-09-01 (ChristoDay Cycle 47)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.09.01.1`.
+- Deployment version: `2026.09.08.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -45,7 +48,39 @@ Last updated: 2026-09-01 (ChristoDay Cycle 47)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: keep replacement speech state immune to late callbacks
+## Latest cycle: open unseen deep links from the offline shell
+
+### Why this was selected
+
+The installed worker could reload an exact URL that was already cached, but an
+offline visit to a first-time shared URL such as `?d=2026-06-17&tr=ESV` had no
+matching cache key and failed before ChristoDay could interpret the date and
+translation.
+
+### Changes
+
+- Give document navigations a dedicated network-first path with one canonical
+  cached `index.html` fallback, avoiding query-specific cache entries.
+- Keep the reading-plan request on its separate network-first path so online
+  invalid or non-200 plan responses still reach the existing fatal recovery
+  surface instead of being hidden by cached data.
+- Add deterministic worker and structural contracts for the navigation order
+  and exact fallback key.
+- Add a real installed-worker Chromium journey that goes offline, opens a URL
+  never visited in that context, and verifies its ESV Mark reading and
+  reference-only recovery surface.
+- Bump the site/offline-cache version to `2026.09.08.1`.
+
+### Verification evidence
+
+- The focused worker and structural suites pass all eight execution scenarios
+  and 12 precache entries.
+- Both installed-worker Chromium journeys pass, including the unseen
+  `?d=2026-06-17&tr=ESV` navigation.
+- Schedule/data/schema 50, Bible 16, state 16, workflow policy 25, recursive
+  syntax, dependency audit, and all 19 Chromium reading/offline journeys pass.
+
+## Previous cycle: keep replacement speech state immune to late callbacks
 
 ### Why this was selected
 
@@ -94,6 +129,7 @@ narration and chapter comments never reached the page.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Open unseen dated/translated deep links offline | Reliability / PWA | Medium-high: shared reading URLs failed offline unless that exact query had been cached | Small / low | Network-first navigation fixture and installed-worker Chromium deep-link journey | Completed in Cycle 48 |
 | — | Ignore late callbacks from cancelled speech | Correctness / accessibility | Medium: an active replacement could be displayed as stopped or falsely failed | Small / low | Controlled cancelled utterance completes and errors after its replacement starts | Completed in Cycle 47 |
 | — | Reset Listen controls when speech synthesis fails | Correctness / accessibility | Medium: the engine stopped while the control still claimed `Stop` and stayed pressed | Small / low | A real Chromium speech error now restores `Listen` and `aria-pressed=false` | Completed in Cycle 45 |
 | — | Count only actual plan-reading completions | Correctness / reliability | Medium: hydrated weekend and pre-start flags inflated progress even though those screens cannot be completed | Small / low | One valid reading remains counted; impossible records remain preserved but excluded | Completed in Cycle 42 |

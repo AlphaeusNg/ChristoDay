@@ -4,6 +4,7 @@ importScripts("./js/version.js");
 const CACHE_PREFIX = "christoday-";
 const CACHE = `${CACHE_PREFIX}${self.SITE_VERSION.id}`;
 const SCOPE_URL = new URL(self.registration.scope);
+const SHELL_URL = new URL("./index.html", SCOPE_URL).href;
 const PLAN_URL = new URL("./data/segments.json", SCOPE_URL).href;
 const PRECACHE = [
   "./",
@@ -49,6 +50,18 @@ self.addEventListener("fetch", (event) => {
     url.origin !== SCOPE_URL.origin ||
     !url.pathname.startsWith(SCOPE_URL.pathname)
   ) {
+    return;
+  }
+
+  // Documents stay network-first so repeat visits see the current shell. An
+  // unseen query/deep link can still boot from the one canonical cached shell
+  // when the network is unavailable; app.js then interprets its URL normally.
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req).catch(() =>
+        caches.open(CACHE).then((cache) => cache.match(SHELL_URL))
+      )
+    );
     return;
   }
 

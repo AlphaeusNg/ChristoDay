@@ -109,3 +109,26 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
     expect(workerResponses, `${path} must be served by the installed worker`).toContain(path);
   }
 });
+
+test("opens an unseen dated deep link from the canonical shell offline", async ({ context, page }) => {
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#site-version")).not.toHaveText("—");
+  const expectedVersion = await page.locator("#site-version").textContent();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+
+  await context.setOffline(true);
+  const navigation = await page.goto("./?d=2026-06-17&tr=ESV", {
+    waitUntil: "domcontentloaded",
+  });
+
+  expect(navigation?.fromServiceWorker()).toBe(true);
+  await expect(page).toHaveURL(/\/ChristoDay\/\?d=2026-06-17&tr=ESV$/);
+  await expect(page.locator("#site-version")).toHaveText(expectedVersion);
+  await expect(page.locator("#fatal")).toBeHidden();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-17");
+  await expect(page.locator("#translation")).toHaveValue("ESV");
+  await expect(page.locator("#passage-ref")).toHaveText("Mark 1:1-8");
+  await expect(page.locator("#passage-body .fallback-ref")).toContainText("Mark 1:1-8");
+  await expect(page.locator("#passage-body")).toContainText("schedule still works fully offline");
+});
