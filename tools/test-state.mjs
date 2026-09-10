@@ -77,4 +77,29 @@ assert.equal(
   false
 );
 
-console.log("test-state.mjs: 16 hydration and persistence cases ok");
+const exportedAt = "2026-09-11T00:00:00.000Z";
+const backup = stateApi.createBackup(hydrated, exportedAt);
+assert.equal(backup.product, "ChristoDay");
+assert.equal(backup.schemaVersion, 1);
+assert.equal(backup.exportedAt, exportedAt);
+assert.equal(backup.state.days["2026-08-09"].journal, "Saw Christ clearly.");
+assert.deepEqual(
+  JSON.parse(JSON.stringify(stateApi.parseBackup(JSON.stringify(backup)))),
+  JSON.parse(JSON.stringify(hydrated))
+);
+assert.throws(() => stateApi.parseBackup("{bad-json"), /valid JSON/);
+assert.throws(
+  () => stateApi.parseBackup(JSON.stringify({ ...backup, product: "AnotherApp" })),
+  /ChristoDay backup/
+);
+assert.throws(
+  () => stateApi.parseBackup(JSON.stringify({ ...backup, schemaVersion: 2 })),
+  /newer backup format/
+);
+assert.throws(
+  () => stateApi.parseBackup(JSON.stringify({ ...backup, state: null })),
+  /missing reading data/
+);
+assert.throws(() => stateApi.parseBackup(" ".repeat(stateApi.MAX_BACKUP_BYTES + 1)), /too large/);
+
+console.log("test-state.mjs: 27 hydration, persistence, and backup cases ok");

@@ -13,7 +13,7 @@ Most plans measure chapters finished. ChristoDay measures *Christ seen*.
 - Fixed weekday map: Mon Jude · Tue Matthew · Wed Mark · Thu Philippians · Fri Luke
 - Weekends are rest, not guilt
 - Schedule math is Asia/Singapore
-- Optional live Scripture, a private on-device journal, and streaks
+- Optional live Scripture, a private on-device journal with backup/restore, and streaks
 - Prompts aimed at Jesus' person, work, and gospel glory
 
 Pairs with [VerseKeep](https://alphaeusng.github.io/VerseKeep/) for memory practice.
@@ -22,7 +22,7 @@ Pairs with [VerseKeep](https://alphaeusng.github.io/VerseKeep/) for memory pract
 
 1. Open **[ChristoDay](https://alphaeusng.github.io/ChristoDay/)**.
 2. Read today's segment (or jump to another weekday).
-3. Use a reflection prompt, then write in the journal if you want. Journal and completion stay on this device only. Nothing is uploaded.
+3. Use a reflection prompt, then write in the journal if you want. Journal and completion stay on this device only. Download a private JSON backup whenever you want; nothing is uploaded.
 4. Come back tomorrow. Streaks follow the Singapore calendar. Saturday and Sunday are rest.
 
 Working in this repo? See **[AGENTS.md](AGENTS.md)** for schedule math, tests, and conventions.

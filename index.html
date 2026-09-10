@@ -156,6 +156,13 @@
         <label class="sr-only" for="journal">Journal</label>
         <textarea id="journal" placeholder="What did you see of Christ? What grace do you need to walk in?"></textarea>
         <p id="storage-status" class="muted" role="status" hidden></p>
+        <div class="journal-backup" role="group" aria-label="Private journal backup">
+          <button type="button" class="btn" id="btn-backup">Download backup</button>
+          <button type="button" class="btn" id="btn-restore">Restore backup</button>
+          <input type="file" id="backup-file" accept="application/json,.json" hidden />
+        </div>
+        <p class="journal-backup-note muted">The backup includes every private journal note and stays on your device.</p>
+        <p id="backup-status" class="muted" role="status" hidden></p>
       </article>
     </section>
 

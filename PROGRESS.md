@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-08 (ChristoDay Cycle 48)
+Last updated: 2026-09-11 (ChristoDay Cycle 49)
 
 ## Current state
 
@@ -14,9 +14,10 @@ Last updated: 2026-09-08 (ChristoDay Cycle 48)
   passage paints, and obsolete prefetches are aborted. Gospel speech is wrapped
   in red, verse numbers copy, and chapter comments become cross-reference
   popovers.
-- Persisted journal/completion state with 16 passing hydration/persistence cases
-  and non-throwing save failure handling. Passage size is a device-local
-  preference beside translation.
+- Persisted journal/completion state with 27 passing hydration, persistence,
+  and versioned-backup cases plus non-throwing save failure handling. Passage
+  size and share-note consent are included with journal/completion history in a
+  user-downloaded JSON backup that is validated before confirmed restore.
 - Service-worker runtime behavior has eight deterministic execution scenarios
   plus two production-mounted installed-worker journeys covering scope, cache
   ownership, event lifetime, network/cache failures, offline reload, and a
@@ -24,7 +25,9 @@ Last updated: 2026-09-08 (ChristoDay Cycle 48)
 - The controlled reading browser project covers startup, navigation,
   translation cancellation, live-passage failure fallback and recovery, denied
   journal/completion saves, in-memory continuity, honest durability status,
-  recovery persistence, invalid fetched-plan fatal recovery, non-200 and
+  recovery persistence, backup download/restore, invalid-backup rejection,
+  honest session-only restore under denied storage, invalid fetched-plan fatal
+  recovery, non-200 and
   non-JSON plan fetch fatal recovery, weekend next-step jumps, old unfinished-entry resume,
   schedule-valid completion totals, copy/share/listen/size, and
   `?d=` / `?tr=` deep-links. Listen coverage includes explicit stop, natural
@@ -40,7 +43,7 @@ Last updated: 2026-09-08 (ChristoDay Cycle 48)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.09.08.1`.
+- Deployment version: `2026.09.11.2`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -48,7 +51,41 @@ Last updated: 2026-09-08 (ChristoDay Cycle 48)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: open unseen deep links from the offline shell
+## Latest cycle: let visitors own their private journal history
+
+### Why this was selected
+
+ChristoDay kept private notes and completion history in one browser profile.
+That local-only privacy boundary is intentional, but a cleared browser or new
+device could erase the user's accumulated journal with no recovery path.
+
+### Changes
+
+- Add a versioned JSON backup containing normalized journal, completion,
+  translation, passage-size, and explicit share-note preference state; the
+  browser downloads it locally and uploads nothing.
+- Validate product identity, schema version, required reading-data shape, JSON,
+  and a one-megabyte input ceiling before presenting the overwrite confirmation.
+- Restore only after explicit confirmation. Invalid or cancelled imports leave
+  the current journal untouched; denied `localStorage` keeps the restored state
+  usable for the visit and states that it is not durable.
+- Add restrained Download backup / Restore backup controls beside the private
+  journal with local-data disclosure and announced outcomes.
+- Bump the site/offline-cache version to `2026.09.11.2`.
+
+### Verification evidence
+
+- State contracts increased from 16 to 27, covering deterministic export,
+  round-trip normalization, invalid JSON, wrong product, unknown schema,
+  missing data, and oversized input.
+- Two real Chromium journeys download and inspect the backup on a 360px layout,
+  mutate the live journal, restore it with confirmation, reject a malformed replacement
+  without data loss, and prove a storage-denied restore remains usable with
+  honest session-only guidance.
+- Schedule, Bible, state, workflow, site/offline structure, service-worker,
+  recursive syntax, dependency audit, and all 21 Chromium journeys pass.
+
+## Previous cycle: open unseen deep links from the offline shell
 
 ### Why this was selected
 
@@ -129,6 +166,7 @@ narration and chapter comments never reached the page.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Export and restore private journal/completion history | Data ownership / reliability | High: clearing one browser profile could erase the entire local journal | Small-medium / low | Versioned bounded backup, explicit overwrite confirmation, invalid-file preservation, and durable/session-only Chromium paths | Completed in Cycle 49 |
 | — | Open unseen dated/translated deep links offline | Reliability / PWA | Medium-high: shared reading URLs failed offline unless that exact query had been cached | Small / low | Network-first navigation fixture and installed-worker Chromium deep-link journey | Completed in Cycle 48 |
 | — | Ignore late callbacks from cancelled speech | Correctness / accessibility | Medium: an active replacement could be displayed as stopped or falsely failed | Small / low | Controlled cancelled utterance completes and errors after its replacement starts | Completed in Cycle 47 |
 | — | Reset Listen controls when speech synthesis fails | Correctness / accessibility | Medium: the engine stopped while the control still claimed `Stop` and stayed pressed | Small / low | A real Chromium speech error now restores `Listen` and `aria-pressed=false` | Completed in Cycle 45 |

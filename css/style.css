@@ -220,6 +220,22 @@ a:hover {
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
+
+.journal-backup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.journal-backup-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.82rem;
+}
+
+#backup-status {
+  margin: 0.45rem 0 0;
+}
 .btn:hover {
   border-color: var(--gold-line);
   background: var(--gold-soft);

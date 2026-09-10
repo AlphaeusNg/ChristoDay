@@ -123,6 +123,10 @@ assert.match(index, /id="btn-listen"/, "listen passage control remains");
 assert.match(index, /id="btn-share"/, "share reading control remains");
 assert.match(index, /id="btn-type-smaller"/, "smaller passage text control remains");
 assert.match(index, /id="btn-type-larger"/, "larger passage text control remains");
+assert.match(index, /id="btn-backup"/, "journal backup download control remains");
+assert.match(index, /id="btn-restore"/, "journal backup restore control remains");
+assert.match(index, /id="backup-file"[^>]*accept="application\/json,\.json"/, "restore accepts JSON backup files");
+assert.match(index, /id="backup-status"[^>]*role="status"/, "backup outcomes are announced");
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
@@ -157,6 +161,9 @@ assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
 assert.match(app, /key === "l"/, "L reads the visible passage aloud");
 assert.match(app, /shiftPassageSize/, "passage size can be changed from the reader");
 assert.match(app, /data-passage-size/, "passage size is applied on the document");
+assert.match(app, /ChristoState\.createBackup/, "journal backup uses the versioned state boundary");
+assert.match(app, /ChristoState\.parseBackup/, "journal restore validates before applying state");
+assert.match(app, /window\.confirm/, "journal restore confirms before replacing local data");
 
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`

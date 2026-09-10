@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const runtimeErrors = new WeakMap();
 
@@ -94,6 +95,101 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
   expect(saved.translation).toBe("ESV");
   expect(saved.days["2026-06-17"].translation).toBe("ESV");
+});
+
+test("downloads and safely restores the private journal", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("./?d=2026-06-16&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  const journal = page.locator("#journal");
+  const originalNote = "Christ keeps every part of this story.";
+  await journal.fill(originalNote);
+  await page.locator("#btn-complete").click();
+  await page.locator("#include-share-note").check();
+  await page.locator("#btn-type-larger").click();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#btn-backup").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^christoday-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  const downloadPath = await download.path();
+  const backup = JSON.parse(await readFile(downloadPath, "utf8"));
+  expect(backup.product).toBe("ChristoDay");
+  expect(backup.schemaVersion).toBe(1);
+  expect(backup.state.days["2026-06-16"].journal).toBe(originalNote);
+  expect(backup.state.days["2026-06-16"].completed).toBe(true);
+
+  await journal.fill("Temporary replacement");
+  await page.locator("#btn-complete").click();
+  await page.locator("#include-share-note").uncheck();
+  await page.locator("#translation").selectOption("WEB");
+  await page.locator("#btn-type-smaller").click();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("#backup-file").setInputFiles(downloadPath);
+  await expect(page.locator("#backup-status")).toHaveText("Backup restored.");
+  await expect(journal).toHaveValue(originalNote);
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#include-share-note")).toBeChecked();
+  await expect(page.locator("#translation")).toHaveValue("ESV");
+  await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
+  await expect(page).toHaveURL(/tr=ESV/);
+
+  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
+  expect(restored.days["2026-06-16"].journal).toBe(originalNote);
+  expect(restored.days["2026-06-16"].completed).toBe(true);
+
+  await page.locator("#backup-file").setInputFiles({
+    name: "not-a-backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{bad-json"),
+  });
+  await expect(page.locator("#backup-status")).toHaveText("Choose a valid JSON backup.");
+  await expect(journal).toHaveValue(originalNote);
+});
+
+test("keeps a restored backup usable when permanent storage is denied", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === "christoday.v1") throw new DOMException("storage denied", "QuotaExceededError");
+      return originalSetItem.call(this, key, value);
+    };
+  });
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+
+  const backup = {
+    product: "ChristoDay",
+    schemaVersion: 1,
+    exportedAt: "2026-09-11T00:00:00.000Z",
+    state: {
+      translation: "NKJV",
+      passageSize: "md",
+      includeShareNote: false,
+      days: {
+        "2026-06-16": {
+          completed: true,
+          journal: "Grace remains visible in this visit.",
+          translation: "NKJV",
+        },
+      },
+    },
+  };
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("#backup-file").setInputFiles({
+    name: "christoday-backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+
+  await expect(page.locator("#journal")).toHaveValue("Grace remains visible in this visit.");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#backup-status")).toContainText("restored for this visit");
+  await expect(page.locator("#storage-status")).toContainText("may be lost when this tab closes");
+  expect(await page.evaluate(() => localStorage.getItem("christoday.v1"))).toBeNull();
 });
 
 test("prefetches the next weekday in the selected translation", async ({ page }) => {

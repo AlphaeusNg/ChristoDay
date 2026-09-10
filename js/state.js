@@ -3,6 +3,9 @@
   "use strict";
 
   const STORAGE_KEY = "christoday.v1";
+  const BACKUP_PRODUCT = "ChristoDay";
+  const BACKUP_SCHEMA_VERSION = 1;
+  const MAX_BACKUP_BYTES = 1_000_000;
   const TRANSLATIONS = new Set(["NIV", "ESV", "NKJV", "WEB"]);
 
   function isRecord(value) {
@@ -66,6 +69,37 @@
     }
   }
 
+  function createBackup(state, exportedAt = new Date().toISOString()) {
+    return {
+      product: BACKUP_PRODUCT,
+      schemaVersion: BACKUP_SCHEMA_VERSION,
+      exportedAt,
+      state: hydrateState(state),
+    };
+  }
+
+  function parseBackup(raw) {
+    if (typeof raw !== "string") throw new Error("Choose a valid JSON backup.");
+    if (raw.length > MAX_BACKUP_BYTES) throw new Error("That backup is too large.");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error("Choose a valid JSON backup.");
+    }
+    if (!isRecord(parsed) || parsed.product !== BACKUP_PRODUCT) {
+      throw new Error("Choose a ChristoDay backup.");
+    }
+    if (parsed.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+      throw new Error("This file uses a newer backup format.");
+    }
+    if (!isRecord(parsed.state) || !isRecord(parsed.state.days)) {
+      throw new Error("This backup is missing reading data.");
+    }
+    return hydrateState(parsed.state);
+  }
+
   function ensureDay(state, ymd) {
     if (!isRecord(state.days)) state.days = {};
     if (!isRecord(state.days[ymd])) {
@@ -80,10 +114,15 @@
 
   global.ChristoState = {
     STORAGE_KEY,
+    BACKUP_PRODUCT,
+    BACKUP_SCHEMA_VERSION,
+    MAX_BACKUP_BYTES,
     defaultState,
     hydrateState,
     loadState,
     saveState,
+    createBackup,
+    parseBackup,
     ensureDay,
     validYmd,
     validPassageSize,
