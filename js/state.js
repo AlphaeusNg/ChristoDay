@@ -69,13 +69,35 @@
     }
   }
 
-  function createBackup(state, exportedAt = new Date().toISOString()) {
-    return {
+  function lastDayYmd(state) {
+    let latest = "";
+    if (!isRecord(state?.days)) return latest;
+    for (const ymd of Object.keys(state.days)) {
+      if (validYmd(ymd) && ymd > latest) latest = ymd;
+    }
+    return latest;
+  }
+
+  function backupFocusYmd(state) {
+    return validYmd(state?.currentYmd) ? state.currentYmd : lastDayYmd(state);
+  }
+
+  function restoreOpenYmd(state, todayYmd, isReadingYmd) {
+    const today = validYmd(todayYmd) ? todayYmd : "";
+    const focus = backupFocusYmd(state);
+    if (focus && typeof isReadingYmd === "function" && isReadingYmd(focus)) return focus;
+    return today;
+  }
+
+  function createBackup(state, exportedAt = new Date().toISOString(), currentYmd) {
+    const backup = {
       product: BACKUP_PRODUCT,
       schemaVersion: BACKUP_SCHEMA_VERSION,
       exportedAt,
       state: hydrateState(state),
     };
+    if (validYmd(currentYmd)) backup.currentYmd = currentYmd;
+    return backup;
   }
 
   function parseBackup(raw) {
@@ -97,7 +119,9 @@
     if (!isRecord(parsed.state) || !isRecord(parsed.state.days)) {
       throw new Error("This backup is missing reading data.");
     }
-    return hydrateState(parsed.state);
+    const state = hydrateState(parsed.state);
+    if (validYmd(parsed.currentYmd)) state.currentYmd = parsed.currentYmd;
+    return state;
   }
 
   function ensureDay(state, ymd) {
@@ -123,6 +147,8 @@
     saveState,
     createBackup,
     parseBackup,
+    backupFocusYmd,
+    restoreOpenYmd,
     ensureDay,
     validYmd,
     validPassageSize,

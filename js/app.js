@@ -389,7 +389,7 @@
 
   function downloadBackup() {
     try {
-      const payload = `${JSON.stringify(ChristoState.createBackup(state), null, 2)}\n`;
+      const payload = `${JSON.stringify(ChristoState.createBackup(state, undefined, currentYmd), null, 2)}\n`;
       const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
       const link = document.createElement("a");
       link.href = url;
@@ -430,7 +430,13 @@
     applyPassageSize(state.passageSize);
     applyShareNotePreference(state.includeShareNote);
     const persisted = saveState();
-    await renderDay(currentYmd);
+    const todayYmd = ChristoSchedule.partsInSingapore().ymd;
+    const openYmd = ChristoState.restoreOpenYmd(
+      restored,
+      todayYmd,
+      (ymd) => plan && ChristoSchedule.resolveReading(plan, ymd).kind === "reading"
+    );
+    await renderDay(openYmd);
     setBackupStatus(
       persisted
         ? "Backup restored."

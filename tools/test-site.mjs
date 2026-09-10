@@ -161,9 +161,15 @@ assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
 assert.match(app, /key === "l"/, "L reads the visible passage aloud");
 assert.match(app, /shiftPassageSize/, "passage size can be changed from the reader");
 assert.match(app, /data-passage-size/, "passage size is applied on the document");
-assert.match(app, /ChristoState\.createBackup/, "journal backup uses the versioned state boundary");
+assert.match(app, /ChristoState\.createBackup\(state,\s*undefined,\s*currentYmd\)/, "journal backup records the current reading date");
 assert.match(app, /ChristoState\.parseBackup/, "journal restore validates before applying state");
 assert.match(app, /window\.confirm/, "journal restore confirms before replacing local data");
+assert.match(app, /ChristoState\.restoreOpenYmd/, "journal restore selects a backed-up weekday when valid");
+assert.match(
+  app,
+  /restoreOpenYmd\([\s\S]*kind === "reading"[\s\S]*renderDay\(openYmd\)/,
+  "confirmed restore opens a valid backed-up weekday and updates the URL"
+);
 
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`

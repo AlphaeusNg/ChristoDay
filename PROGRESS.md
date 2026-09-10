@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-11 (ChristoDay Cycle 49)
+Last updated: 2026-09-11 (ChristoDay Cycle 50)
 
 ## Current state
 
@@ -14,10 +14,12 @@ Last updated: 2026-09-11 (ChristoDay Cycle 49)
   passage paints, and obsolete prefetches are aborted. Gospel speech is wrapped
   in red, verse numbers copy, and chapter comments become cross-reference
   popovers.
-- Persisted journal/completion state with 27 passing hydration, persistence,
-  and versioned-backup cases plus non-throwing save failure handling. Passage
-  size and share-note consent are included with journal/completion history in a
-  user-downloaded JSON backup that is validated before confirmed restore.
+- Persisted journal/completion state with 41 passing hydration, persistence,
+  versioned-backup, and restore-navigation cases plus non-throwing save failure
+  handling. Passage size and share-note consent are included with
+  journal/completion history in a user-downloaded JSON backup that is validated
+  before confirmed restore. A successful restore opens the backup's current or
+  last reading date when that date is a scheduled weekday.
 - Service-worker runtime behavior has eight deterministic execution scenarios
   plus two production-mounted installed-worker journeys covering scope, cache
   ownership, event lifetime, network/cache failures, offline reload, and a
@@ -43,7 +45,7 @@ Last updated: 2026-09-11 (ChristoDay Cycle 49)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.09.11.2`.
+- Deployment version: `2026.09.11.3`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -51,7 +53,36 @@ Last updated: 2026-09-11 (ChristoDay Cycle 49)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: let visitors own their private journal history
+## Latest cycle: open the restored weekday after journal restore
+
+### Why this was selected
+
+A confirmed backup restore already replaced private journal and completion
+history, but the reader stayed on whatever day was already open. Restoring a
+backup from another weekday left the visitor looking at today's passage instead
+of the restored day's reading.
+
+### Changes
+
+- Record the currently viewed date on a downloaded backup. Restore prefers that
+  date and otherwise uses the last saved day key.
+- After a confirmed restore, `replaceState` to that `?d=` when the date is a
+  valid scheduled weekday, keeping `?tr=` when present.
+- Weekend, pre-start, and invalid dates stay on today. Failed or cancelled
+  restore still leaves the current journal and URL untouched.
+- Bump the site/offline-cache version to `2026.09.11.3`.
+
+### Verification evidence
+
+- State contracts increased from 27 to 41, covering backup current-date export,
+  last-day fallback, weekday open, weekend/pre-start/invalid stay-on-today, and
+  localStorage omitting the viewing date.
+- Site structure asserts the restore path selects a reading weekday and renders
+  that day.
+- Schedule, Bible, state, workflow, site/offline structure, service-worker,
+  and recursive syntax checks pass. Playwright was not run.
+
+## Previous cycle: let visitors own their private journal history
 
 ### Why this was selected
 
@@ -166,6 +197,7 @@ narration and chapter comments never reached the page.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Open the restored weekday after a confirmed journal restore | Continuity / UX | Medium: restored notes were on-device but the reader stayed on the already-open day | Small / low | Backup current/last reading date, weekday `?d=` replaceState, weekend/pre-start stay on today | Completed in Cycle 50 |
 | — | Export and restore private journal/completion history | Data ownership / reliability | High: clearing one browser profile could erase the entire local journal | Small-medium / low | Versioned bounded backup, explicit overwrite confirmation, invalid-file preservation, and durable/session-only Chromium paths | Completed in Cycle 49 |
 | — | Open unseen dated/translated deep links offline | Reliability / PWA | Medium-high: shared reading URLs failed offline unless that exact query had been cached | Small / low | Network-first navigation fixture and installed-worker Chromium deep-link journey | Completed in Cycle 48 |
 | — | Ignore late callbacks from cancelled speech | Correctness / accessibility | Medium: an active replacement could be displayed as stopped or falsely failed | Small / low | Controlled cancelled utterance completes and errors after its replacement starts | Completed in Cycle 47 |
