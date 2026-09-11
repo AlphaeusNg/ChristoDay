@@ -717,11 +717,18 @@
 
     const body = $("#passage-body");
     const status = $("#passage-status");
-    lastPassage = null;
+    const hadPaintedPassage = !!body.innerHTML.trim();
     hideRefPopover();
-    body.innerHTML = "";
-    status.textContent = "Loading Scripture…";
-    status.hidden = false;
+    // Stale-while-revalidate: keep last good HTML painted while the next fetch runs.
+    if (hadPaintedPassage) {
+      status.textContent = "Updating…";
+      status.hidden = false;
+    } else {
+      lastPassage = null;
+      body.innerHTML = "";
+      status.textContent = "Loading Scripture…";
+      status.hidden = false;
+    }
 
     const tr = state.translation || "NIV";
     const previousController = passageController;
