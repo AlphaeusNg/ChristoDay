@@ -134,7 +134,7 @@ test("keeps the last good passage painted while the next fetch runs", async ({ p
   await page.locator("#translation").selectOption("ESV");
   await statusVisible;
   await expect(page.locator("#passage-status")).toHaveText("Updating…");
-  await expect(page.locator("#passage-body")).toHaveHTML(priorHtml);
+  expect(await page.locator("#passage-body").innerHTML()).toBe(priorHtml);
 
   await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
