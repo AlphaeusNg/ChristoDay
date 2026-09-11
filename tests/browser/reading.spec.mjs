@@ -97,6 +97,50 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   expect(saved.days["2026-06-17"].translation).toBe("ESV");
 });
 
+test("keeps the last good passage painted while the next fetch runs", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  const priorHtml = await page.locator("#passage-body").innerHTML();
+  expect(priorHtml.trim().length).toBeGreaterThan(0);
+
+  await page.route(/^https:\/\/bolls\.life\/get-(?:text|chapter)\//, async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const bibleRequest = /^\/get-(?:text|chapter)\/([^/]+)\/(\d+)\/(\d+)\/(?:(\d+(?:-\d+)?)\/?)?$/.exec(
+      url.pathname
+    );
+    if (!bibleRequest) {
+      await route.continue();
+      return;
+    }
+    const [, translation, bookId, chapter] = bibleRequest;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const verses = Array.from({ length: 120 }, (_, index) => ({
+      verse: index + 1,
+      text: `<b>${translation}</b> book ${bookId} chapter ${chapter} verse ${index + 1}`,
+    }));
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(verses),
+    });
+  });
+
+  const statusVisible = page.waitForFunction(() => {
+    const status = document.querySelector("#passage-status");
+    return status && !status.hidden && /Updating/.test(status.textContent || "");
+  });
+  await page.locator("#translation").selectOption("ESV");
+  await statusVisible;
+  await expect(page.locator("#passage-status")).toHaveText("Updating…");
+  await expect(page.locator("#passage-body")).toHaveHTML(priorHtml);
+
+  await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
+  await expect(page.locator("#passage-status")).toBeHidden();
+});
+
 test("downloads and safely restores the private journal", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("./?d=2026-06-16&tr=ESV", { waitUntil: "domcontentloaded" });
