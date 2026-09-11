@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-11 (ChristoDay Cycle 50)
+Last updated: 2026-09-12 (ChristoDay Cycle 51)
 
 ## Current state
 
@@ -45,7 +45,7 @@ Last updated: 2026-09-11 (ChristoDay Cycle 50)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.09.11.3`.
+- Deployment version: `2026.09.12.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -53,7 +53,37 @@ Last updated: 2026-09-11 (ChristoDay Cycle 50)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: open the restored weekday after journal restore
+## Latest cycle: keep retained Scripture safe while updating
+
+### Why this was selected
+
+Stale-while-revalidate keeps the last successful passage painted during a day
+or translation request. That prevents a blank flash, but it briefly places the
+old body beneath the new reference. Copy, Listen, verse-copy, and cross-reference
+controls still worked during that interval, so a visitor could copy or hear a
+reference paired with the wrong passage text.
+
+### Changes
+
+- Mark the retained passage `aria-busy` and inert while the matching live text
+  loads, keeping stale verse controls out of keyboard and assistive-technology
+  interaction.
+- Disable Copy and Listen until the request succeeds or reaches the existing
+  reference-only recovery surface. Keyboard attempts also announce that the
+  passage is still updating.
+- Dim the retained body subtly so sighted visitors can distinguish the
+  temporary content without reintroducing a blank reader.
+- Bump the site/offline-cache version to `2026.09.12.1`.
+
+### Verification evidence
+
+- The real Chromium stale-passage journey now proves retained HTML stays
+  painted but busy/inert, Copy and Listen stay disabled, and all interaction is
+  restored only after the new translation renders.
+- Site structure guards the initial busy/inert state and the runtime pending
+  transition.
+
+## Previous cycle: open the restored weekday after journal restore
 
 ### Why this was selected
 

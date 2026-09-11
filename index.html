@@ -103,8 +103,8 @@
         <div class="card-head">
           <span class="badge" id="book-badge">—</span>
           <div class="card-actions">
-            <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)">Copy</button>
-            <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false">Listen</button>
+            <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
+            <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
             <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
             <label class="share-note" for="include-share-note">
               <input type="checkbox" id="include-share-note" />
@@ -131,7 +131,7 @@
         <p id="yesterday-line" class="muted" hidden></p>
         <p class="focus-box" id="book-focus"></p>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
-        <div id="passage-body" class="passage-body" aria-live="polite"></div>
+        <div id="passage-body" class="passage-body" aria-live="polite" aria-busy="true" inert></div>
       </article>
 
       <div id="ref-popover" class="ref-popover" hidden role="dialog" aria-labelledby="ref-popover-title">

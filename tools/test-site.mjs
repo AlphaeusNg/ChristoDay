@@ -128,6 +128,7 @@ assert.match(index, /id="btn-restore"/, "journal backup restore control remains"
 assert.match(index, /id="backup-file"[^>]*accept="application\/json,\.json"/, "restore accepts JSON backup files");
 assert.match(index, /id="backup-status"[^>]*role="status"/, "backup outcomes are announced");
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
+assert.match(index, /id="passage-body"[^>]*aria-busy="true"[^>]*inert/, "passage starts busy and inert before live text settles");
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
 assert.match(app, /fetch\("data\/segments\.json"\)/, "app must reuse the preloaded plan response");
@@ -160,6 +161,8 @@ assert.match(app, /clipboard\.writeText/, "copy/share must write to the clipboar
 assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
 assert.match(app, /key === "l"/, "L reads the visible passage aloud");
 assert.match(app, /shiftPassageSize/, "passage size can be changed from the reader");
+assert.match(app, /setPassagePending\(true\)/, "passage actions are suspended while text updates");
+assert.match(app, /body\.toggleAttribute\("inert", pending\)/, "retained stale Scripture is not interactive while updating");
 assert.match(app, /data-passage-size/, "passage size is applied on the document");
 assert.match(app, /ChristoState\.createBackup\(state,\s*undefined,\s*currentYmd\)/, "journal backup records the current reading date");
 assert.match(app, /ChristoState\.parseBackup/, "journal restore validates before applying state");

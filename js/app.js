@@ -364,6 +364,10 @@
   async function copyVisiblePassage() {
     const readingEl = $("#reading-panel");
     if (!readingEl || readingEl.hidden) return;
+    if ($("#passage-body")?.getAttribute("aria-busy") === "true") {
+      announceAction("Passage is still updating.");
+      return;
+    }
     const text = visiblePassageText();
     if (!text) {
       announceAction("Nothing to copy yet.");
@@ -587,6 +591,10 @@
   function toggleListen() {
     const readingEl = $("#reading-panel");
     if (!readingEl || readingEl.hidden) return;
+    if ($("#passage-body")?.getAttribute("aria-busy") === "true") {
+      announceAction("Passage is still updating.");
+      return;
+    }
     if (speaking) {
       stopListening();
       announceAction("Stopped reading.");
@@ -719,6 +727,7 @@
     const status = $("#passage-status");
     const hadPaintedPassage = !!body.innerHTML.trim();
     hideRefPopover();
+    setPassagePending(true);
     // Stale-while-revalidate: keep last good HTML painted while the next fetch runs.
     if (hadPaintedPassage) {
       status.textContent = "Updating…";
@@ -749,6 +758,7 @@
       lastPassage = result;
       body.innerHTML = result.html;
       bindPassageReferences(body);
+      setPassagePending(false);
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
       prefetchNextReading(reading, tr, seq);
@@ -760,6 +770,7 @@
       hideRefPopover();
       body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
         <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
+      setPassagePending(false);
       $("#passage-tr-label").textContent = "—";
     } finally {
       if (passageController === controller) passageController = null;
@@ -790,6 +801,18 @@
     nextPassageController = null;
     controller?.abort();
     prefetchController?.abort();
+  }
+
+  function setPassagePending(pending) {
+    const body = $("#passage-body");
+    if (body) {
+      body.setAttribute("aria-busy", pending ? "true" : "false");
+      body.toggleAttribute("inert", pending);
+    }
+    ["#btn-copy", "#btn-listen"].forEach((selector) => {
+      const button = $(selector);
+      if (button) button.disabled = pending;
+    });
   }
 
   function hideRefPopover() {

@@ -350,6 +350,12 @@ select.toolbar-pill {
   color: #dbe4f0;
 }
 
+.passage-body[aria-busy="true"] {
+  opacity: 0.68;
+  pointer-events: none;
+  user-select: none;
+}
+
 html[data-passage-size="sm"] {
   --passage-size: 1rem;
 }

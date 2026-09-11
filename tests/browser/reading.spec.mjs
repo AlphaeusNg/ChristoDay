@@ -135,10 +135,18 @@ test("keeps the last good passage painted while the next fetch runs", async ({ p
   await statusVisible;
   await expect(page.locator("#passage-status")).toHaveText("Updating…");
   expect(await page.locator("#passage-body").innerHTML()).toBe(priorHtml);
+  await expect(page.locator("#passage-body")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator("#passage-body")).toHaveAttribute("inert", "");
+  await expect(page.locator("#btn-copy")).toBeDisabled();
+  await expect(page.locator("#btn-listen")).toBeDisabled();
 
   await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
   await expect(page.locator("#passage-status")).toBeHidden();
+  await expect(page.locator("#passage-body")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator("#passage-body")).not.toHaveAttribute("inert", "");
+  await expect(page.locator("#btn-copy")).toBeEnabled();
+  await expect(page.locator("#btn-listen")).toBeEnabled();
 });
 
 test("downloads and safely restores the private journal", async ({ page }) => {
