@@ -466,6 +466,10 @@
   }
 
   async function shareReading() {
+    if ($("#passage-body")?.getAttribute("aria-busy") === "true") {
+      announceAction("Passage is still updating.");
+      return;
+    }
     writeDeepLink(currentYmd, currentTranslation());
     const url = location.href;
     const line = shareLine(url);
@@ -809,7 +813,7 @@
       body.setAttribute("aria-busy", pending ? "true" : "false");
       body.toggleAttribute("inert", pending);
     }
-    ["#btn-copy", "#btn-listen"].forEach((selector) => {
+    ["#btn-copy", "#btn-listen", "#btn-share"].forEach((selector) => {
       const button = $(selector);
       if (button) button.disabled = pending;
     });
