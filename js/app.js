@@ -802,7 +802,7 @@
       body.setAttribute("aria-busy", pending ? "true" : "false");
       body.toggleAttribute("inert", pending);
     }
-    ["#btn-copy", "#btn-listen"].forEach((selector) => {
+    ["#btn-copy", "#btn-listen", "#btn-share"].forEach((selector) => {
       const button = $(selector);
       if (button) button.disabled = pending;
     });

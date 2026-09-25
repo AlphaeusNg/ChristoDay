@@ -113,6 +113,10 @@
     }
 
     async function shareReading() {
+      if (passageBusy()) {
+        announceAction("Passage is still updating.");
+        return;
+      }
       const ymd = deps.getCurrentYmd();
       deps.writeDeepLink(ymd, deps.currentTranslation());
       const url = location.href;
