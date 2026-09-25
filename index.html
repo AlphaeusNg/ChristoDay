@@ -47,7 +47,7 @@
 
   <main id="main" class="wrap">
     <div class="reader-head">
-      <div class="stats" aria-label="Progress">
+      <div class="stats focus-fold" aria-label="Progress">
         <div class="stat">
           <b id="stat-streak">0</b>
           <span>Weekday streak</span>
@@ -103,33 +103,50 @@
         <div class="card-head">
           <span class="badge" id="book-badge">—</span>
           <div class="card-actions">
-            <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
-            <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
-            <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
-            <label class="share-note" for="include-share-note">
-              <input type="checkbox" id="include-share-note" />
-              Include my note
-            </label>
-            <span class="type-size" role="group" aria-label="Passage text size">
-              <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
-              <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
-            </span>
-            <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
-              <span aria-hidden="true">○</span> Mark complete
-            </button>
+            <div class="reading-primary">
+              <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
+              <button type="button" class="btn" id="btn-focus" aria-pressed="false">Focus</button>
+              <span class="line-spacing" role="group" aria-label="Line spacing">
+                <button type="button" class="btn" id="btn-leading-tighter" title="Tighter line spacing">Line −</button>
+                <button type="button" class="btn" id="btn-leading-looser" title="Looser line spacing">Line +</button>
+              </span>
+              <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
+                <span aria-hidden="true">○</span> Mark complete
+              </button>
+            </div>
+            <details id="reading-tools" class="reading-tools" open>
+              <summary>More tools</summary>
+              <div class="reading-secondary">
+                <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
+                <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
+                <label class="share-note" for="include-share-note">
+                  <input type="checkbox" id="include-share-note" />
+                  Include my note
+                </label>
+                <span class="type-size" role="group" aria-label="Passage text size">
+                  <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
+                  <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
+                </span>
+              </div>
+            </details>
           </div>
         </div>
         <p id="action-status" class="muted" role="status" hidden></p>
         <h2 class="passage-ref" id="passage-ref">—</h2>
-        <div class="meta-row">
+        <div class="meta-row focus-fold">
           <span id="weekday-progress"></span>
           <span id="time-est">≈ 5–10 minutes</span>
           <span>Translation: <strong id="passage-tr-label">—</strong></span>
           <span class="red-letter-legend"><span aria-hidden="true">Jesus’ words</span><span class="sr-only">Words of Jesus appear in red</span></span>
           <span id="tomorrow-note"></span>
         </div>
-        <p id="yesterday-line" class="muted" hidden></p>
-        <p class="focus-box" id="book-focus"></p>
+        <p id="yesterday-line" class="muted focus-fold" hidden></p>
+        <p class="focus-box focus-fold" id="book-focus"></p>
+        <p id="passage-availability" class="muted"></p>
+        <div class="reading-save">
+          <button type="button" class="btn" id="btn-save-reading" hidden>Save offline</button>
+          <button type="button" class="btn" id="btn-remove-reading" hidden>Remove saved text</button>
+        </div>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
         <div id="passage-body" class="passage-body" aria-live="polite" aria-busy="true" inert></div>
       </article>
@@ -142,7 +159,7 @@
         <div id="ref-popover-body" class="ref-popover-body"></div>
       </div>
 
-      <article class="card">
+      <article class="card reflection-card focus-fold">
         <p class="eyebrow">Christ-centered reflection</p>
         <h3 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.15rem">Look for Jesus</h3>
         <p id="reflection-seed" class="muted" style="margin-top:0"></p>
@@ -151,7 +168,7 @@
 
       <article class="card">
         <p class="eyebrow">Private journal</p>
-        <h3 style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.15rem">One sentence for today</h3>
+        <h3 id="journal-heading" style="font-family:var(--serif);font-weight:500;margin:0 0 0.5rem;font-size:1.15rem">One sentence for today</h3>
         <p class="muted" style="margin-top:0">Stored only on this device (<code>localStorage</code>). Never uploaded.</p>
         <label class="sr-only" for="journal">Journal</label>
         <textarea id="journal" placeholder="What did you see of Christ? What grace do you need to walk in?"></textarea>
@@ -166,7 +183,30 @@
       </article>
     </section>
 
-    <details id="about" class="card about-card">
+    <details id="journal-history" class="card" hidden>
+      <summary>Journal history</summary>
+      <p class="muted history-note">Search stays on this device. Notes are never uploaded.</p>
+      <div class="history-filters">
+        <label>From
+          <input type="date" id="history-from" aria-label="Journal history from date" />
+        </label>
+        <label>To
+          <input type="date" id="history-to" aria-label="Journal history to date" />
+        </label>
+        <label>Book
+          <select id="history-book" aria-label="Journal history book">
+            <option value="">All books</option>
+          </select>
+        </label>
+        <label class="history-query-label">Search notes
+          <input type="search" id="history-query" placeholder="Search notes" autocomplete="off" enterkeyhint="search" />
+        </label>
+      </div>
+      <p id="history-status" class="muted" role="status"></p>
+      <ul id="history-results" class="history-results"></ul>
+    </details>
+
+    <details id="about" class="card about-card focus-fold">
       <summary>
         <span class="eyebrow">Why this exists</span>
         <span class="about-title">Niche with a name</span>
@@ -223,6 +263,12 @@
   <script src="js/red-letter.js"></script>
   <script src="js/bible.js"></script>
   <script src="js/state.js"></script>
+  <script src="js/reading-actions.js"></script>
+  <script src="js/journal-backup.js"></script>
+  <script src="js/ref-popover.js"></script>
+  <script src="js/journal-history.js"></script>
+  <script src="js/offline-readings.js"></script>
+  <script src="js/today-rollover.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

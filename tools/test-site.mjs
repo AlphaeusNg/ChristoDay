@@ -67,6 +67,12 @@ const requiredRuntime = [
   "./js/red-letter.js",
   "./js/bible.js",
   "./js/state.js",
+  "./js/reading-actions.js",
+  "./js/journal-backup.js",
+  "./js/ref-popover.js",
+  "./js/journal-history.js",
+  "./js/offline-readings.js",
+  "./js/today-rollover.js",
   "./js/app.js",
   "./data/segments.json",
 ];
@@ -129,8 +135,45 @@ assert.match(index, /id="backup-file"[^>]*accept="application\/json,\.json"/, "r
 assert.match(index, /id="backup-status"[^>]*role="status"/, "backup outcomes are announced");
 assert.match(index, /id="action-status"[^>]*role="status"/, "copy/share status is announced");
 assert.match(index, /id="passage-body"[^>]*aria-busy="true"[^>]*inert/, "passage starts busy and inert before live text settles");
+assert.match(index, /id="journal-history"/, "journal history stays on the page");
+assert.match(index, /id="history-query"/, "journal history has a local text search");
+assert.match(index, /id="history-book"/, "journal history can filter by book");
+assert.match(index, /id="history-from"/, "journal history can filter from a date");
+assert.match(index, /id="history-to"/, "journal history can filter to a date");
+assert.match(index, /id="btn-save-reading"/, "permitted readings can be saved for offline");
+assert.match(index, /id="btn-remove-reading"/, "saved readings can be removed");
+assert.match(index, /id="passage-availability"/, "offline availability is visible per reading");
+assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
+assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
+assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
+assert.match(index, /id="reading-tools"/, "secondary reading tools can fold");
+assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
+assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");
+assert.match(css, /--passage-leading/, "line spacing uses the passage leading token");
+assert.match(css, /\.history-result/, "journal history results are styled for touch");
+assert.match(css, /flex-wrap:\s*wrap/, "narrow toolbars wrap instead of overflowing");
+for (const script of [
+  "js/reading-actions.js",
+  "js/journal-backup.js",
+  "js/ref-popover.js",
+  "js/journal-history.js",
+  "js/offline-readings.js",
+  "js/today-rollover.js",
+]) {
+  assert(
+    index.indexOf(`src="${script}"`) > index.indexOf('src="js/state.js"') &&
+      index.indexOf(`src="${script}"`) < index.indexOf('src="js/app.js"'),
+    `${script} must load after state and before app`
+  );
+}
 
 const app = readFileSync(join(root, "js/app.js"), "utf8");
+const actions = readFileSync(join(root, "js/reading-actions.js"), "utf8");
+const backup = readFileSync(join(root, "js/journal-backup.js"), "utf8");
+const popover = readFileSync(join(root, "js/ref-popover.js"), "utf8");
+const history = readFileSync(join(root, "js/journal-history.js"), "utf8");
+const readings = readFileSync(join(root, "js/offline-readings.js"), "utf8");
+const today = readFileSync(join(root, "js/today-rollover.js"), "utf8");
 assert.match(app, /fetch\("data\/segments\.json"\)/, "app must reuse the preloaded plan response");
 assert.doesNotMatch(
   app,
@@ -156,22 +199,37 @@ assert.match(app, /previousPrefetchController\?\.abort\(\)/, "navigation must ca
 assert.match(app, /params\.get\("d"\)/, "boot must read the d deep-link");
 assert.match(app, /params\.get\("tr"\)/, "boot must read the tr deep-link");
 assert.match(app, /history\.replaceState/, "date/translation changes must update the URL");
-assert.match(app, /navigator\.share/, "share must prefer the Web Share API");
-assert.match(app, /clipboard\.writeText/, "copy/share must write to the clipboard");
-assert.match(app, /speechSynthesis/, "listen must use the Web Speech API");
+assert.match(actions, /navigator\.share/, "share must prefer the Web Share API");
+assert.match(actions, /clipboard\.writeText/, "copy/share must write to the clipboard");
+assert.match(actions, /speechSynthesis/, "listen must use the Web Speech API");
+assert.match(actions, /speechRun/, "stale speech callbacks must not own a replacement reading");
 assert.match(app, /key === "l"/, "L reads the visible passage aloud");
-assert.match(app, /shiftPassageSize/, "passage size can be changed from the reader");
+assert.match(actions, /shiftPassageSize/, "passage size can be changed from the reader");
+assert.match(actions, /data-passage-size/, "passage size is applied on the document");
+assert.match(actions, /data-reading-focus/, "focus mode uses the document attribute");
+assert.match(actions, /data-line-spacing/, "line spacing is applied on the document");
 assert.match(app, /setPassagePending\(true\)/, "passage actions are suspended while text updates");
 assert.match(app, /body\.toggleAttribute\("inert", pending\)/, "retained stale Scripture is not interactive while updating");
-assert.match(app, /data-passage-size/, "passage size is applied on the document");
-assert.match(app, /ChristoState\.createBackup\(state,\s*undefined,\s*currentYmd\)/, "journal backup records the current reading date");
-assert.match(app, /ChristoState\.parseBackup/, "journal restore validates before applying state");
-assert.match(app, /window\.confirm/, "journal restore confirms before replacing local data");
-assert.match(app, /ChristoState\.restoreOpenYmd/, "journal restore selects a backed-up weekday when valid");
+assert.match(backup, /ChristoState\.createBackup\(state,\s*undefined,\s*currentYmd\)/, "journal backup records the current reading date");
+assert.match(backup, /ChristoState\.parseBackup/, "journal restore validates before applying state");
+assert.match(backup, /window\.confirm/, "journal restore confirms before replacing local data");
+assert.match(backup, /ChristoState\.restoreOpenYmd/, "journal restore selects a backed-up weekday when valid");
 assert.match(
-  app,
+  backup,
   /restoreOpenYmd\([\s\S]*kind === "reading"[\s\S]*renderDay\(openYmd\)/,
   "confirmed restore opens a valid backed-up weekday and updates the URL"
+);
+assert.match(popover, /fn-mark/, "cross-reference markers still open the popover");
+assert.match(popover, /class="wj"|xref-link/, "popover still follows passage reference links");
+assert.match(history, /searchEntries/, "journal history filters on device");
+assert.doesNotMatch(history, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket/, "journal search never uploads notes");
+assert.match(readings, /allowsLocalPassageStorage/, "offline copies follow the translation permission gate");
+assert.match(app, /decideTodayRollover/, "a Singapore day change is handled without a reload");
+assert.match(today, /editingHistorical/, "an active historical note is not moved at midnight");
+assert.match(
+  app.slice(app.indexOf("function toggleComplete"), app.indexOf("function updateCompleteButton")),
+  /ensureDay\(currentYmd\)/,
+  "completion stays on the open reading date"
 );
 
 console.log(

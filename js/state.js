@@ -26,8 +26,19 @@
     return value === "sm" || value === "lg" ? value : "md";
   }
 
+  function validLineSpacing(value) {
+    return value === "tight" || value === "open" ? value : "normal";
+  }
+
   function defaultState() {
-    return { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false };
+    return {
+      translation: "NIV",
+      days: {},
+      passageSize: "md",
+      lineSpacing: "normal",
+      readingFocus: false,
+      includeShareNote: false,
+    };
   }
 
   function hydrateState(saved) {
@@ -35,6 +46,8 @@
     if (!isRecord(saved)) return hydrated;
     hydrated.translation = validTranslation(saved.translation);
     hydrated.passageSize = validPassageSize(saved.passageSize);
+    hydrated.lineSpacing = validLineSpacing(saved.lineSpacing);
+    hydrated.readingFocus = saved.readingFocus === true;
     hydrated.includeShareNote = saved.includeShareNote === true;
     if (!isRecord(saved.days)) return hydrated;
 
@@ -152,5 +165,6 @@
     ensureDay,
     validYmd,
     validPassageSize,
+    validLineSpacing,
   };
 })(typeof window !== "undefined" ? window : globalThis);

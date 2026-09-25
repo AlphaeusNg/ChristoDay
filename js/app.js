@@ -10,16 +10,19 @@
 
   let plan = null;
   let state = ChristoState.loadState();
+  let readings = ChristoReadings.load();
   let currentYmd = null;
+  let observedToday = null;
   /** Monotonic token so slow Bible fetches don't clobber a newer day. */
   let renderSeq = 0;
   let passageController = null;
   let nextPassageController = null;
-  let actionStatusTimer = 0;
-  let speaking = false;
-  let speechRun = 0;
   let lastPassage = null;
-  let previewController = null;
+  let passageSource = "reference";
+  let actions = null;
+  let backups = null;
+  let popovers = null;
+  let journalHistory = null;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -153,9 +156,112 @@
     btn.textContent = `Continue ${ChristoSchedule.formatDisplayDate(target)}`;
   }
 
+  function currentTranslation() {
+    return TRANSLATIONS.has(state.translation) ? state.translation : "NIV";
+  }
+
+  function writeDeepLink(ymd, translation) {
+    const url = new URL(location.href);
+    url.searchParams.set("d", ymd);
+    url.searchParams.set("tr", TRANSLATIONS.has(translation) ? translation : "NIV");
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${location.pathname}${location.search}${location.hash}`;
+    if (next !== current) history.replaceState(null, "", next);
+  }
+
+  function currentJournalNote() {
+    const fromState = String(state.days?.[currentYmd]?.journal || "").trim();
+    if (fromState) return fromState;
+    return String($("#journal")?.value || "").trim();
+  }
+
+  function journalEntries() {
+    const entries = [];
+    for (const [ymd, day] of Object.entries(state.days || {})) {
+      const journal = typeof day?.journal === "string" ? day.journal : "";
+      if (!journal.trim() || !ChristoState.validYmd(ymd)) continue;
+      let bookKey = "";
+      let bookLabel = "Reading";
+      let ref = "";
+      if (plan) {
+        const reading = ChristoSchedule.resolveReading(plan, ymd);
+        if (reading.kind === "reading") {
+          bookKey = reading.bookKey;
+          bookLabel = reading.bookLabel;
+          ref = reading.fullRef;
+        } else if (reading.kind === "weekend") {
+          bookLabel = "Weekend";
+        }
+      }
+      entries.push({
+        ymd,
+        journal,
+        bookKey,
+        bookLabel,
+        ref,
+        completed: day.completed === true,
+      });
+    }
+    return entries;
+  }
+
+  function historyBooks() {
+    const books = [];
+    const seen = new Set();
+    for (const key of Object.values(plan?.weekdayMap || {})) {
+      if (seen.has(key) || !plan?.books?.[key]) continue;
+      seen.add(key);
+      books.push({ key, label: plan.books[key].label || key });
+    }
+    return books;
+  }
+
+  function initModules() {
+    actions = ChristoReadingActions.create({
+      $,
+      getState: () => state,
+      saveState,
+      getLastPassage: () => lastPassage,
+      getPlan: () => plan,
+      getCurrentYmd: () => currentYmd,
+      getJournalNote: currentJournalNote,
+      writeDeepLink,
+      currentTranslation,
+    });
+    popovers = ChristoRefPopover.create({
+      $,
+      getLastPassage: () => lastPassage,
+      getPlan: () => plan,
+      getCurrentYmd: () => currentYmd,
+      announceAction: (message) => actions.announceAction(message),
+      writeClipboard: (text) => actions.writeClipboard(text),
+    });
+    backups = ChristoJournalBackup.create({
+      $,
+      getState: () => state,
+      getPlan: () => plan,
+      getCurrentYmd: () => currentYmd,
+      replaceState: (next) => {
+        state = next;
+      },
+      saveState,
+      renderDay,
+      applyPassageSize: (size) => actions.applyPassageSize(size),
+      applyLineSpacing: (spacing) => actions.applyLineSpacing(spacing),
+      applyFocus: (on) => actions.applyFocus(on),
+      applyShareNotePreference: (on) => actions.applyShareNotePreference(on),
+    });
+    journalHistory = ChristoJournalHistory.create({
+      $,
+      getEntries: journalEntries,
+      openReading: (ymd) => openHistoryReading(ymd),
+    });
+  }
+
   async function init() {
     bindAutoHideHeader();
-    bindRefPopover();
+    initModules();
+    popovers.bind();
     try {
       const res = await fetch("data/segments.json");
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -176,17 +282,28 @@
     const requestedTr = params.get("tr");
     const hadDeepLink = params.has("d") || params.has("tr");
     if (TRANSLATIONS.has(requestedTr)) state.translation = requestedTr;
+    observedToday = ChristoSchedule.partsInSingapore().ymd;
     currentYmd = ChristoState.validYmd(requestedYmd)
       ? requestedYmd
-      : ChristoSchedule.partsInSingapore().ymd;
+      : observedToday;
     bindUi();
-    applyPassageSize(state.passageSize);
-    applyShareNotePreference(state.includeShareNote);
+    actions.applyPassageSize(state.passageSize);
+    actions.applyLineSpacing(state.lineSpacing);
+    actions.applyFocus(state.readingFocus);
+    actions.applyShareNotePreference(state.includeShareNote);
+    const historyCard = $("#journal-history");
+    if (historyCard) historyCard.hidden = false;
+    journalHistory.setBooks(historyBooks());
+    journalHistory.bind();
     await renderDay(currentYmd, { syncUrl: hadDeepLink });
+    journalHistory.refresh();
+    watchSingaporeDay();
     $("#site-version").textContent = SITE_VERSION?.id || "";
   }
 
   function bindUi() {
+    actions.bind();
+    backups.bind();
     $("#btn-prev")?.addEventListener("click", () => shiftDay(-1));
     $("#btn-next")?.addEventListener("click", () => shiftDay(1));
     $("#btn-today")?.addEventListener("click", () => renderDay(ChristoSchedule.partsInSingapore().ymd));
@@ -195,34 +312,14 @@
       if (ymd) renderDay(ymd);
     });
     $("#btn-complete")?.addEventListener("click", toggleComplete);
-    $("#btn-copy")?.addEventListener("click", () => {
-      copyVisiblePassage().catch(() => {});
-    });
-    $("#btn-listen")?.addEventListener("click", () => {
-      toggleListen();
-    });
-    $("#btn-share")?.addEventListener("click", () => {
-      shareReading().catch(() => {});
-    });
-    $("#include-share-note")?.addEventListener("change", (e) => {
-      applyShareNotePreference(e.target.checked);
-      saveState();
-    });
-    $("#btn-backup")?.addEventListener("click", downloadBackup);
-    $("#btn-restore")?.addEventListener("click", () => $("#backup-file")?.click());
-    $("#backup-file")?.addEventListener("change", async (event) => {
-      const input = event.currentTarget;
-      const file = input.files?.[0];
-      input.value = "";
-      if (file) await restoreBackupFile(file);
-    });
-    $("#btn-type-smaller")?.addEventListener("click", () => shiftPassageSize(-1));
-    $("#btn-type-larger")?.addEventListener("click", () => shiftPassageSize(1));
+    $("#btn-save-reading")?.addEventListener("click", saveCurrentReading);
+    $("#btn-remove-reading")?.addEventListener("click", removeCurrentReading);
     $("#journal")?.addEventListener("input", (e) => {
       const day = ensureDay(currentYmd);
       day.journal = e.target.value;
       saveState();
       updateMeta();
+      journalHistory.refresh();
     });
     $("#translation")?.addEventListener("change", async (e) => {
       state.translation = e.target.value;
@@ -254,234 +351,20 @@
       if (e.key === "t" || e.key === "T") renderDay(ChristoSchedule.partsInSingapore().ymd);
       if (e.key === "c" || e.key === "C") toggleComplete();
       if ((e.key === "y" || e.key === "Y") && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        copyVisiblePassage().catch(() => {});
+        actions.copyVisiblePassage().catch(() => {});
       }
       if ((e.key === "l" || e.key === "L") && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        toggleListen();
+        actions.toggleListen();
       }
       if (e.key === "-" || e.key === "_") {
         e.preventDefault();
-        shiftPassageSize(-1);
+        actions.shiftPassageSize(-1);
       }
       if (e.key === "=" || e.key === "+") {
         e.preventDefault();
-        shiftPassageSize(1);
+        actions.shiftPassageSize(1);
       }
     });
-  }
-
-  const PASSAGE_SIZES = ["sm", "md", "lg"];
-
-  function applyPassageSize(size) {
-    const next = ChristoState.validPassageSize
-      ? ChristoState.validPassageSize(size)
-      : size === "sm" || size === "lg"
-        ? size
-        : "md";
-    state.passageSize = next;
-    document.documentElement.setAttribute("data-passage-size", next);
-    const smaller = $("#btn-type-smaller");
-    const larger = $("#btn-type-larger");
-    if (smaller) smaller.disabled = next === "sm";
-    if (larger) larger.disabled = next === "lg";
-    return next;
-  }
-
-  function shiftPassageSize(delta) {
-    const current = applyPassageSize(state.passageSize);
-    const index = PASSAGE_SIZES.indexOf(current);
-    const next = PASSAGE_SIZES[Math.max(0, Math.min(PASSAGE_SIZES.length - 1, index + delta))];
-    if (next === current) return;
-    applyPassageSize(next);
-    saveState();
-    announceAction(
-      next === "sm" ? "Smaller passage text." : next === "lg" ? "Larger passage text." : "Default passage text."
-    );
-  }
-
-  function currentTranslation() {
-    return TRANSLATIONS.has(state.translation) ? state.translation : "NIV";
-  }
-
-  function writeDeepLink(ymd, translation) {
-    const url = new URL(location.href);
-    url.searchParams.set("d", ymd);
-    url.searchParams.set("tr", TRANSLATIONS.has(translation) ? translation : "NIV");
-    const next = `${url.pathname}${url.search}${url.hash}`;
-    const current = `${location.pathname}${location.search}${location.hash}`;
-    if (next !== current) history.replaceState(null, "", next);
-  }
-
-  function announceAction(message) {
-    const status = $("#action-status");
-    if (!status) return;
-    status.hidden = false;
-    status.textContent = message;
-    clearTimeout(actionStatusTimer);
-    actionStatusTimer = setTimeout(() => {
-      if (status.textContent === message) {
-        status.hidden = true;
-        status.textContent = "";
-      }
-    }, 2500);
-  }
-
-  function visiblePassageText() {
-    const ref = ($("#passage-ref")?.textContent || "").trim();
-    const body = lastPassage?.verses?.length
-      ? lastPassage.verses.map((verse) => `${verse.chapter}:${verse.verse} ${verse.text}`).join(" ")
-      : ($("#passage-body")?.innerText || "").replace(/\s+\n/g, "\n").trim();
-    if (ref && body) return `${ref}\n\n${body}`;
-    return ref || body;
-  }
-
-  async function writeClipboard(text) {
-    if (!text) return false;
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch {
-      /* fall through */
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand("copy");
-      ta.remove();
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-
-  async function copyVisiblePassage() {
-    const readingEl = $("#reading-panel");
-    if (!readingEl || readingEl.hidden) return;
-    if ($("#passage-body")?.getAttribute("aria-busy") === "true") {
-      announceAction("Passage is still updating.");
-      return;
-    }
-    const text = visiblePassageText();
-    if (!text) {
-      announceAction("Nothing to copy yet.");
-      return;
-    }
-    const ok = await writeClipboard(text);
-    announceAction(ok ? "Copied passage." : "Could not copy passage.");
-  }
-
-  function applyShareNotePreference(on) {
-    state.includeShareNote = on === true;
-    const box = $("#include-share-note");
-    if (box) box.checked = state.includeShareNote;
-    return state.includeShareNote;
-  }
-
-  function setBackupStatus(message) {
-    const status = $("#backup-status");
-    if (!status) return;
-    status.hidden = !message;
-    status.textContent = message;
-  }
-
-  function downloadBackup() {
-    try {
-      const payload = `${JSON.stringify(ChristoState.createBackup(state, undefined, currentYmd), null, 2)}\n`;
-      const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `christoday-backup-${ChristoSchedule.partsInSingapore().ymd}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
-      setBackupStatus("Backup downloaded.");
-    } catch {
-      setBackupStatus("Could not create a backup on this device.");
-    }
-  }
-
-  async function restoreBackupFile(file) {
-    if (file.size > ChristoState.MAX_BACKUP_BYTES) {
-      setBackupStatus("That backup is too large.");
-      return;
-    }
-
-    let restored;
-    try {
-      restored = ChristoState.parseBackup(await file.text());
-    } catch (error) {
-      setBackupStatus(error?.message || "Could not read that backup.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "Replace this device's ChristoDay journal and completion history with this backup?"
-    );
-    if (!confirmed) {
-      setBackupStatus("Restore cancelled. Your journal was not changed.");
-      return;
-    }
-
-    state = restored;
-    applyPassageSize(state.passageSize);
-    applyShareNotePreference(state.includeShareNote);
-    const persisted = saveState();
-    const todayYmd = ChristoSchedule.partsInSingapore().ymd;
-    const openYmd = ChristoState.restoreOpenYmd(
-      restored,
-      todayYmd,
-      (ymd) => plan && ChristoSchedule.resolveReading(plan, ymd).kind === "reading"
-    );
-    await renderDay(openYmd);
-    setBackupStatus(
-      persisted
-        ? "Backup restored."
-        : "Backup restored for this visit, but this device blocked permanent storage."
-    );
-  }
-
-  function currentJournalNote() {
-    const fromState = String(state.days?.[currentYmd]?.journal || "").trim();
-    if (fromState) return fromState;
-    return String($("#journal")?.value || "").trim();
-  }
-
-  function shareLine(url) {
-    const display = currentYmd ? ChristoSchedule.formatDisplayDate(currentYmd) : "";
-    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
-    const ref = reading?.kind === "reading"
-      ? reading.fullRef
-      : ($("#passage-ref")?.textContent || "").trim();
-    const line = [display, ref, url].filter(Boolean).join(" · ");
-    const note = state.includeShareNote ? currentJournalNote() : "";
-    return note ? `${line}\n\n${note}` : line;
-  }
-
-  async function shareReading() {
-    writeDeepLink(currentYmd, currentTranslation());
-    const url = location.href;
-    const line = shareLine(url);
-    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
-    const title = reading?.kind === "reading" ? reading.fullRef : "ChristoDay";
-    try {
-      if (typeof navigator.share === "function") {
-        await navigator.share({ title, text: line, url });
-        announceAction("Shared today's reading.");
-        return;
-      }
-    } catch (err) {
-      if (err?.name === "AbortError") return;
-    }
-    const ok = await writeClipboard(line);
-    announceAction(ok ? "Copied today's reading." : "Could not share today's reading.");
   }
 
   function findWeekdayYmd(fromYmd, weekdayNum, direction) {
@@ -544,6 +427,7 @@
     saveState();
     updateCompleteButton(day.completed);
     updateMeta();
+    journalHistory?.refresh();
   }
 
   function updateCompleteButton(done) {
@@ -557,83 +441,64 @@
   }
 
   function updateMeta() {
-    const today = ChristoSchedule.partsInSingapore().ymd;
+    const today = observedToday || ChristoSchedule.partsInSingapore().ymd;
     $("#stat-streak").textContent = String(computeStreak(today));
     $("#stat-done").textContent = String(countCompleted());
   }
 
-  function renderListeningState(active) {
-    speaking = active;
-    const btn = $("#btn-listen");
-    if (btn) {
-      btn.setAttribute("aria-pressed", active ? "true" : "false");
-      btn.textContent = active ? "Stop" : "Listen";
+  function applyTodayLabels() {
+    const today = observedToday || ChristoSchedule.partsInSingapore().ymd;
+    const dateEl = $("#reading-date");
+    if (dateEl && currentYmd) {
+      const display = ChristoSchedule.formatDisplayDate(currentYmd);
+      dateEl.textContent = currentYmd === today ? `Today · ${display}` : display;
     }
+    const heading = $("#journal-heading");
+    if (heading) {
+      heading.textContent = currentYmd === today ? "One sentence for today" : "One sentence for this reading";
+    }
+    updateMeta();
   }
 
-  function stopListening() {
-    speechRun += 1;
-    try {
-      window.speechSynthesis?.cancel();
-    } catch {
-      /* ignore */
-    }
-    renderListeningState(false);
+  function journalIsActive() {
+    const journal = $("#journal");
+    return !!journal && document.activeElement === journal;
   }
 
-  function finishListening(run, errorMessage = "") {
-    if (run !== speechRun) return;
-    speechRun += 1;
-    renderListeningState(false);
-    if (errorMessage) announceAction(errorMessage);
+  function handleTodayChange(nextToday) {
+    const decision = ChristoToday.decideTodayRollover({
+      viewedYmd: currentYmd,
+      previousToday: observedToday,
+      nextToday,
+      journalActive: journalIsActive(),
+    });
+    observedToday = nextToday;
+    if (decision.moved) return renderDay(decision.viewedYmd);
+    applyTodayLabels();
+    return decision;
   }
 
-  function toggleListen() {
-    const readingEl = $("#reading-panel");
-    if (!readingEl || readingEl.hidden) return;
-    if ($("#passage-body")?.getAttribute("aria-busy") === "true") {
-      announceAction("Passage is still updating.");
-      return;
-    }
-    if (speaking) {
-      stopListening();
-      announceAction("Stopped reading.");
-      return;
-    }
-    const text = visiblePassageText();
-    if (!text) {
-      announceAction("Nothing to read yet.");
-      return;
-    }
-    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
-      announceAction("Speech is not available on this device.");
-      return;
-    }
-    stopListening();
-    const run = speechRun;
-    const utterance = new window.SpeechSynthesisUtterance();
-    utterance.text = text;
-    utterance.rate = 0.92;
-    utterance.onend = () => {
-      finishListening(run);
+  function watchSingaporeDay() {
+    const tick = () => {
+      const next = ChristoSchedule.partsInSingapore().ymd;
+      if (next !== observedToday) handleTodayChange(next);
     };
-    utterance.onerror = () => {
-      finishListening(run, "Could not read passage.");
-    };
-    renderListeningState(true);
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      finishListening(run, "Could not read passage.");
-      return;
-    }
-    if (run === speechRun && speaking) announceAction("Reading aloud…");
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") tick();
+    });
+    window.addEventListener("focus", tick);
+    window.setInterval(tick, 60000);
+  }
+
+  async function openHistoryReading(ymd) {
+    await renderDay(ymd);
+    $("#journal")?.scrollIntoView({ block: "center", inline: "nearest" });
   }
 
   async function renderDay(ymd, options = {}) {
     const seq = ++renderSeq;
     currentYmd = ymd;
-    stopListening();
+    actions?.stopListening();
     const reading = ChristoSchedule.resolveReading(plan, ymd);
     const datePick = $("#date-pick");
     if (datePick) datePick.value = ymd;
@@ -644,8 +509,7 @@
       actionStatus.textContent = "";
     }
 
-    $("#reading-date").textContent = ChristoSchedule.formatDisplayDate(ymd);
-    updateMeta();
+    applyTodayLabels();
 
     const weekendEl = $("#weekend-panel");
     const readingEl = $("#reading-panel");
@@ -660,12 +524,14 @@
       weekendEl.hidden = false;
       $("#weekend-msg").textContent = reading.message;
       renderWeekStrip(ymd);
+      journalHistory?.refresh();
       return;
     }
     if (reading.kind === "before_start") {
       cancelPassageRequest();
       beforeEl.hidden = false;
       $("#before-msg").textContent = reading.message;
+      journalHistory?.refresh();
       return;
     }
     if (reading.kind !== "reading") {
@@ -699,6 +565,7 @@
     const tr = $("#translation");
     if (tr) tr.value = state.translation || day.translation || "NIV";
     updateCompleteButton(!!day.completed);
+    journalHistory?.refresh();
 
     await loadPassage(seq);
   }
@@ -715,10 +582,129 @@
     return `${opener} As you read ${reading.fullRef}, ask: How does this passage reveal His person, work, or gospel glory? End with one short prayer of trust.`;
   }
 
+  function refreshReadingAvailability(loaded) {
+    const tr = currentTranslation();
+    const saved = !!ChristoReadings.get(readings, currentYmd, tr);
+    const status = ChristoReadings.availability({ translation: tr, saved, loaded });
+    const el = $("#passage-availability");
+    if (el) el.textContent = status.text;
+    const saveBtn = $("#btn-save-reading");
+    const removeBtn = $("#btn-remove-reading");
+    const busy = $("#passage-body")?.getAttribute("aria-busy") === "true";
+    if (saveBtn) {
+      saveBtn.hidden = !(status.permitted && !status.saved && loaded === "live");
+      saveBtn.disabled = busy;
+    }
+    if (removeBtn) removeBtn.hidden = !status.saved;
+  }
+
+  function saveCurrentReading() {
+    const tr = currentTranslation();
+    if (!ChristoBible.allowsLocalPassageStorage(tr)) {
+      actions.announceAction(`${tr} text is not stored. Offline, this reading stays reference-only.`);
+      return;
+    }
+    const reading = ChristoSchedule.resolveReading(plan, currentYmd);
+    if (reading.kind !== "reading" || !lastPassage?.verses?.length || lastPassage.translation !== tr) {
+      actions.announceAction("Nothing to save yet.");
+      return;
+    }
+    const entry = {
+      ymd: currentYmd,
+      translation: tr,
+      ref: reading.fullRef,
+      bookKey: reading.bookKey,
+      bookLabel: reading.bookLabel,
+      savedAt: new Date().toISOString(),
+      passage: {
+        translation: tr,
+        verses: lastPassage.verses.map((verse) => ({
+          chapter: verse.chapter,
+          verse: verse.verse,
+          text: verse.text,
+          heading: verse.heading || "",
+        })),
+      },
+    };
+    const result = ChristoReadings.put(readings, entry);
+    if (!result.ok) {
+      const message = result.reason === "full"
+        ? "Offline reading storage is full. Remove a saved reading first."
+        : result.reason === "not-permitted"
+          ? `${tr} text is not stored. Offline, this reading stays reference-only.`
+          : "Could not save this reading.";
+      actions.announceAction(message);
+      return;
+    }
+    if (!ChristoReadings.save(result.library)) {
+      actions.announceAction("Could not save on this device.");
+      return;
+    }
+    readings = result.library;
+    refreshReadingAvailability(passageSource === "saved" ? "saved" : "live");
+    actions.announceAction(`Saved this ${tr} reading on this device.`);
+  }
+
+  function showReferenceOnly(reading, message) {
+    const body = $("#passage-body");
+    const status = $("#passage-status");
+    lastPassage = null;
+    passageSource = "reference";
+    popovers?.hide();
+    status.hidden = false;
+    status.innerHTML = message;
+    body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
+        <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
+    setPassagePending(false);
+    $("#passage-tr-label").textContent = "—";
+    refreshReadingAvailability("reference");
+  }
+
+  function removeCurrentReading() {
+    const tr = currentTranslation();
+    const next = ChristoReadings.remove(readings, currentYmd, tr);
+    if (!ChristoReadings.save(next)) {
+      actions.announceAction("Could not remove the saved reading.");
+      return;
+    }
+    readings = next;
+    if (passageSource === "saved") {
+      const reading = ChristoSchedule.resolveReading(plan, currentYmd);
+      showReferenceOnly(
+        reading,
+        `Saved copy removed. Open <strong>${escapeHtml(reading.fullRef)}</strong> when you are online, or read it in your Bible.`
+      );
+    } else {
+      refreshReadingAvailability(passageSource === "live" ? "live" : "reference");
+    }
+    actions.announceAction("Removed the saved reading.");
+  }
+
+  function paintSavedPassage(reading, tr) {
+    const savedEntry = ChristoReadings.get(readings, currentYmd, tr);
+    if (!savedEntry || !ChristoBible.allowsLocalPassageStorage(tr)) return false;
+    const rendered = ChristoBible.renderStoredVerses(
+      savedEntry.bookKey || reading.bookKey,
+      savedEntry.passage.verses
+    );
+    if (!rendered.verses.length) return false;
+    const body = $("#passage-body");
+    const status = $("#passage-status");
+    lastPassage = { ...rendered, translation: tr };
+    passageSource = "saved";
+    body.innerHTML = rendered.html;
+    popovers.bindPassage(body);
+    setPassagePending(false);
+    status.hidden = true;
+    $("#passage-tr-label").textContent = tr;
+    refreshReadingAvailability("saved");
+    return true;
+  }
+
   async function loadPassage(seq) {
-    if (speaking) {
-      stopListening();
-      announceAction("Stopped reading.");
+    if (actions?.isSpeaking()) {
+      actions.stopListening();
+      actions.announceAction("Stopped reading.");
     }
     const reading = ChristoSchedule.resolveReading(plan, currentYmd);
     if (reading.kind !== "reading") return;
@@ -726,7 +712,7 @@
     const body = $("#passage-body");
     const status = $("#passage-status");
     const hadPaintedPassage = !!body.innerHTML.trim();
-    hideRefPopover();
+    popovers?.hide();
     setPassagePending(true);
     // Stale-while-revalidate: keep last good HTML painted while the next fetch runs.
     if (hadPaintedPassage) {
@@ -734,10 +720,12 @@
       status.hidden = false;
     } else {
       lastPassage = null;
+      passageSource = "reference";
       body.innerHTML = "";
       status.textContent = "Loading Scripture…";
       status.hidden = false;
     }
+    refreshReadingAvailability("pending");
 
     const tr = state.translation || "NIV";
     const previousController = passageController;
@@ -756,22 +744,27 @@
       if (controller.signal.aborted || seq !== renderSeq) return; // user navigated away
       if (!result.verses?.length) throw new Error("Empty passage");
       lastPassage = result;
+      passageSource = "live";
       body.innerHTML = result.html;
-      bindPassageReferences(body);
+      popovers.bindPassage(body);
       setPassagePending(false);
       status.hidden = true;
       $("#passage-tr-label").textContent = result.translation;
+      refreshReadingAvailability("live");
       prefetchNextReading(reading, tr, seq);
     } catch (err) {
       if (controller.signal.aborted || seq !== renderSeq) return;
+      if (paintSavedPassage(reading, tr)) return;
       status.hidden = false;
       status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
       lastPassage = null;
-      hideRefPopover();
+      passageSource = "reference";
+      popovers?.hide();
       body.innerHTML = `<p class="fallback-ref">Read: <strong>${escapeHtml(reading.fullRef)}</strong></p>
         <p class="muted">Live text uses a public API (bolls.life). Offline or blocked networks fall back to the reference only — the schedule still works fully offline once plan data is cached.</p>`;
       setPassagePending(false);
       $("#passage-tr-label").textContent = "—";
+      refreshReadingAvailability("reference");
     } finally {
       if (passageController === controller) passageController = null;
     }
@@ -815,139 +808,6 @@
     });
   }
 
-  function hideRefPopover() {
-    previewController?.abort();
-    previewController = null;
-    const popover = $("#ref-popover");
-    if (!popover) return;
-    popover.hidden = true;
-    popover.removeAttribute("style");
-  }
-
-  function placeRefPopover(anchor) {
-    const popover = $("#ref-popover");
-    if (!popover || !anchor) return;
-    const box = anchor.getBoundingClientRect();
-    const width = Math.min(320, window.innerWidth - 24);
-    let left = box.left;
-    if (left + width > window.innerWidth - 12) left = window.innerWidth - width - 12;
-    if (left < 12) left = 12;
-    let top = box.bottom + 8;
-    popover.hidden = false;
-    popover.style.width = `${width}px`;
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-    const popBox = popover.getBoundingClientRect();
-    if (popBox.bottom > window.innerHeight - 8) {
-      top = Math.max(8, box.top - popBox.height - 8);
-      popover.style.top = `${top}px`;
-    }
-  }
-
-  function showRefPopover(anchor, title, bodyHtml) {
-    const popover = $("#ref-popover");
-    const heading = $("#ref-popover-title");
-    const body = $("#ref-popover-body");
-    if (!popover || !heading || !body) return;
-    heading.textContent = title;
-    body.innerHTML = bodyHtml;
-    placeRefPopover(anchor);
-  }
-
-  function verseRecord(chapter, verse) {
-    return lastPassage?.verses?.find(
-      (item) => Number(item.chapter) === Number(chapter) && Number(item.verse) === Number(verse)
-    );
-  }
-
-  async function copyVerse(chapter, verse) {
-    const reading = plan && currentYmd ? ChristoSchedule.resolveReading(plan, currentYmd) : null;
-    const record = verseRecord(chapter, verse);
-    if (!record) {
-      announceAction("Nothing to copy yet.");
-      return;
-    }
-    const book = reading?.bookLabel || "Passage";
-    const ok = await writeClipboard(`${book} ${chapter}:${verse}\n${record.text}`);
-    announceAction(ok ? `Copied ${book} ${chapter}:${verse}.` : "Could not copy verse.");
-  }
-
-  async function openCrossRef(anchor) {
-    const ref = anchor.getAttribute("data-ref") || "";
-    const parsed = ChristoBible.parseRemoteRef?.(ref);
-    showRefPopover(anchor, parsed?.label || "Reference", `<p class="muted">Loading…</p>`);
-    previewController?.abort();
-    const controller = new AbortController();
-    previewController = controller;
-    try {
-      const preview = await ChristoBible.fetchVersePreview(ref, { signal: controller.signal });
-      if (controller.signal.aborted) return;
-      showRefPopover(
-        anchor,
-        `${preview.label} · ${preview.translation}`,
-        `<p>${escapeHtml(preview.text)}</p>`
-      );
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      showRefPopover(
-        anchor,
-        parsed?.label || "Reference",
-        `<p class="muted">${escapeHtml(error.message || "Could not load that verse.")}</p>`
-      );
-    }
-  }
-
-  function bindPassageReferences(root) {
-    if (!root || root.dataset.refsBound === "1") return;
-    root.dataset.refsBound = "1";
-    root.addEventListener("click", (event) => {
-      const vnum = event.target.closest?.(".vnum");
-      if (vnum && root.contains(vnum)) {
-        const verseEl = vnum.closest(".verse");
-        if (!verseEl) return;
-        copyVerse(verseEl.dataset.chapter, verseEl.dataset.verse);
-        return;
-      }
-      const mark = event.target.closest?.(".fn-mark");
-      if (mark && root.contains(mark)) {
-        const [chapter, verse] = String(mark.getAttribute("data-verse-key") || "").split(":");
-        const record = verseRecord(chapter, verse);
-        showRefPopover(
-          mark,
-          `Cross references · ${chapter}:${verse}`,
-          record?.commentHtml || "<p class='muted'>No references for this verse.</p>"
-        );
-        return;
-      }
-      const link = event.target.closest?.(".xref-link");
-      if (link && root.contains(link)) {
-        event.preventDefault();
-        openCrossRef(link);
-      }
-    });
-  }
-
-  function bindRefPopover() {
-    $("#ref-popover")?.addEventListener("click", (event) => {
-      const link = event.target.closest?.(".xref-link");
-      if (!link) return;
-      event.preventDefault();
-      openCrossRef(link);
-    });
-    $("#ref-popover-close")?.addEventListener("click", hideRefPopover);
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") hideRefPopover();
-    });
-    document.addEventListener("pointerdown", (event) => {
-      const popover = $("#ref-popover");
-      if (!popover || popover.hidden) return;
-      if (popover.contains(event.target)) return;
-      if (event.target.closest?.(".fn-mark, .xref-link, .vnum")) return;
-      hideRefPopover();
-    });
-    window.addEventListener("resize", hideRefPopover, { passive: true });
-  }
-
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -965,7 +825,12 @@
   }
 
   // Expose for tests
-  window.ChristoDayApp = { resolve: (ymd) => plan && ChristoSchedule.resolveReading(plan, ymd), getPlan: () => plan };
+  window.ChristoDayApp = {
+    resolve: (ymd) => plan && ChristoSchedule.resolveReading(plan, ymd),
+    getPlan: () => plan,
+    getViewedYmd: () => currentYmd,
+    handleTodayChange,
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

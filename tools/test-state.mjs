@@ -23,7 +23,14 @@ assert.equal(stateApi.validYmd("2026-13-01"), false);
 
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.hydrateState(null))),
-  { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false }
+  {
+    translation: "NIV",
+    days: {},
+    passageSize: "md",
+    lineSpacing: "normal",
+    readingFocus: false,
+    includeShareNote: false,
+  }
 );
 
 const hydrated = stateApi.hydrateState({
@@ -56,6 +63,11 @@ assert.equal(
   stateApi.hydrateState({ translation: "ESV", passageSize: "sm", days: {} }).passageSize,
   "sm"
 );
+assert.equal(stateApi.validLineSpacing("open"), "open");
+assert.equal(stateApi.validLineSpacing("wide"), "normal");
+assert.equal(stateApi.hydrateState({ lineSpacing: "tight" }).lineSpacing, "tight");
+assert.equal(stateApi.hydrateState({ readingFocus: true }).readingFocus, true);
+assert.equal(stateApi.hydrateState({ readingFocus: "yes" }).readingFocus, false);
 assert.equal(stateApi.hydrateState({ includeShareNote: true }).includeShareNote, true);
 assert.equal(stateApi.hydrateState({ includeShareNote: "yes" }).includeShareNote, false);
 assert.equal(stateApi.hydrateState(null).includeShareNote, false);
@@ -70,7 +82,14 @@ assert.deepEqual(JSON.parse(JSON.stringify(created)), {
 const corruptStorage = { getItem: () => "{bad-json" };
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.loadState(corruptStorage))),
-  { translation: "NIV", days: {}, passageSize: "md", includeShareNote: false }
+  {
+    translation: "NIV",
+    days: {},
+    passageSize: "md",
+    lineSpacing: "normal",
+    readingFocus: false,
+    includeShareNote: false,
+  }
 );
 
 let saved;
@@ -165,4 +184,4 @@ assert.equal(
 assert.equal(JSON.parse(savedAfterRestore).currentYmd, undefined);
 assert.equal(JSON.parse(savedAfterRestore).days["2026-08-09"].journal, "Saw Christ clearly.");
 
-console.log("test-state.mjs: 41 hydration, persistence, backup, and restore-navigation cases ok");
+console.log("test-state.mjs: hydration, persistence, backup, focus, spacing, and restore-navigation cases ok");

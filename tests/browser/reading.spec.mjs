@@ -806,3 +806,155 @@ test("resizes the passage and remembers the choice", async ({ page }) => {
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
   expect(saved.passageSize).toBe("sm");
 });
+
+test("searches journal history on device and opens the original note", async ({ page }) => {
+  const leaked = [];
+  page.on("request", (request) => {
+    const blob = `${request.url()}\n${request.postData() || ""}`;
+    if (blob.includes("Unique grace in this genealogy")) leaked.push(request.url());
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "christoday.v1",
+      JSON.stringify({
+        translation: "NIV",
+        days: {
+          "2026-06-16": {
+            journal: "Unique grace in this genealogy",
+            completed: false,
+            translation: "NIV",
+          },
+          "2026-06-17": {
+            journal: "Servant urgency toward the cross",
+            completed: true,
+            translation: "NIV",
+          },
+        },
+      }),
+    );
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("./?d=2026-06-19&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Luke 1:1-4");
+  await page.locator("#journal-history > summary").click();
+  await page.locator("#history-query").fill("grace");
+  await expect(page.locator(".history-result")).toHaveCount(1);
+  await page.locator(".history-result").evaluate((el) => {
+    document.documentElement.style.scrollBehavior = "auto";
+    el.scrollIntoView({ block: "center" });
+    const box = el.getBoundingClientRect();
+    const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    if (!top || (top !== el && !el.contains(top))) throw new Error("history result is covered");
+    el.click();
+  });
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await expect(page.locator("#journal")).toHaveValue("Unique grace in this genealogy");
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  expect(leaked).toEqual([]);
+  await page.locator("#history-query").fill("");
+  await page.locator("#history-book").selectOption("mark");
+  await expect(page.locator(".history-result")).toHaveCount(1);
+  await expect(page.locator(".history-result")).toContainText("Mark 1:1-8");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+});
+
+test("saves a permitted reading for offline use and refuses the others", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-availability")).toContainText("not saved yet");
+  await page.locator("#btn-save-reading").click();
+  await expect(page.locator("#action-status")).toHaveText("Saved this WEB reading on this device.");
+  await expect(page.locator("#btn-remove-reading")).toBeVisible();
+  await expect(page.locator("#btn-save-reading")).toBeHidden();
+  const stored = await page.evaluate(() => localStorage.getItem("christoday.readings.v1"));
+  expect(stored).toContain("WEB book 40 chapter 1 verse 1");
+  expect(stored).not.toContain("\"NIV\"");
+
+  await page.locator("#translation").selectOption("NIV");
+  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page.locator("#btn-save-reading")).toBeHidden();
+  await expect(page.locator("#passage-availability")).toContainText("not stored");
+  expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("\"NIV\"");
+
+  await page.locator("#translation").selectOption("WEB");
+  await expect(page.locator("#btn-remove-reading")).toBeVisible();
+  await page.route(/^https:\/\/bolls\.life\//, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "offline" }),
+    });
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-availability")).toContainText("saved on this device");
+  await page.locator("#btn-remove-reading").click();
+  await expect(page.locator("#passage-body")).toContainText("reference only");
+  await expect(page.locator("#btn-remove-reading")).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("WEB book 40 chapter 1 verse 1");
+});
+
+test("recovers stale Today labels without moving an edited historical note", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  const note = "Historical grace stays on this reading.";
+  await page.locator("#journal").fill(note);
+  await page.locator("#journal").focus();
+  const next = await page.evaluate(() => ChristoSchedule.addDaysYmd(ChristoSchedule.partsInSingapore().ymd, 1));
+  await page.evaluate((ymd) => window.ChristoDayApp.handleTodayChange(ymd), next);
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await expect(page.locator("#journal")).toHaveValue(note);
+  if (next !== "2026-06-16") {
+    await expect(page.locator("#reading-date")).not.toContainText("Today ·");
+    await expect(page.locator("#journal-heading")).toHaveText("One sentence for this reading");
+  }
+  await page.locator("#btn-complete").click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")));
+  expect(saved.days["2026-06-16"].completed).toBe(true);
+  expect(saved.days["2026-06-16"].journal).toBe(note);
+  if (next !== "2026-06-16") expect(saved.days[next]?.completed).not.toBe(true);
+
+  const today = singaporeYmd();
+  await page.goto(`./?d=${today}&tr=NIV`, { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#date-pick")).toHaveValue(today);
+  await expect(page.locator("#reading-date")).toContainText("Today ·");
+  const tomorrow = await page.evaluate((ymd) => ChristoSchedule.addDaysYmd(ymd, 1), today);
+  await page.evaluate((ymd) => window.ChristoDayApp.handleTodayChange(ymd), tomorrow);
+  await expect(page.locator("#date-pick")).toHaveValue(tomorrow);
+  await expect(page.locator("#reading-date")).toContainText("Today ·");
+});
+
+test("keeps navigation, completion, and journal available in focus mode", async ({ page }) => {
+  async function expectNoHorizontalOverflow() {
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1),
+    ).toBe(true);
+  }
+
+  async function expectPrimaryVisible() {
+    for (const selector of ["#btn-prev", "#btn-today", "#btn-next", "#date-pick", "#btn-complete", "#journal"]) {
+      await expect(page.locator(selector)).toBeVisible();
+    }
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expectPrimaryVisible();
+  await expectNoHorizontalOverflow();
+  await page.locator("#btn-focus").click();
+  await expect(page.locator("html")).toHaveAttribute("data-reading-focus", "on");
+  await expect(page.locator("#btn-copy")).toBeHidden();
+  await expect(page.locator("#btn-listen")).toBeVisible();
+  await expectPrimaryVisible();
+  const beforeLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
+  await page.locator("#btn-leading-looser").click();
+  await expect(page.locator("html")).toHaveAttribute("data-line-spacing", "open");
+  const afterLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
+  expect(Number.parseFloat(afterLeading)).toBeGreaterThan(Number.parseFloat(beforeLeading));
+  await expectNoHorizontalOverflow();
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await expectPrimaryVisible();
+  await expectNoHorizontalOverflow();
+});

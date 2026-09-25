@@ -285,4 +285,25 @@ function loadBible(fetchImpl, timers = {}) {
   assert.match(requestedUrls[0], /\/1\/$/);
 }
 
-console.log("test-bible.mjs: 16 network, payload, cache, cancellation, red-letter, and passage cases ok");
+{
+  const bible = loadBible(async () => {
+    throw new Error("no network");
+  });
+  assert.equal(bible.allowsLocalPassageStorage("WEB"), true);
+  assert.equal(bible.allowsLocalPassageStorage("NIV"), false);
+  assert.equal(bible.allowsLocalPassageStorage("ESV"), false);
+  assert.equal(bible.allowsLocalPassageStorage("NKJV"), false);
+  assert.equal(bible.allowsLocalPassageStorage("KJV"), false);
+  const rendered = bible.renderStoredVerses("matthew", [
+    { chapter: 5, verse: 3, text: "Blessed <script>alert(1)</script>" },
+  ]);
+  assert.match(rendered.html, /class="wj"/);
+  assert.doesNotMatch(rendered.html, /<script>/);
+  assert.match(rendered.verses[0].text, /Blessed/);
+  const letter = bible.renderStoredVerses("philippians", [
+    { chapter: 1, verse: 1, text: "Paul" },
+  ]);
+  assert.doesNotMatch(letter.html, /class="wj"/);
+}
+
+console.log("test-bible.mjs: network, payload, cache, cancellation, red-letter, local-copy, and passage cases ok");

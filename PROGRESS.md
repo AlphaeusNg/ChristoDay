@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-12 (ChristoDay Cycle 51)
+Last updated: 2026-09-25 (ChristoDay Cycle 52)
 
 ## Current state
 
@@ -45,7 +45,19 @@ Last updated: 2026-09-12 (ChristoDay Cycle 51)
   optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
   back to today; date and translation changes `replaceState` so a copied URL
   matches the screen. Passage size persists on-device.
-- Deployment version: `2026.09.12.1`.
+- Journal history filters by date and book and searches note text on device only.
+  Selecting a result opens that reading and its note. Nothing in the search is uploaded.
+- WEB passages can be saved explicitly for offline use, up to 30 at a time, and removed
+  in one step. NIV, ESV, and NKJV text is not stored; those days stay reference-only.
+  Availability is shown per date and translation. Saved WEB text survives reload.
+- Reading actions/speech, journal backup, and reference popovers live in their own
+  scripts. Scheduling is unchanged. Focus mode limits the passage to 65ch, adjusts
+  line spacing, and folds secondary tools. Navigation, completion, and the journal
+  stay available at phone width and at a 320px layout.
+- A page left open across Singapore midnight updates Today labels without a reload.
+  An unattended today view moves from Friday to the weekend and from Sunday to Monday.
+  An actively edited historical note stays put, and completion still applies to that date.
+- Deployment version: `2026.09.25.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -53,7 +65,42 @@ Last updated: 2026-09-12 (ChristoDay Cycle 51)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: keep retained Scripture safe while updating
+## Latest cycle: journal history, permitted offline text, and a calmer reader
+
+### Why this was selected
+
+The backlog asked for a local journal index, explicit offline copies only where the
+translation terms allow them, a smaller app script, a restrained focus mode, and a
+Today label that stays honest after Singapore midnight.
+
+### Changes
+
+- Added on-device journal history with date range, book, and text filters. A result
+  opens the original weekday and note. The search module does not call the network.
+- WEB (public domain) can be saved on device, bounded at 30 readings, and removed.
+  NIV, ESV, and NKJV are refused and never written. Failed live loads use a saved
+  WEB copy when one exists, otherwise the existing reference-only fallback.
+- Moved copy/share/listen/type size, backup/restore, and reference popovers into
+  `js/reading-actions.js`, `js/journal-backup.js`, and `js/ref-popover.js`.
+  Speech generations and passage cancellation stay as they were.
+- Added focus mode and line spacing with the existing gold/navy tokens. Secondary
+  tools fold; passage navigation, completion, and the journal stay visible.
+- A Singapore day change refreshes Today labels. If the open day was yesterday and
+  the journal is not focused, the view moves to the new today. An edited historical
+  note is not moved, and completion still uses that reading date.
+- Bumped the site/offline-cache version to `2026.09.25.1`.
+
+### Verification evidence
+
+- Schedule/data/schema 50, Bible local-copy plus the existing client cases, state
+  hydration including focus and spacing, journal-history search, offline-reading
+  permission/bound/removal, Singapore rollover, site structure with 18 precache
+  entries, service-worker behavior, and workflow policy 25 pass.
+- Chromium: 24 reading journeys and 2 installed-worker journeys pass, including
+  history search without upload, WEB save/reload/remove, NIV refusal, midnight
+  label recovery, and focus mode at 390px and 320px.
+
+## Previous cycle: keep retained Scripture safe while updating
 
 ### Why this was selected
 
@@ -227,6 +274,11 @@ narration and chapter comments never reached the page.
 
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
+| — | Local journal history with date, book, and text search | Continuity / UX | Medium: older notes were only reachable by remembering the date | Small / low | On-device filter; a result opens the original reading and note; no upload | Completed in Cycle 52 |
+| — | Save a bounded offline copy only when terms allow it | Reliability / rights | Medium: copyrighted translations must stay reference-only offline | Small / low | WEB public-domain copies; NIV/ESV/NKJV refused; availability and removal | Completed in Cycle 52 |
+| — | Split reading actions, backup UI, and reference popovers | Maintainability | Medium: app.js owned speech, backup, and popovers together | Small / low | Modules keep speech generations, restore, and popovers; existing journeys pass | Completed in Cycle 52 |
+| — | Restrained reading-focus mode | UX | Medium: phone reading was full-width with every control open | Small / low | 65ch measure, line spacing, folded tools; nav, completion, and journal stay visible | Completed in Cycle 52 |
+| — | Recover stale Today labels across Singapore midnight | Correctness | Medium: a tab left open kept yesterday's Today chrome | Small / low | Friday-to-weekend and Sunday-to-Monday move only when the note is not being edited | Completed in Cycle 52 |
 | — | Open the restored weekday after a confirmed journal restore | Continuity / UX | Medium: restored notes were on-device but the reader stayed on the already-open day | Small / low | Backup current/last reading date, weekday `?d=` replaceState, weekend/pre-start stay on today | Completed in Cycle 50 |
 | — | Export and restore private journal/completion history | Data ownership / reliability | High: clearing one browser profile could erase the entire local journal | Small-medium / low | Versioned bounded backup, explicit overwrite confirmation, invalid-file preservation, and durable/session-only Chromium paths | Completed in Cycle 49 |
 | — | Open unseen dated/translated deep links offline | Reliability / PWA | Medium-high: shared reading URLs failed offline unless that exact query had been cached | Small / low | Network-first navigation fixture and installed-worker Chromium deep-link journey | Completed in Cycle 48 |
@@ -258,6 +310,12 @@ narration and chapter comments never reached the page.
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 52 — Journal history, permitted offline text, focus, and midnight labels (2026-09-25)
+
+Shipped the five backlog items above at version `2026.09.25.1`. WEB is the only
+translation stored for offline reading. Completion remains bound to the open
+reading date when a historical note is being edited.
 
 ### Cycle 45 — Keep Listen state truthful on speech failures (2026-08-28)
 

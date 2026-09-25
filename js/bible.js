@@ -85,8 +85,14 @@
     NIV: { code: "NIV", label: "NIV" },
     ESV: { code: "ESV", label: "ESV" },
     NKJV: { code: "NKJV", label: "NKJV" },
-    WEB: { code: "WEB", label: "WEB" },
+    // World English Bible text is public domain and may be kept on device.
+    WEB: { code: "WEB", label: "WEB", localCopy: true },
   };
+  const LOCAL_PASSAGE_TRANSLATIONS = new Set(
+    Object.entries(TRANSLATIONS)
+      .filter(([, meta]) => meta.localCopy === true)
+      .map(([code]) => code)
+  );
   const FETCH_TIMEOUT_MS = 10_000;
   const MAX_CACHED_CHAPTERS = 50;
   const chapterCache = new Map();
@@ -426,6 +432,38 @@
     return { text, html, translation: tr, verses: collected };
   }
 
+  function allowsLocalPassageStorage(translation) {
+    return LOCAL_PASSAGE_TRANSLATIONS.has(translation);
+  }
+
+  /** Rebuild a device-saved passage from plain verse text. Markup is escaped here. */
+  function renderStoredVerses(bookKey, verses) {
+    const collected = [];
+    for (const verse of Array.isArray(verses) ? verses : []) {
+      if (!verse || typeof verse !== "object") continue;
+      const chapter = Number(verse.chapter);
+      const number = Number(verse.verse);
+      if (!Number.isInteger(chapter) || chapter < 1 || !Number.isInteger(number) || number < 1) continue;
+      const text = stripHtml(verse.text || "");
+      if (!text) continue;
+      const heading = typeof verse.heading === "string" ? stripHtml(verse.heading) : "";
+      collected.push({
+        chapter,
+        verse: number,
+        text,
+        html: wrapWordsOfJesus(escapeHtml(text), bookKey, chapter, number),
+        heading,
+        comment: "",
+        commentHtml: "",
+      });
+    }
+    return {
+      text: collected.map((verse) => verse.text).join(" "),
+      html: collected.map((verse) => verseMarkup(verse)).join(" "),
+      verses: collected,
+    };
+  }
+
   async function fetchVersePreview(ref, options = {}) {
     const parsed = parseRemoteRef(ref);
     if (!parsed) throw new Error("Unknown reference");
@@ -463,6 +501,8 @@
     fetchChapter,
     fetchPassage,
     fetchVersePreview,
+    allowsLocalPassageStorage,
+    renderStoredVerses,
     clearChapterCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);
