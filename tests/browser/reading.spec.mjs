@@ -864,8 +864,10 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("not saved yet");
+  await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Saved this WEB reading on this device.");
+  await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
   await expect(page.locator("#btn-save-reading")).toBeHidden();
   const stored = await page.evaluate(() => localStorage.getItem("christoday.readings.v1"));
@@ -876,6 +878,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
   await expect(page.locator("#btn-save-reading")).toBeHidden();
   await expect(page.locator("#passage-availability")).toContainText("not stored");
+  await expect(page.locator("#passage-availability")).not.toContainText("offline slots");
   expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("\"NIV\"");
 
   await page.locator("#translation").selectOption("WEB");
@@ -890,9 +893,11 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("saved on this device");
+  await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
   await expect(page.locator("#btn-remove-reading")).toBeHidden();
+  await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
   expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("WEB book 40 chapter 1 verse 1");
 });
 

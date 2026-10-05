@@ -145,7 +145,15 @@
     return next;
   }
 
-  function availability({ translation, saved, loaded }) {
+  function slotSummary(library) {
+    const items = hydrate(library).items;
+    const dates = [...new Set(Object.values(items).map((item) => item.ymd))].sort();
+    const used = Object.keys(items).length;
+    const summary = ` ${used} of ${MAX_SAVED_READINGS} offline slots used`;
+    return used > 0 ? `${summary}: ${dates.join(", ")}.` : `${summary}.`;
+  }
+
+  function availability({ translation, saved, loaded, library } = {}) {
     const permitted = passageAllowed(translation);
     if (!permitted) {
       return {
@@ -154,25 +162,17 @@
         text: `${translation} text is not stored. Offline, this reading stays reference-only.`,
       };
     }
-    if (saved && loaded === "saved") {
-      return {
-        permitted: true,
-        saved: true,
-        text: `Showing the ${translation} copy saved on this device.`,
-      };
+    const kept = Boolean(saved);
+    let text;
+    if (kept && loaded === "saved") {
+      text = `Showing the ${translation} copy saved on this device.`;
+    } else if (kept) {
+      text = `${translation} is saved on this device for offline.`;
+    } else {
+      text = `${translation} is not saved yet. You can keep this reading on this device.`;
     }
-    if (saved) {
-      return {
-        permitted: true,
-        saved: true,
-        text: `${translation} is saved on this device for offline.`,
-      };
-    }
-    return {
-      permitted: true,
-      saved: false,
-      text: `${translation} is not saved yet. You can keep this reading on this device.`,
-    };
+    if (library != null) text += slotSummary(library);
+    return { permitted: true, saved: kept, text };
   }
 
   global.ChristoReadings = {

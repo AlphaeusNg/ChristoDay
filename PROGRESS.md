@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-09-25 (ChristoDay Cycle 52)
+Last updated: 2026-10-05 (ChristoDay Cycle 53)
 
 ## Current state
 
@@ -49,7 +49,9 @@ Last updated: 2026-09-25 (ChristoDay Cycle 52)
   Selecting a result opens that reading and its note. Nothing in the search is uploaded.
 - WEB passages can be saved explicitly for offline use, up to 30 at a time, and removed
   in one step. NIV, ESV, and NKJV text is not stored; those days stay reference-only.
-  Availability is shown per date and translation. Saved WEB text survives reload.
+  Availability is shown per date and translation. For WEB, that line also reports how
+  many of the 30 slots are used and lists the stored dates. Removing a reading frees
+  its slot on the next paint. Saved WEB text survives reload.
 - Reading actions/speech, journal backup, and reference popovers live in their own
   scripts. Scheduling is unchanged. Focus mode limits the passage to 65ch, adjusts
   line spacing, and folds secondary tools. Navigation, completion, and the journal
@@ -57,7 +59,7 @@ Last updated: 2026-09-25 (ChristoDay Cycle 52)
 - A page left open across Singapore midnight updates Today labels without a reload.
   An unattended today view moves from Friday to the weekend and from Sunday to Monday.
   An actively edited historical note stays put, and completion still applies to that date.
-- Deployment version: `2026.09.25.1`.
+- Deployment version: `2026.10.05.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -65,7 +67,11 @@ Last updated: 2026-09-25 (ChristoDay Cycle 52)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: journal history, permitted offline text, and a calmer reader
+## Latest cycle: show which offline reading slots are used
+
+WEB availability keeps its sentence and appends `N of 30 offline slots used`, plus the stored dates when any slot is in use. NIV, ESV, and NKJV stay on the refusal text. Save and remove update the count on the next paint. Version `2026.10.05.1`.
+
+## Previous cycle: journal history, permitted offline text, and a calmer reader
 
 ### Why this was selected
 
@@ -310,6 +316,13 @@ narration and chapter comments never reached the page.
 | — | Bound live Bible fetch duration | Reliability / test | High: stalled requests left the UI loading indefinitely | Small / low | AbortController plus deterministic timer tests | Completed in Cycle 19 |
 
 ## Cycle log
+
+### Cycle 53 — Offline slot count on WEB availability (2026-10-05)
+
+WEB availability appends `N of 30 offline slots used` and, when slots are in use,
+the stored dates in ascending order. NIV, ESV, and NKJV keep the existing refusal
+and do not show a slot count. Removal updates the count without a reload.
+Version `2026.10.05.1`.
 
 ### Cycle 52 — Journal history, permitted offline text, focus, and midnight labels (2026-09-25)
 

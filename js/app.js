@@ -585,7 +585,7 @@
   function refreshReadingAvailability(loaded) {
     const tr = currentTranslation();
     const saved = !!ChristoReadings.get(readings, currentYmd, tr);
-    const status = ChristoReadings.availability({ translation: tr, saved, loaded });
+    const status = ChristoReadings.availability({ translation: tr, saved, loaded, library: readings });
     const el = $("#passage-availability");
     if (el) el.textContent = status.text;
     const saveBtn = $("#btn-save-reading");

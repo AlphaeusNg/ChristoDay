@@ -34,6 +34,7 @@ for (const translation of ["NIV", "ESV", "NKJV"]) {
   assert.equal(status.permitted, false);
   assert.equal(status.saved, false);
   assert.match(status.text, /not stored/);
+  assert.doesNotMatch(status.text, /offline slots/);
   assert.equal(status.text.includes(secret), false);
 }
 
@@ -66,7 +67,29 @@ assert.equal(
   "The book of the generation"
 );
 assert.equal(readings.get(loaded, "2026-06-16", "NIV"), null);
-assert.match(readings.availability({ translation: "WEB", saved: true, loaded: "saved" }).text, /saved on this device/i);
+const savedHere = readings.availability({ translation: "WEB", saved: true, loaded: "saved" });
+assert.match(savedHere.text, /saved on this device/i);
+assert.doesNotMatch(savedHere.text, /offline slots/);
+const withSlots = readings.availability({
+  translation: "WEB",
+  saved: true,
+  loaded: "saved",
+  library: saved.library,
+});
+assert.match(withSlots.text, /saved on this device/i);
+assert.match(withSlots.text, /1 of 30 offline slots used: 2026-06-16/);
+assert.equal(withSlots.text.includes(secret), false);
+for (const translation of ["NIV", "ESV", "NKJV"]) {
+  const refused = readings.availability({
+    translation,
+    saved: true,
+    loaded: "saved",
+    library: saved.library,
+  });
+  assert.match(refused.text, /not stored/, translation);
+  assert.doesNotMatch(refused.text, /offline slots/, translation);
+  assert.equal(refused.text.includes(secret), false, translation);
+}
 
 const full = readings.empty();
 for (let index = 0; index < readings.MAX_SAVED_READINGS; index += 1) {
@@ -100,6 +123,14 @@ assert.equal(Object.keys(replaced.library.items).length, 1);
 const removed = readings.remove(loaded, "2026-06-16", "WEB");
 assert.equal(readings.save(removed, storage), true);
 assert.equal(readings.get(readings.load(storage), "2026-06-16", "WEB"), null);
+const afterRemoval = readings.availability({
+  translation: "WEB",
+  saved: false,
+  loaded: "live",
+  library: removed,
+});
+assert.match(afterRemoval.text, /0 of 30 offline slots used/);
+assert.equal(afterRemoval.text.includes("2026-06-16"), false);
 
 raw = JSON.stringify({
   items: {
