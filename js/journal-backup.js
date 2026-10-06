@@ -34,6 +34,20 @@
       }
     }
 
+    function restoreConfirmMessage(summary) {
+      const notes = summary.notes === 1 ? "1 journal note" : `${summary.notes} journal notes`;
+      const readings = summary.completed === 1 ? "1 completed reading" : `${summary.completed} completed readings`;
+      let coverage = `This backup contains ${notes} and ${readings}`;
+      if (summary.firstYmd == null || summary.lastYmd == null) {
+        coverage += ". This backup has no saved days.";
+      } else if (summary.firstYmd === summary.lastYmd) {
+        coverage += ` on ${summary.firstYmd}.`;
+      } else {
+        coverage += ` from ${summary.firstYmd} to ${summary.lastYmd}.`;
+      }
+      return `${coverage} This replaces, not merges, this device's history. Restore this backup?`;
+    }
+
     async function restoreBackupFile(file) {
       if (file.size > ChristoState.MAX_BACKUP_BYTES) {
         setBackupStatus("That backup is too large.");
@@ -48,9 +62,7 @@
         return;
       }
 
-      const confirmed = window.confirm(
-        "Replace this device's ChristoDay journal and completion history with this backup?"
-      );
+      const confirmed = window.confirm(restoreConfirmMessage(ChristoState.summarizeBackup(restored)));
       if (!confirmed) {
         setBackupStatus("Restore cancelled. Your journal was not changed.");
         return;

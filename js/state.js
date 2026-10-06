@@ -137,6 +137,19 @@
     return state;
   }
 
+  function summarizeBackup(state) {
+    const summary = { notes: 0, completed: 0, firstYmd: null, lastYmd: null };
+    if (!isRecord(state) || !isRecord(state.days)) return summary;
+    for (const [ymd, day] of Object.entries(state.days)) {
+      if (summary.firstYmd === null || ymd < summary.firstYmd) summary.firstYmd = ymd;
+      if (summary.lastYmd === null || ymd > summary.lastYmd) summary.lastYmd = ymd;
+      if (!isRecord(day)) continue;
+      if (typeof day.journal === "string" && day.journal.trim() !== "") summary.notes += 1;
+      if (day.completed === true) summary.completed += 1;
+    }
+    return summary;
+  }
+
   function ensureDay(state, ymd) {
     if (!isRecord(state.days)) state.days = {};
     if (!isRecord(state.days[ymd])) {
@@ -160,6 +173,7 @@
     saveState,
     createBackup,
     parseBackup,
+    summarizeBackup,
     backupFocusYmd,
     restoreOpenYmd,
     ensureDay,

@@ -181,8 +181,14 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   await page.locator("#translation").selectOption("WEB");
   await page.locator("#btn-type-smaller").click();
 
-  page.once("dialog", (dialog) => dialog.accept());
+  const dialogPromise = page.waitForEvent("dialog");
   await page.locator("#backup-file").setInputFiles(downloadPath);
+  const dialog = await dialogPromise;
+  const restoreMessage = dialog.message();
+  await dialog.accept();
+  expect(restoreMessage).toContain("1 journal note");
+  expect(restoreMessage).toContain("1 completed reading");
+  expect(restoreMessage).toContain("This replaces, not merges, this device's history.");
   await expect(page.locator("#backup-status")).toHaveText("Backup restored.");
   await expect(journal).toHaveValue(originalNote);
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
@@ -202,6 +208,30 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   });
   await expect(page.locator("#backup-status")).toHaveText("Choose a valid JSON backup.");
   await expect(journal).toHaveValue(originalNote);
+});
+
+test("cancels restore and leaves the changed journal in place", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+
+  const journal = page.locator("#journal");
+  await journal.fill("Christ keeps every part of this story.");
+  await page.locator("#btn-complete").click();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#btn-backup").click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+
+  const changedNote = "A later sentence that must stay.";
+  await journal.fill(changedNote);
+
+  const dialogPromise = page.waitForEvent("dialog");
+  await page.locator("#backup-file").setInputFiles(downloadPath);
+  const dialog = await dialogPromise;
+  await dialog.dismiss();
+  await expect(page.locator("#backup-status")).toHaveText("Restore cancelled. Your journal was not changed.");
+  await expect(journal).toHaveValue(changedNote);
 });
 
 test("keeps a restored backup usable when permanent storage is denied", async ({ page }) => {
