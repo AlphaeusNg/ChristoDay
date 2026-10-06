@@ -184,4 +184,38 @@ assert.equal(
 assert.equal(JSON.parse(savedAfterRestore).currentYmd, undefined);
 assert.equal(JSON.parse(savedAfterRestore).days["2026-08-09"].journal, "Saw Christ clearly.");
 
-console.log("test-state.mjs: hydration, persistence, backup, focus, spacing, and restore-navigation cases ok");
+const summarized = JSON.parse(JSON.stringify(stateApi.summarizeBackup({
+  days: {
+    "2026-08-10": { journal: "Second note", completed: false },
+    "2026-06-16": { journal: "", completed: true },
+    "2026-07-01": { journal: "   \n\t", completed: false },
+    "2026-09-02": { journal: "Third note", completed: true },
+    "2026-06-01": { journal: "First note", completed: 1 },
+  },
+})));
+assert.deepEqual(summarized, {
+  notes: 3,
+  completed: 2,
+  firstYmd: "2026-06-01",
+  lastYmd: "2026-09-02",
+});
+assert.deepEqual(JSON.parse(JSON.stringify(stateApi.summarizeBackup({ days: {} }))), {
+  notes: 0,
+  completed: 0,
+  firstYmd: null,
+  lastYmd: null,
+});
+assert.deepEqual(JSON.parse(JSON.stringify(stateApi.summarizeBackup(null))), {
+  notes: 0,
+  completed: 0,
+  firstYmd: null,
+  lastYmd: null,
+});
+assert.deepEqual(JSON.parse(JSON.stringify(stateApi.summarizeBackup({}))), {
+  notes: 0,
+  completed: 0,
+  firstYmd: null,
+  lastYmd: null,
+});
+
+console.log("test-state.mjs: hydration, persistence, backup, summary, focus, spacing, and restore-navigation cases ok");
