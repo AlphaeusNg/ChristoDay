@@ -197,6 +197,7 @@
 
     function applyFocus(on) {
       const enabled = on === true;
+      if (!enabled && state().readingFocus && speaking) stopListening();
       state().readingFocus = enabled;
       const root = document.documentElement;
       if (enabled) root.setAttribute("data-reading-focus", "on");

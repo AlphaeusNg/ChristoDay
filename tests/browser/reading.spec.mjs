@@ -798,6 +798,18 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeTranslation);
   expect(await page.evaluate(() => window.__spoken.length)).toBe(spokenCount);
+  await page.locator("#btn-focus").click();
+  await expect(page.locator("html")).toHaveAttribute("data-reading-focus", "on");
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  const focusCancelled = await page.evaluate(() => window.__cancelled);
+  await page.locator("#btn-focus").click();
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(focusCancelled);
+  await page.evaluate(() => { window.__utterances.at(-1).onend(); window.__utterances.at(-1).onerror(); });
+  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("html")).not.toHaveAttribute("data-reading-focus", "on");
+
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
 
   await page.locator("#btn-listen").click();

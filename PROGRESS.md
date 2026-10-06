@@ -1654,3 +1654,8 @@ registration scope and attach cache writes to `event.waitUntil`, preventing
 out-of-scope same-origin support assets or terminated background writes from
 weakening cache ownership. Workspace next: rotate to AIly after this
 service-worker cycle.
+
+
+## 2026-10-07 — Stop speech when leaving reading focus
+
+Turning focus off cancels active speech and invalidates late utterance callbacks. Gospel text rendering stays intact. All Node gates and 27 Chromium checks passed.
