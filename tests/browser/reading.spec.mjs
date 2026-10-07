@@ -1044,3 +1044,26 @@ test("weekend shows Friday's note and Monday's title without creating a rest-day
   await page.locator("#date-pick").dispatchEvent("change");
   await expect(page.locator("#weekend-friday-note")).toContainText("Friday grace and rest.");
 });
+
+test('an older delayed restore cannot overwrite the newest journal', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = File.prototype.text;
+    File.prototype.text = function () {
+      if (this.name !== 'slow.json') return original.call(this);
+      return new Promise(resolve => { window.__releaseOldBackup = async () => resolve(await original.call(this)); });
+    };
+  });
+  await page.goto('./?d=2026-06-16&tr=NIV');
+  await expect(page.locator('#passage-ref')).toHaveText('Matthew 1:1-17');
+  const backup = {product:'ChristoDay', schemaVersion:1, state:{translation:'NIV', days:{'2026-06-16':{completed:true,journal:'Old note',translation:'NIV'}}}};
+  let dialogs = 0;
+  page.on('dialog', dialog => { dialogs++; return dialog.accept(); });
+  await page.locator('#backup-file').setInputFiles({name:'slow.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});
+  backup.state.days['2026-06-16'].journal = 'Newest note';
+  await page.locator('#backup-file').setInputFiles({name:'new.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});
+  await expect(page.locator('#journal')).toHaveValue('Newest note');
+  await page.evaluate(() => window.__releaseOldBackup());
+  await page.waitForTimeout(100);
+  await expect(page.locator('#journal')).toHaveValue('Newest note');
+  expect(dialogs).toBe(1);
+});

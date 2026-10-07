@@ -48,7 +48,9 @@
       return `${coverage} This replaces, not merges, this device's history. Restore this backup?`;
     }
 
+    let restoreGeneration = 0;
     async function restoreBackupFile(file) {
+      const generation = ++restoreGeneration;
       if (file.size > ChristoState.MAX_BACKUP_BYTES) {
         setBackupStatus("That backup is too large.");
         return;
@@ -56,8 +58,11 @@
 
       let restored;
       try {
-        restored = ChristoState.parseBackup(await file.text());
+        const text = await file.text();
+        if (generation !== restoreGeneration) return;
+        restored = ChristoState.parseBackup(text);
       } catch (error) {
+        if (generation !== restoreGeneration) return;
         setBackupStatus(error?.message || "Could not read that backup.");
         return;
       }
@@ -82,6 +87,7 @@
         (ymd) => deps.getPlan() && ChristoSchedule.resolveReading(deps.getPlan(), ymd).kind === "reading"
       );
       await deps.renderDay(openYmd);
+      if (generation !== restoreGeneration) return;
       setBackupStatus(
         persisted
           ? "Backup restored."

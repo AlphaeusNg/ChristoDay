@@ -1669,3 +1669,7 @@ A folded catch-up panel lists elapsed weekdays in the current Singapore week, ex
 ## 2026-10-07 — Show Friday’s reflection and Monday’s title on weekends
 
 The weekend panel shows the previous Friday’s journal as read-only text and the next Monday’s scheduled title. It neither fetches an extra passage nor creates weekend/Monday journal rows. Existing preview and Last Friday actions remain. Validation: all Node gates and 29 Chromium journeys passed, including Saturday/Sunday state preservation. Version 2026.10.07.3.
+
+## 2026-10-07 — Ignore superseded journal restores
+
+Journal restore checks its selection identity after file reading and rendering. An older delayed file cannot overwrite the newly restored journal or its status. All Node gates and 30 Chromium journeys passed, including two deliberately overlapping reads. The plan epoch, stored translations and journal dates stay unchanged.
