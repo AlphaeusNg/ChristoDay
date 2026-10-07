@@ -544,6 +544,15 @@
       cancelPassageRequest();
       weekendEl.hidden = false;
       $("#weekend-msg").textContent = reading.message;
+      const weekday = ChristoSchedule.weekdayOfYmd(ymd);
+      const friday = ChristoSchedule.addDaysYmd(ymd, weekday === 6 ? -1 : -2);
+      const monday = ChristoSchedule.addDaysYmd(friday, 3);
+      const nextReading = ChristoSchedule.resolveReading(plan, monday);
+      $("#weekend-next").textContent = `Monday · ${nextReading.segmentLabel || nextReading.fullRef}`;
+      const note = $("#weekend-friday-note");
+      const fridayNote = String(state.days?.[friday]?.journal || "").trim();
+      note.hidden = !fridayNote;
+      note.textContent = fridayNote ? `Friday’s journal: ${fridayNote}` : "";
       renderWeekStrip(ymd);
       journalHistory?.refresh();
       return;

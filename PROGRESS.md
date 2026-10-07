@@ -1664,3 +1664,8 @@ Turning focus off cancels active speech and invalidates late utterance callbacks
 ## 2026-10-07 — Offer this week’s unfinished readings
 
 A folded catch-up panel lists elapsed weekdays in the current Singapore week, excluding completed days and dates before the epoch. Opening or completing a historical day preserves separate journals and does not mark Today complete. Weekends use the week just ended. Validation: all Node gates (54 schedule assertions) and 28 Chromium journeys passed. Version 2026.10.07.2.
+
+
+## 2026-10-07 — Show Friday’s reflection and Monday’s title on weekends
+
+The weekend panel shows the previous Friday’s journal as read-only text and the next Monday’s scheduled title. It neither fetches an extra passage nor creates weekend/Monday journal rows. Existing preview and Last Friday actions remain. Validation: all Node gates and 29 Chromium journeys passed, including Saturday/Sunday state preservation. Version 2026.10.07.3.

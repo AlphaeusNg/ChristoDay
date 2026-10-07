@@ -1025,3 +1025,22 @@ test("weekly catch-up opens and completes the selected historical day", async ({
   await expect(page.locator("#date-pick")).toHaveValue("2026-06-19");
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "false");
 });
+
+
+test("weekend shows Friday's note and Monday's title without creating a rest-day journal", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-06-20T04:00:00Z") });
+  await page.addInitScript(() => localStorage.setItem("christoday.v1", JSON.stringify({
+    days: { "2026-06-19": { journal: "Friday grace and rest.", completed: true } }, translation: "WEB",
+  })));
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#weekend-panel")).toBeVisible();
+  await expect(page.locator("#weekend-next")).toContainText("Monday · Jude");
+  await expect(page.locator("#weekend-friday-note")).toHaveText("Friday’s journal: Friday grace and rest.");
+  const days = await page.evaluate(() => JSON.parse(localStorage.getItem("christoday.v1")).days);
+  expect(days["2026-06-20"]).toBeUndefined();
+  expect(days["2026-06-21"]).toBeUndefined();
+  expect(days["2026-06-22"]).toBeUndefined();
+  await page.locator("#date-pick").fill("2026-06-21");
+  await page.locator("#date-pick").dispatchEvent("change");
+  await expect(page.locator("#weekend-friday-note")).toContainText("Friday grace and rest.");
+});
