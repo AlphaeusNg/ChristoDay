@@ -1007,3 +1007,21 @@ test("keeps navigation, completion, and journal available in focus mode", async 
   await expectPrimaryVisible();
   await expectNoHorizontalOverflow();
 });
+
+
+test("weekly catch-up opens and completes the selected historical day", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-06-19T04:00:00Z") });
+  await page.goto("./", { waitUntil: "domcontentloaded" });
+  const panel = page.locator("#weekly-catch-up");
+  await expect(panel).toBeVisible();
+  await panel.locator("summary").click();
+  await expect(panel.locator("button")).toHaveCount(5);
+  await panel.getByRole("button", { name: /^Tuesday/ }).click();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await page.locator("#btn-complete").click();
+  await expect(panel.locator("button")).toHaveCount(4);
+  await expect(panel.getByRole("button", { name: /^Tuesday/ })).toHaveCount(0);
+  await page.locator("#btn-today").click();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-19");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "false");
+});

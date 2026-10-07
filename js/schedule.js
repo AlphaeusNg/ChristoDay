@@ -274,6 +274,18 @@
     return cur;
   }
 
+  function weeklyIncompleteDates(today, days = {}, start = START) {
+    if (!validYmd(today) || !validYmd(start)) return [];
+    const weekday = weekdayOfYmd(today);
+    const monday = addDaysYmd(today, -(weekday === 0 ? 6 : weekday - 1));
+    const pending = [];
+    for (let offset = 0; offset < 5; offset++) {
+      const date = addDaysYmd(monday, offset);
+      if (date >= start && date <= today && days?.[date]?.completed !== true) pending.push(date);
+    }
+    return pending;
+  }
+
   function formatDisplayDate(ymd) {
     const dt = ymdToUtcNoon(ymd);
     return new Intl.DateTimeFormat("en-SG", {
@@ -292,6 +304,7 @@
     validatePlan,
     resolveReading,
     formatDisplayDate,
+    weeklyIncompleteDates,
     addDaysYmd,
     weekdayOfYmd,
     countWeekdayInclusive,

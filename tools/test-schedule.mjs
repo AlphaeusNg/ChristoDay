@@ -216,5 +216,12 @@ assert(B.parseRef("bogus").length === 0, "invalid ref empty");
   assert(bad === 0, "all segment refs parse");
 }
 
+assert(JSON.stringify(S.weeklyIncompleteDates("2026-06-19", { "2026-06-15": { completed: true } })) ===
+  JSON.stringify(["2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19"]), "weekly catch-up excludes completed days");
+assert(JSON.stringify(S.weeklyIncompleteDates("2026-06-21", {})) ===
+  JSON.stringify(["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19"]), "Sunday catch-up uses the week just ended");
+assert(S.weeklyIncompleteDates("2026-06-14", {}).length === 0, "catch-up does not invent readings before the epoch");
+assert(S.weeklyIncompleteDates("invalid", {}).length === 0, "catch-up rejects malformed dates");
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -1659,3 +1659,8 @@ service-worker cycle.
 ## 2026-10-07 — Stop speech when leaving reading focus
 
 Turning focus off cancels active speech and invalidates late utterance callbacks. Gospel text rendering stays intact. All Node gates and 27 Chromium checks passed.
+
+
+## 2026-10-07 — Offer this week’s unfinished readings
+
+A folded catch-up panel lists elapsed weekdays in the current Singapore week, excluding completed days and dates before the epoch. Opening or completing a historical day preserves separate journals and does not mark Today complete. Weekends use the week just ended. Validation: all Node gates (54 schedule assertions) and 28 Chromium journeys passed. Version 2026.10.07.2.

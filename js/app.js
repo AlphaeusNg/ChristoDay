@@ -156,6 +156,26 @@
     btn.textContent = `Continue ${ChristoSchedule.formatDisplayDate(target)}`;
   }
 
+  function renderWeeklyCatchUp(today) {
+    const panel = $("#weekly-catch-up");
+    const list = $("#weekly-catch-up-list");
+    if (!panel || !list || !plan) return;
+    const dates = ChristoSchedule.weeklyIncompleteDates(today, state.days, plan.meta.startDate);
+    panel.hidden = dates.length === 0;
+    $("#weekly-catch-up-summary").textContent = `This week · ${dates.length} unfinished reading${dates.length === 1 ? "" : "s"}`;
+    list.replaceChildren();
+    for (const date of dates) {
+      const reading = ChristoSchedule.resolveReading(plan, date);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn";
+      button.dataset.catchUpDate = date;
+      button.textContent = `${reading.weekdayName} · ${reading.fullRef}`;
+      button.addEventListener("click", () => renderDay(date));
+      list.appendChild(button);
+    }
+  }
+
   function currentTranslation() {
     return TRANSLATIONS.has(state.translation) ? state.translation : "NIV";
   }
@@ -444,6 +464,7 @@
     const today = observedToday || ChristoSchedule.partsInSingapore().ymd;
     $("#stat-streak").textContent = String(computeStreak(today));
     $("#stat-done").textContent = String(countCompleted());
+    renderWeeklyCatchUp(today);
   }
 
   function applyTodayLabels() {
