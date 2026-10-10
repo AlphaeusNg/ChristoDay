@@ -144,3 +144,9 @@ raw = JSON.stringify({
 assert.equal(JSON.stringify(readings.load(storage)).includes(secret), false);
 
 console.log("test-readings.mjs: permitted offline copies, refusal, bound, and removal ok");
+
+for (const ymd of ["2026-02-29", "2026-02-30", "2026-04-31", "2026-13-01", "2026-00-01"]) {
+  assert.equal(readings.put(readings.empty(), { ...webEntry, ymd }).reason, "invalid", ymd);
+  assert.equal(Object.keys(readings.hydrate({ items: { bad: { ...webEntry, ymd } } }).items).length, 0, ymd);
+}
+assert.equal(readings.put(readings.empty(), { ...webEntry, ymd: "2028-02-29" }).ok, true);

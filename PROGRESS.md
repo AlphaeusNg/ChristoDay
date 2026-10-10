@@ -1673,3 +1673,9 @@ The weekend panel shows the previous Friday’s journal as read-only text and th
 ## 2026-10-07 — Ignore superseded journal restores
 
 Journal restore checks its selection identity after file reading and rendering. An older delayed file cannot overwrite the newly restored journal or its status. All Node gates and 30 Chromium journeys passed, including two deliberately overlapping reads. The plan epoch, stored translations and journal dates stay unchanged.
+
+## 2026-10-11 — Reject impossible offline-reading dates
+
+Offline-library hydration and writes require a real calendar date. February 30, non-leap February 29 and invalid months cannot become saved-reading keys; leap-year February 29 remains valid. WEB-only storage terms stay unchanged.
+
+Validation: All Node gates with invalid-date/leap-day cases; 30 Chromium journeys.
