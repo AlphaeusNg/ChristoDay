@@ -72,7 +72,9 @@
       if (!isRecord(value) || !validYmd(value.ymd) || !passageAllowed(value.translation)) continue;
       const passage = validPassage(value, value.translation);
       if (!passage) continue;
-      library.items[keyFor(value.ymd, value.translation)] = {
+      const id = keyFor(value.ymd, value.translation);
+      if (!library.items[id] && Object.keys(library.items).length >= MAX_SAVED_READINGS) continue;
+      library.items[id] = {
         ymd: value.ymd,
         translation: value.translation,
         ref: typeof value.ref === "string" ? plainText(value.ref).slice(0, 80) : "",
@@ -88,6 +90,7 @@
   function load(storage = global.localStorage) {
     try {
       const raw = storage?.getItem(STORAGE_KEY);
+      if (raw && raw.length > MAX_LIBRARY_BYTES) return emptyLibrary();
       return hydrate(raw ? JSON.parse(raw) : null);
     } catch {
       return emptyLibrary();
@@ -96,7 +99,9 @@
 
   function save(library, storage = global.localStorage) {
     try {
-      storage.setItem(STORAGE_KEY, JSON.stringify(hydrate(library)));
+      const raw = JSON.stringify(hydrate(library));
+      if (raw.length > MAX_LIBRARY_BYTES) return false;
+      storage.setItem(STORAGE_KEY, raw);
       return true;
     } catch {
       return false;

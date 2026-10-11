@@ -1679,3 +1679,9 @@ Journal restore checks its selection identity after file reading and rendering. 
 Offline-library hydration and writes require a real calendar date. February 30, non-leap February 29 and invalid months cannot become saved-reading keys; leap-year February 29 remains valid. WEB-only storage terms stay unchanged.
 
 Validation: All Node gates with invalid-date/leap-day cases; 30 Chromium journeys.
+
+## 2026-10-11 — Enforce offline-library limits on every storage path
+
+Hydration caps valid entries at 30, persisted reads reject oversized text before parsing, and direct saves cannot bypass the existing library-size limit. Ordinary updates/removals and WEB-only storage remain intact.
+
+Validation: All Node gates with oversized/full-library cases and 30 Chromium journeys.

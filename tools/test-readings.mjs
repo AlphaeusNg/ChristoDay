@@ -150,3 +150,16 @@ for (const ymd of ["2026-02-29", "2026-02-30", "2026-04-31", "2026-13-01", "2026
   assert.equal(Object.keys(readings.hydrate({ items: { bad: { ...webEntry, ymd } } }).items).length, 0, ymd);
 }
 assert.equal(readings.put(readings.empty(), { ...webEntry, ymd: "2028-02-29" }).ok, true);
+
+const hydratedOverflow = readings.hydrate({ items: {
+  ...full.items, extra: { ...webEntry, ymd: "2026-08-01" },
+} });
+assert.equal(Object.keys(hydratedOverflow.items).length, readings.MAX_SAVED_READINGS);
+assert.equal(readings.get(hydratedOverflow, "2026-08-01", "WEB"), null);
+assert.equal(Object.keys(readings.load({ getItem: () => " ".repeat(readings.MAX_LIBRARY_BYTES + 1) }).items).length, 0);
+const largeEntry = { ...webEntry, passage: { verses: Array.from({ length: 200 }, (_, index) => ({
+  chapter: 1, verse: index + 1, text: "x".repeat(4000),
+})) } };
+let oversizedWritten = false;
+assert.equal(readings.save({ items: { big: largeEntry } }, { setItem() { oversizedWritten = true; } }), false);
+assert.equal(oversizedWritten, false, "direct library saves cannot bypass the size cap");
