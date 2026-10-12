@@ -163,3 +163,13 @@ const largeEntry = { ...webEntry, passage: { verses: Array.from({ length: 200 },
 let oversizedWritten = false;
 assert.equal(readings.save({ items: { big: largeEntry } }, { setItem() { oversizedWritten = true; } }), false);
 assert.equal(oversizedWritten, false, "direct library saves cannot bypass the size cap");
+
+const duplicatePassage = { ...webEntry, passage: { verses: [
+  { chapter: 1, verse: 1, text: "First" }, { chapter: 1, verse: 1, text: "Duplicate" },
+] } };
+assert.equal(readings.put(readings.empty(), duplicatePassage).reason, "invalid");
+assert.equal(Object.keys(readings.hydrate({ items: { duplicate: duplicatePassage } }).items).length, 0);
+const acrossChapters = { ...webEntry, passage: { verses: [
+  { chapter: 1, verse: 1, text: "First" }, { chapter: 2, verse: 1, text: "Next chapter" },
+] } };
+assert.equal(readings.put(readings.empty(), acrossChapters).ok, true, "verse numbers may repeat across chapters");

@@ -1685,3 +1685,9 @@ Validation: All Node gates with invalid-date/leap-day cases; 30 Chromium journey
 Hydration caps valid entries at 30, persisted reads reject oversized text before parsing, and direct saves cannot bypass the existing library-size limit. Ordinary updates/removals and WEB-only storage remain intact.
 
 Validation: All Node gates with oversized/full-library cases and 30 Chromium journeys.
+
+## 2026-10-13 — Reject duplicate verses in offline passages
+
+Offline passage hydration and writes reject duplicate chapter/verse coordinates. The same verse number in different chapters remains valid. WEB-only terms and 30-slot cap stay unchanged.
+
+Validation: All Node gates and 30 Chromium journeys passed.

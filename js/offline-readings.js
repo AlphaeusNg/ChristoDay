@@ -41,6 +41,7 @@
     const source = isRecord(value?.passage) ? value.passage : value;
     if (!isRecord(source) || !Array.isArray(source.verses)) return null;
     const verses = [];
+    const coordinates = new Set();
     for (const verse of source.verses) {
       if (!isRecord(verse)) return null;
       const chapter = Number(verse.chapter);
@@ -48,6 +49,9 @@
       const text = plainText(verse.text);
       if (!Number.isInteger(chapter) || chapter < 1 || !Number.isInteger(number) || number < 1) return null;
       if (!text || text.length > 4000) return null;
+      const coordinate = `${chapter}:${number}`;
+      if (coordinates.has(coordinate)) return null;
+      coordinates.add(coordinate);
       const row = { chapter, verse: number, text };
       const heading = plainText(verse.heading);
       if (heading) row.heading = heading.slice(0, 80);
