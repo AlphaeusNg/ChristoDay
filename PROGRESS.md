@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-05 (ChristoDay Cycle 53)
+Last updated: 2026-10-13 (device-storage access recovery)
 
 ## Current state
 
@@ -59,7 +59,7 @@ Last updated: 2026-10-05 (ChristoDay Cycle 53)
 - A page left open across Singapore midnight updates Today labels without a reload.
   An unattended today view moves from Friday to the weekend and from Sunday to Monday.
   An actively edited historical note stays put, and completion still applies to that date.
-- Deployment version: `2026.10.05.1`.
+- Deployment version: `2026.10.13.2`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -67,7 +67,23 @@ Last updated: 2026-10-05 (ChristoDay Cycle 53)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: show which offline reading slots are used
+## Latest cycle: keep reading usable when device storage access is denied
+
+The browser can throw a SecurityError merely when reading `window.localStorage`.
+Journal and offline-library helpers previously evaluated that getter in default
+parameters, before entering their recovery handlers, so the app stopped at
+startup. Resolve default storage inside each load/save handler. Startup now uses
+an empty journal/library when storage is blocked; journal and completion remain
+available in memory, failed writes retain the existing durability guidance, and
+failed WEB saves leave the offline slot count unchanged.
+
+Verification: reproduced both prior startup failures from the previous commit;
+all nine Node suites and full JavaScript syntax checks passed. All 31 Chromium
+journeys passed, including getter-denial startup, journal/completion navigation,
+failed WEB-save feedback, and installed-worker offline reload. Version
+`2026.10.13.2`. The plan epoch and WEB-only offline permission gate are unchanged.
+
+## Previous cycle: show which offline reading slots are used
 
 WEB availability keeps its sentence and appends `N of 30 offline slots used`, plus the stored dates when any slot is in use. NIV, ESV, and NKJV stay on the refusal text. Save and remove update the count on the next paint. Version `2026.10.05.1`.
 

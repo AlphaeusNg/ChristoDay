@@ -91,8 +91,9 @@
     return library;
   }
 
-  function load(storage = global.localStorage) {
+  function load(storage) {
     try {
+      if (storage === undefined) storage = global.localStorage;
       const raw = storage?.getItem(STORAGE_KEY);
       if (raw && raw.length > MAX_LIBRARY_BYTES) return emptyLibrary();
       return hydrate(raw ? JSON.parse(raw) : null);
@@ -101,8 +102,9 @@
     }
   }
 
-  function save(library, storage = global.localStorage) {
+  function save(library, storage) {
     try {
+      if (storage === undefined) storage = global.localStorage;
       const raw = JSON.stringify(hydrate(library));
       if (raw.length > MAX_LIBRARY_BYTES) return false;
       storage.setItem(STORAGE_KEY, raw);

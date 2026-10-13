@@ -64,8 +64,9 @@
     return hydrated;
   }
 
-  function loadState(storage = global.localStorage) {
+  function loadState(storage) {
     try {
+      if (storage === undefined) storage = global.localStorage;
       const raw = storage?.getItem(STORAGE_KEY);
       return raw ? hydrateState(JSON.parse(raw)) : defaultState();
     } catch {
@@ -73,8 +74,9 @@
     }
   }
 
-  function saveState(state, storage = global.localStorage) {
+  function saveState(state, storage) {
     try {
+      if (storage === undefined) storage = global.localStorage;
       storage.setItem(STORAGE_KEY, JSON.stringify(hydrateState(state)));
       return true;
     } catch {

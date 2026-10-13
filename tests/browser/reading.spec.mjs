@@ -1067,3 +1067,27 @@ test('an older delayed restore cannot overwrite the newest journal', async ({ pa
   await expect(page.locator('#journal')).toHaveValue('Newest note');
   expect(dialogs).toBe(1);
 });
+
+
+test("keeps journal and reading usable when access to device storage is denied", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get() { throw new DOMException("storage denied", "SecurityError"); },
+    });
+  });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#fatal")).toBeHidden();
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
+  await page.locator("#journal").fill("Grace remains with me in this visit.");
+  await expect(page.locator("#storage-status")).toContainText("may be lost when this tab closes");
+  await page.locator("#btn-complete").click();
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await page.locator("#btn-save-reading").click();
+  await expect(page.locator("#action-status")).toHaveText("Could not save on this device.");
+  await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
+  await page.locator("#btn-next").click();
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-17");
+  await page.locator("#btn-prev").click();
+  await expect(page.locator("#journal")).toHaveValue("Grace remains with me in this visit.");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+});

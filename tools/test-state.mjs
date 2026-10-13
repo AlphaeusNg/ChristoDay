@@ -92,6 +92,16 @@ assert.deepEqual(
   }
 );
 
+Object.defineProperty(sandbox.window, "localStorage", {
+  get() { throw new Error("storage access denied"); },
+});
+assert.deepEqual(
+  JSON.parse(JSON.stringify(stateApi.loadState())),
+  JSON.parse(JSON.stringify(stateApi.defaultState())),
+  "denied storage getter must leave startup usable"
+);
+assert.equal(stateApi.saveState(hydrated), false, "denied storage getter must report failed save");
+
 let saved;
 assert.equal(stateApi.saveState(hydrated, { setItem: (_key, value) => { saved = value; } }), true);
 assert.equal(JSON.parse(saved).days["2026-08-09"].completed, true);

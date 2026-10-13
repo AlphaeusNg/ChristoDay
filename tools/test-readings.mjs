@@ -6,8 +6,11 @@ import vm from "node:vm";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function loadReadings() {
+function loadReadings(storageDenied = false) {
   const sandbox = { window: {}, localStorage: null };
+  if (storageDenied) Object.defineProperty(sandbox.window, "localStorage", {
+    get() { throw new Error("storage access denied"); },
+  });
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(readFileSync(join(root, "js/red-letter.js"), "utf8"), sandbox);
@@ -15,6 +18,10 @@ function loadReadings() {
   vm.runInContext(readFileSync(join(root, "js/offline-readings.js"), "utf8"), sandbox);
   return sandbox.window.ChristoReadings;
 }
+
+const deniedReadings = loadReadings(true);
+assert.deepEqual(Object.keys(deniedReadings.load().items), [], "denied getter returns an empty library");
+assert.equal(deniedReadings.save(deniedReadings.empty()), false, "denied getter reports failed save");
 
 const readings = loadReadings();
 const secret = "NIV copyrighted sentence that must stay unsaved";
