@@ -191,6 +191,16 @@
       <div id="weekly-catch-up-list" class="journal-backup" role="group" aria-label="Unfinished readings this week"></div>
     </details>
 
+    <details id="reading-calendar" class="card" hidden>
+      <summary>Add readings to your calendar</summary>
+      <p id="calendar-range" class="muted"></p>
+      <button type="button" class="btn" id="btn-calendar">Download four weeks (.ics)</button>
+      <p class="muted">The file includes references and reading links. Journal notes and Scripture text stay out of it.</p>
+      <p class="muted">Import the file into your calendar, then choose reminders there. This is a snapshot and does not synchronize. Importing the same dates again may create duplicates.</p>
+      <p class="muted">In Google Calendar on a computer, open Settings → Import &amp; export → Import.</p>
+      <p id="calendar-status" class="muted" role="status" hidden></p>
+    </details>
+
     <details id="journal-history" class="card" hidden>
       <summary>Journal history</summary>
       <p class="muted history-note">Search stays on this device. Notes are never uploaded.</p>
@@ -273,6 +283,7 @@
   <script src="js/state.js"></script>
   <script src="js/reading-actions.js"></script>
   <script src="js/journal-backup.js"></script>
+  <script src="js/reading-calendar.js"></script>
   <script src="js/ref-popover.js"></script>
   <script src="js/journal-history.js"></script>
   <script src="js/offline-readings.js"></script>

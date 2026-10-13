@@ -25,6 +25,14 @@ Pairs with [VerseKeep](https://alphaeusng.github.io/VerseKeep/) for memory pract
 3. Use a reflection prompt, then write in the journal if you want. Journal and completion stay on this device only. Download a private JSON backup whenever you want; nothing is uploaded.
 4. Come back tomorrow. Streaks follow the Singapore calendar. Saturday and Sunday are rest.
 
+To plan ahead, open **Add readings to your calendar** and download four weeks of
+weekday references from the displayed date. Import the `.ics` file into your
+calendar and choose reminders there. Before the plan starts, the export begins
+on 2026-06-15. Weekends remain free. The file contains no journal notes or
+Scripture text. It is a snapshot; importing the same dates again may create
+duplicates. Google Calendar accepts ICS imports through **Settings → Import &
+export** on a computer.
+
 Working in this repo? See **[AGENTS.md](AGENTS.md)** for schedule math, tests, and conventions.
 
 MIT © 2026 Alphaeus Ng

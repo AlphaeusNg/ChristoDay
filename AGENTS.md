@@ -34,6 +34,7 @@ python3 -m http.server 8091
 node tools/test-schedule.mjs
 node tools/test-bible.mjs
 node tools/test-state.mjs
+node tools/test-calendar.mjs
 node tools/test-site.mjs
 node tools/test-service-worker.mjs
 node tools/test-workflow.mjs

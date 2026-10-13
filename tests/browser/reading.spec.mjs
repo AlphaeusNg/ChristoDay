@@ -1091,3 +1091,58 @@ test("keeps journal and reading usable when access to device storage is denied",
   await expect(page.locator("#journal")).toHaveValue("Grace remains with me in this visit.");
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
 });
+
+
+test("downloads four weeks of references without private notes or passage text", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
+  await page.locator("#btn-complete").click();
+  await page.locator("#include-share-note").check();
+  await page.locator("#reading-calendar summary").click();
+  await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#btn-calendar").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("christoday-readings-2026-06-15-to-2026-07-12.ics");
+  const text = (await readFile(await download.path(), "utf8")).replace(/\r\n /g, "");
+  expect(text.match(/BEGIN:VEVENT/g)).toHaveLength(20);
+  expect(text).toContain("DTSTART;VALUE=DATE:20260615\r\nDTEND;VALUE=DATE:20260616");
+  expect(text).toContain("SUMMARY:ChristoDay: Jude 1:1-25");
+  expect(text).toContain("URL:https://alphaeusng.github.io/ChristoDay/?d=2026-06-16&tr=ESV");
+  expect(text).not.toContain("PRIVATE CALENDAR SENTINEL");
+  expect(text).not.toContain("book 65 chapter");
+  expect(text).not.toContain("completed");
+  await expect(page.locator("#calendar-status")).toContainText("Downloaded 20 reading dates");
+  await expect(page.locator("#journal")).toHaveValue("PRIVATE CALENDAR SENTINEL");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await page.locator("#btn-next").click();
+  await expect(page.locator("#calendar-range")).toContainText("2026-06-16 to 2026-07-13");
+  await expect(page.locator("#calendar-status")).toBeHidden();
+});
+
+for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
+  test(`downloads calendar from rest or pre-start day ${date}`, async ({ page }) => {
+    await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
+    await page.locator("#reading-calendar summary").click();
+    await expect(page.locator("#calendar-range")).toContainText(`${start} to ${end}`);
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator("#btn-calendar").click();
+    const download = await downloadPromise;
+    const text = (await readFile(await download.path(), "utf8")).replace(/\r\n /g, "");
+    expect(text.match(/BEGIN:VEVENT/g)).toHaveLength(20);
+    expect(text).not.toContain("DTSTART;VALUE=DATE:20260620");
+    expect(text).toContain("&tr=WEB");
+  });
+}
+
+test("reports a calendar download failure without affecting the reading", async ({ page }) => {
+  await page.goto("./?d=2026-06-16", { waitUntil: "domcontentloaded" });
+  await page.locator("#reading-calendar summary").click();
+  await page.evaluate(() => { URL.createObjectURL = () => { throw new Error("blocked download"); }; });
+  await page.locator("#btn-calendar").click();
+  await expect(page.locator("#calendar-status")).toContainText("Could not download a calendar");
+  await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await expect(page.locator("#fatal")).toBeHidden();
+});

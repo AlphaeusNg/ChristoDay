@@ -69,6 +69,7 @@ const requiredRuntime = [
   "./js/state.js",
   "./js/reading-actions.js",
   "./js/journal-backup.js",
+  "./js/reading-calendar.js",
   "./js/ref-popover.js",
   "./js/journal-history.js",
   "./js/offline-readings.js",
@@ -155,6 +156,7 @@ assert.match(css, /flex-wrap:\s*wrap/, "narrow toolbars wrap instead of overflow
 for (const script of [
   "js/reading-actions.js",
   "js/journal-backup.js",
+  "js/reading-calendar.js",
   "js/ref-popover.js",
   "js/journal-history.js",
   "js/offline-readings.js",

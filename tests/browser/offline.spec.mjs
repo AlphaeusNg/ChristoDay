@@ -113,10 +113,18 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   await expect(page.locator("#passage-body .fallback-ref")).toContainText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("schedule still works fully offline");
 
+  await page.locator("#reading-calendar summary").click();
+  const calendarDownload = page.waitForEvent("download");
+  await page.locator("#btn-calendar").click();
+  const calendar = await calendarDownload;
+  expect(calendar.suggestedFilename()).toBe("christoday-readings-2026-06-16-to-2026-07-13.ics");
+  await expect(page.locator("#calendar-status")).toContainText("Downloaded 20 reading dates");
+
   for (const path of [
     "/ChristoDay/",
     "/ChristoDay/css/style.css",
     "/ChristoDay/js/app.js",
+    "/ChristoDay/js/reading-calendar.js",
     "/ChristoDay/data/segments.json",
   ]) {
     expect(workerResponses, `${path} must be served by the installed worker`).toContain(path);

@@ -36,6 +36,8 @@ jobs:
         run: node tools/test-journal-history.mjs
       - name: Offline reading tests
         run: node tools/test-readings.mjs
+      - name: Reading calendar export tests
+        run: node tools/test-calendar.mjs
       - name: Singapore day rollover tests
         run: node tools/test-today.mjs
       - name: Site and offline structure

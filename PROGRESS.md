@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-13 (device-storage access recovery)
+Last updated: 2026-10-14 (four-week reading calendar)
 
 ## Current state
 
@@ -59,7 +59,7 @@ Last updated: 2026-10-13 (device-storage access recovery)
 - A page left open across Singapore midnight updates Today labels without a reload.
   An unattended today view moves from Friday to the weekend and from Sunday to Monday.
   An actively edited historical note stays put, and completion still applies to that date.
-- Deployment version: `2026.10.13.2`.
+- Deployment version: `2026.10.14.1`.
 - GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
@@ -67,7 +67,32 @@ Last updated: 2026-10-13 (device-storage access recovery)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: keep reading usable when device storage access is denied
+## Latest cycle: download four weeks of reading dates
+
+Added a collapsed calendar card below weekly catch-up. Download a reference-only
+`.ics` snapshot spanning 28 calendar days from the displayed date, or from the
+2026-06-15 epoch when viewing a pre-start date. Its 20 weekday all-day events use
+the existing Singapore schedule and Jude rotation, leave calendar availability
+free, and link to the correct date in the selected translation. Weekends remain
+rest. The UI explains manual import, user-selected calendar reminders, snapshot
+behavior, and possible duplicates on repeated import.
+
+The new calendar module consumes the validated plan/date/translation only, with
+no journal, completion, reflection answers, or Bible text. Stable event IDs,
+exclusive DATE ends, UTC generation stamps, escaped text, CRLF, and UTF-8-aware
+75-octet folding follow RFC 5545. Its runtime is included in the offline shell.
+Research, sources, acceptance criteria, next priorities, and import-testing limits
+were recorded in `docs/FEATURE_ROADMAP.md` before implementation.
+
+Verification: all ten Node suites, complete JavaScript syntax checks, and all 35
+Chromium journeys passed. Coverage includes exact schedule/date windows across
+weekends, leap days/year boundaries, Jude rotation, invalid inputs, escaping and
+Unicode folding, stable IDs, phone-width downloads excluding private content,
+pre-start/weekend export, visible download failure, and calendar download after
+installed-worker offline reload. CI now runs calendar regressions. Version
+`2026.10.14.1`. Actual Google/Apple/Outlook import UI still needs manual checks.
+
+## Previous cycle: keep reading usable when device storage access is denied
 
 The browser can throw a SecurityError merely when reading `window.localStorage`.
 Journal and offline-library helpers previously evaluated that getter in default
