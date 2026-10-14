@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-14 (four-week reading calendar)
+Last updated: 2026-10-14 (reader control sizing)
 
 ## Current state
 
@@ -67,7 +67,13 @@ Last updated: 2026-10-14 (four-week reading calendar)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: download four weeks of reading dates
+## Latest cycle: keep reading controls inside enlarged phone layouts
+
+Reader stats, the date toolbar and the brand line wrap instead of widening a phone page. A long cross-reference stays inside the viewport, scrolls, and can be paged from the keyboard. Verse numbers and footnote marks stay inline. Findings are in `docs/UI_SIZING_AUDIT.md`.
+
+Verification: all ten Node suites and all 41 reading journeys passed, including eight reflow widths and text scales. Version `2026.10.14.2`.
+
+## Previous cycle: download four weeks of reading dates
 
 Added a collapsed calendar card below weekly catch-up. Download a reference-only
 `.ics` snapshot spanning 28 calendar days from the displayed date, or from the

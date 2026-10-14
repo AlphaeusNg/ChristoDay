@@ -1146,3 +1146,69 @@ test("reports a calendar download failure without affecting the reading", async 
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#fatal")).toBeHidden();
 });
+
+for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
+  test(`reflows reader controls and long references at ${width}px and ${textScale * 100}% text`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.route(/^https:\/\/bolls\.life\//, (route) => route.fulfill({
+      json: Array.from({ length: 120 }, (_, index) => ({
+        verse: index + 1,
+        text: "A passage with words that wrap naturally in the reader.",
+        comment: index === 0 ? `<p>${"Cross reference explanation. ".repeat(100)}End of reference.</p>` : "",
+      })),
+    }));
+    await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("#passage-body .fn-mark")).toBeVisible();
+    await page.evaluate((scale) => {
+      document.documentElement.style.fontSize = `${scale * 100}%`;
+      document.documentElement.style.scrollBehavior = "auto";
+      for (const id of ["reading-calendar", "journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+    }, textScale);
+    await page.locator("#journal").fill("A long journal entry: " + "averylongunbrokenword".repeat(20));
+    const geometry = await page.evaluate(() => {
+      const visible = (el) => !!el.getClientRects().length && getComputedStyle(el).visibility !== "hidden";
+      const controls = [...document.querySelectorAll("main button, main input:not([type=checkbox]), main select, main summary")]
+        .filter((el) => visible(el) && !el.matches(".vnum, .fn-mark, .xref-link"));
+      return {
+        overflow: document.documentElement.scrollWidth - innerWidth,
+        outside: controls.filter((el) => {
+          const rect = el.getBoundingClientRect();
+          return rect.left < -1 || rect.right > innerWidth + 1;
+        }).map((el) => el.id || el.className),
+        undersized: controls.filter((el) => {
+          const rect = el.getBoundingClientRect();
+          return rect.width < 24 || rect.height < 24;
+        }).map((el) => el.id || el.className),
+        searchFont: parseFloat(getComputedStyle(document.getElementById("history-query")).fontSize),
+      };
+    });
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    expect(geometry.outside).toEqual([]);
+    expect(geometry.undersized).toEqual([]);
+    expect(geometry.searchFont).toBeGreaterThanOrEqual(13 * textScale);
+
+    await page.locator("#passage-body .fn-mark").click();
+    const popover = page.locator("#ref-popover");
+    await expect(popover).toBeVisible();
+    const referenceGeometry = await popover.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const close = document.getElementById("ref-popover-close").getBoundingClientRect();
+      const body = document.getElementById("ref-popover-body");
+      return {
+        top: rect.top, bottom: rect.bottom, right: rect.right,
+        closeInside: close.left >= rect.left && close.right <= rect.right && close.bottom <= rect.bottom,
+        scrollable: body.scrollHeight > body.clientHeight && body.clientHeight > 0,
+      };
+    });
+    expect(referenceGeometry.top).toBeGreaterThanOrEqual(0);
+    expect(referenceGeometry.bottom).toBeLessThanOrEqual(800);
+    expect(referenceGeometry.right).toBeLessThanOrEqual(width);
+    expect(referenceGeometry.closeInside).toBe(true);
+    expect(referenceGeometry.scrollable).toBe(true);
+    await page.locator("#ref-popover-body").focus();
+    await page.locator("#ref-popover-body").press("End");
+    await expect.poll(() => page.locator("#ref-popover-body").evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    await page.locator("#ref-popover-close").click();
+    await expect(popover).toBeHidden();
+  });
+}
