@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-14 (reader control sizing)
+Last updated: 2026-10-15 (clearer reading lines)
 
 ## Current state
 
@@ -67,7 +67,13 @@ Last updated: 2026-10-14 (reader control sizing)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: keep reading controls inside enlarged phone layouts
+## Latest cycle: name the weekend and offline actions
+
+Weekend buttons say "Open last Friday". Saturday and Sunday still say there is no reading and the plan resumes Monday. Offline WEB copy tells the reader to save the passage on this device. The about summary names the Christ-centered weekday plan. Version `2026.10.15.1`.
+
+Validation: schedule, Bible, state, calendar, site, service-worker, and workflow node gates passed. Chromium journeys were not rerun.
+
+## Previous cycle: keep reading controls inside enlarged phone layouts
 
 Reader stats, the date toolbar and the brand line wrap instead of widening a phone page. A long cross-reference stays inside the viewport, scrolls, and can be paged from the keyboard. Verse numbers and footnote marks stay inline. Findings are in `docs/UI_SIZING_AUDIT.md`.
 

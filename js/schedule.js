@@ -190,7 +190,7 @@
       return {
         kind: "before_start",
         ymd: today,
-        message: `Plan begins ${start} (Asia/Singapore). Come back then — or preview a weekday after the start date.`,
+        message: `Plan begins ${start} (Asia/Singapore). Preview a weekday after the start date.`,
       };
     }
 
@@ -201,8 +201,8 @@
         ymd: today,
         weekday: isSaturday ? "Saturday" : "Sunday",
         message: isSaturday
-          ? "No reading today (Saturday). Rest in the gospel — the plan resumes Monday."
-          : "No reading today (Sunday). Rest in the gospel and prepare your heart for Monday.",
+          ? "No reading today (Saturday). Rest in the gospel. The plan resumes Monday."
+          : "No reading today (Sunday). Rest in the gospel. The plan resumes Monday.",
       };
     }
 

@@ -618,7 +618,7 @@
       jude: "Rest in the One who is able to keep you from stumbling.",
     };
     const opener = openers[reading.bookKey] || "Look for Jesus.";
-    return `${opener} As you read ${reading.fullRef}, ask: How does this passage reveal His person, work, or gospel glory? End with one short prayer of trust.`;
+    return `${opener} Read ${reading.fullRef}. Ask: How does this passage reveal His person, work, or gospel glory? End with one short prayer of trust.`;
   }
 
   function refreshReadingAvailability(loaded) {

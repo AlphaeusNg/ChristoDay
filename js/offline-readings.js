@@ -182,7 +182,7 @@
     } else if (kept) {
       text = `${translation} is saved on this device for offline.`;
     } else {
-      text = `${translation} is not saved yet. You can keep this reading on this device.`;
+      text = `${translation} is not saved yet. Save this reading on this device.`;
     }
     if (library != null) text += slotSummary(library);
     return { permitted: true, saved: kept, text };
