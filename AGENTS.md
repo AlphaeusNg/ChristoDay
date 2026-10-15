@@ -45,7 +45,11 @@ npx playwright install chromium
 npm run test:browser
 ```
 
+Browser tests (`npm run test:browser`) start `tools/pw-static-server.mjs`, which mounts this repo at `/ChristoDay/`. The clone folder name does not matter. `PW_PORT` is optional (integer 1–65535); when it is unset, Playwright picks a free port on `127.0.0.1`. `PW_REUSE_SERVER=1` opts in to reusing a server that is already listening on that URL, and only when `CI` is unset. `python3 -m http.server 8091` stays the manual local preview and serves the current directory.
+
 ## Tests
+
+Browser tests use `tools/pw-static-server.mjs` with the repo mounted at `http://127.0.0.1:<port>/ChristoDay/`. Leave `PW_PORT` unset to take a free port, or set it to pin one. `PW_REUSE_SERVER=1` is the local opt-in for `reuseExistingServer`; CI keeps reuse off.
 
 Playwright boots the real page with controlled Bible API responses, navigates from Matthew to Mark, overlaps an obsolete NIV request with a newer ESV selection, and verifies the new translation remains rendered and persisted. It forces a malformed live-passage response, proves reference-only reading/journal/completion stay usable, then verifies another translation restores live text. It denies journal storage, proves progress and honest durability guidance survive day navigation, then verifies a later permitted write makes the full entry durable. Listen coverage includes explicit stop, completion, failure, and late callbacks from a cancelled utterance after its replacement starts. Invalid plan payload and non-200 `segments.json` must stay on the user-safe fatal recovery surface. A worker-enabled context installs the offline shell at `/ChristoDay/`, verifies unrelated same-origin caches survive activation, rejects out-of-scope runtime writes, and reloads a working reference-only reading from the service-worker cache.
 
