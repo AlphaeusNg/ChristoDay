@@ -143,11 +143,13 @@ assert.match(index, /id="history-from"/, "journal history can filter from a date
 assert.match(index, /id="history-to"/, "journal history can filter to a date");
 assert.match(index, /id="btn-save-reading"/, "permitted readings can be saved for offline");
 assert.match(index, /id="btn-remove-reading"/, "saved readings can be removed");
-assert.match(index, /id="passage-availability"/, "offline availability is visible per reading");
+assert.match(index, /id="passage-availability"/, "offline availability exists per reading");
 assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
 assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
-assert.match(index, /id="reading-tools"/, "secondary reading tools can fold");
+for (const id of ["reading-tools", "offline-tools"]) {
+  assert.match(index, new RegExp(`<details id="${id}" class="[^"]+">\\s*<summary aria-expanded="false">`), `${id} starts closed with a labelled summary`);
+}
 assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
 assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");
 assert.match(css, /--passage-leading/, "line spacing uses the passage leading token");

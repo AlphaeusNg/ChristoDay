@@ -169,28 +169,28 @@ a:hover {
 }
 
 .stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 1.25rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 0.5rem 0;
 }
 .stat {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0.85rem 1rem;
-  box-shadow: var(--shadow);
+  display: flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  min-width: 0;
 }
 .stat b {
-  display: block;
+  display: inline;
   font-family: var(--serif);
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: var(--gold);
   line-height: 1.1;
 }
 .stat span {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .toolbar {
@@ -396,7 +396,8 @@ html[data-line-spacing="open"] {
   margin: 0.15rem 0 0;
 }
 
-.reading-tools > summary {
+.reading-tools > summary,
+.offline-tools > summary {
   cursor: pointer;
   list-style: none;
 }
@@ -405,11 +406,8 @@ html[data-line-spacing="open"] {
   display: none;
 }
 
-html:not([data-reading-focus="on"]) .reading-tools > summary {
-  display: none;
-}
-
-html[data-reading-focus="on"] .reading-tools > summary {
+.reading-tools > summary,
+.offline-tools > summary {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
@@ -953,4 +951,8 @@ textarea:focus {
   html[data-passage-size="lg"] {
     --passage-size: 1.28rem;
   }
+}
+
+.offline-tools {
+  margin: 0.25rem 0 0.85rem;
 }

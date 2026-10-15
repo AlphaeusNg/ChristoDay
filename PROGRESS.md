@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-15 (clearer reading lines)
+Last updated: 2026-10-15 (declutter the first screen)
 
 ## Current state
 
@@ -67,7 +67,18 @@ Last updated: 2026-10-15 (clearer reading lines)
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: name the weekend and offline actions
+## Latest cycle: declutter the first screen
+
+Keep Listen, Focus, and Mark complete in the primary row. Text & share tools
+(including type size and line spacing) and Offline reading start folded with
+visible summaries and synchronized expanded states. Leaving focus no longer
+reopens tools. Desktop stats use the compact inline layout and stay visible outside focus mode.
+Version `2026.10.15.2`.
+
+Validation: all Node suites, JavaScript syntax checks, and the full Playwright
+suite (44 tests, including new default-folding coverage) pass.
+
+## Previous cycle: name the weekend and offline actions
 
 Weekend buttons say "Open last Friday". Saturday and Sunday still say there is no reading and the plan resumes Monday. Offline WEB copy tells the reader to save the passage on this device. The about summary names the Christ-centered weekday plan. Version `2026.10.15.1`.
 

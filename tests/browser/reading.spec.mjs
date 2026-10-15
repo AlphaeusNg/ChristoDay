@@ -3,6 +3,11 @@ import { readFile } from "node:fs/promises";
 
 const runtimeErrors = new WeakMap();
 
+async function openDetails(page, id) {
+  const details = page.locator(`#${id}`);
+  if (!await details.evaluate((el) => el.open)) await details.locator("summary").click();
+}
+
 test.beforeEach(async ({ page }) => {
   const errors = [];
   runtimeErrors.set(page, errors);
@@ -67,6 +72,7 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await datePicker.dispatchEvent("change");
 
   await expect(page.locator("#reading-panel")).toBeVisible();
+  await openDetails(page, "reading-tools");
   await expect(page.locator("#btn-copy")).toBeVisible();
   await expect(page.locator("#btn-share")).toBeVisible();
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
@@ -161,7 +167,9 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   const originalNote = "Christ keeps every part of this story.";
   await journal.fill(originalNote);
   await page.locator("#btn-complete").click();
+  await openDetails(page, "reading-tools");
   await page.locator("#include-share-note").check();
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-type-larger").click();
 
   const downloadPromise = page.waitForEvent("download");
@@ -177,8 +185,10 @@ test("downloads and safely restores the private journal", async ({ page }) => {
 
   await journal.fill("Temporary replacement");
   await page.locator("#btn-complete").click();
+  await openDetails(page, "reading-tools");
   await page.locator("#include-share-note").uncheck();
   await page.locator("#translation").selectOption("WEB");
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-type-smaller").click();
 
   const dialogPromise = page.waitForEvent("dialog");
@@ -661,6 +671,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
 
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-copy").click();
   await expect(page.locator("#action-status")).toBeVisible();
   await expect(page.locator("#action-status")).toHaveText("Copied passage.");
@@ -673,6 +684,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
 
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   copied = await page.evaluate(() => window.__copied.at(-1));
@@ -699,6 +711,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#include-share-note")).not.toBeChecked();
   await page.locator("#journal").fill("Christ is the true King in this genealogy.");
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   let copied = await page.evaluate(() => window.__copied.at(-1));
@@ -707,7 +720,9 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   expect(copied).toMatch(/d=2026-06-16/);
   expect(copied).not.toContain("Christ is the true King");
 
+  await openDetails(page, "reading-tools");
   await page.locator("#include-share-note").check();
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
@@ -726,6 +741,7 @@ test("uses the Web Share API when it is available", async ({ page }) => {
 
   await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Shared today's reading.");
   const shares = await page.evaluate(() => window.__shares);
@@ -839,6 +855,7 @@ test("resizes the passage and remembers the choice", async ({ page }) => {
   await expect(page.locator("#btn-type-larger")).toBeDisabled();
   await expect(page.locator("#btn-type-smaller")).toBeEnabled();
 
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-type-smaller").click();
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "md");
   await expect(page.locator("#action-status")).toHaveText("Default passage text.");
@@ -907,6 +924,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("not saved yet");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
+  await openDetails(page, "offline-tools");
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Saved this WEB reading on this device.");
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
@@ -936,6 +954,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("saved on this device");
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
+  await openDetails(page, "offline-tools");
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
   await expect(page.locator("#btn-remove-reading")).toBeHidden();
@@ -997,6 +1016,7 @@ test("keeps navigation, completion, and journal available in focus mode", async 
   await expect(page.locator("#btn-listen")).toBeVisible();
   await expectPrimaryVisible();
   const beforeLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
+  await openDetails(page, "reading-tools");
   await page.locator("#btn-leading-looser").click();
   await expect(page.locator("html")).toHaveAttribute("data-line-spacing", "open");
   const afterLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
@@ -1082,6 +1102,7 @@ test("keeps journal and reading usable when access to device storage is denied",
   await expect(page.locator("#storage-status")).toContainText("may be lost when this tab closes");
   await page.locator("#btn-complete").click();
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await openDetails(page, "offline-tools");
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Could not save on this device.");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
@@ -1098,6 +1119,7 @@ test("downloads four weeks of references without private notes or passage text",
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
   await page.locator("#btn-complete").click();
+  await openDetails(page, "reading-tools");
   await page.locator("#include-share-note").check();
   await page.locator("#reading-calendar summary").click();
   await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
@@ -1212,3 +1234,38 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await expect(popover).toBeHidden();
   });
 }
+
+test("keeps labelled reading and offline tools folded until explored", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40");
+  await expect(page.locator("#btn-complete")).toBeVisible();
+  await expect(page.locator(".reading-primary .btn-primary")).toHaveCount(1);
+  for (const [id, label, controls] of [
+    ["reading-tools", "Text & share tools", ["btn-leading-looser", "btn-type-larger"]],
+    ["offline-tools", "Offline reading", ["btn-save-reading"]],
+  ]) {
+    const details = page.locator(`#${id}`);
+    const summary = details.locator("summary");
+    await expect(summary).toBeVisible();
+    await expect(summary).toHaveText(label);
+    await expect(summary).toHaveAttribute("aria-expanded", "false");
+    await expect(details).not.toHaveAttribute("open", "");
+    for (const control of controls) await expect(page.locator(`#${control}`)).toBeHidden();
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+    for (const control of controls) await expect(page.locator(`#${control}`)).toBeVisible();
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "false");
+  }
+  await page.keyboard.press("+");
+  await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
+  await page.locator("#reading-tools > summary").click();
+  await page.locator("#btn-focus").click();
+  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".stats")).toBeHidden();
+  await page.locator("#btn-focus").click();
+  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "false");
+  await page.locator("#reading-tools > summary").click();
+  await page.locator("#btn-next").click();
+  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "true");
+});

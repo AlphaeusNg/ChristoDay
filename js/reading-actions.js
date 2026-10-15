@@ -195,6 +195,10 @@
       );
     }
 
+    function syncDetailsExpanded(details) {
+      details.querySelector("summary")?.setAttribute("aria-expanded", String(details.open));
+    }
+
     function applyFocus(on) {
       const enabled = on === true;
       if (!enabled && state().readingFocus && speaking) stopListening();
@@ -203,7 +207,10 @@
       if (enabled) root.setAttribute("data-reading-focus", "on");
       else root.removeAttribute("data-reading-focus");
       const tools = $("#reading-tools");
-      if (tools instanceof HTMLDetailsElement) tools.open = !enabled;
+      if (enabled && tools instanceof HTMLDetailsElement) {
+        tools.open = false;
+        syncDetailsExpanded(tools);
+      }
       const button = $("#btn-focus");
       if (button) button.setAttribute("aria-pressed", enabled ? "true" : "false");
       return enabled;
@@ -282,6 +289,12 @@
     }
 
     function bind() {
+      for (const selector of ["#reading-tools", "#offline-tools"]) {
+        const details = $(selector);
+        if (!(details instanceof HTMLDetailsElement)) continue;
+        syncDetailsExpanded(details);
+        details.addEventListener("toggle", () => syncDetailsExpanded(details));
+      }
       $("#btn-copy")?.addEventListener("click", () => {
         copyVisiblePassage().catch(() => {});
       });

@@ -108,16 +108,12 @@
             <div class="reading-primary">
               <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
               <button type="button" class="btn" id="btn-focus" aria-pressed="false">Focus</button>
-              <span class="line-spacing" role="group" aria-label="Line spacing">
-                <button type="button" class="btn" id="btn-leading-tighter" title="Tighter line spacing">Line −</button>
-                <button type="button" class="btn" id="btn-leading-looser" title="Looser line spacing">Line +</button>
-              </span>
               <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
                 <span aria-hidden="true">○</span> Mark complete
               </button>
             </div>
-            <details id="reading-tools" class="reading-tools" open>
-              <summary>More tools</summary>
+            <details id="reading-tools" class="reading-tools">
+              <summary aria-expanded="false">Text &amp; share tools</summary>
               <div class="reading-secondary">
                 <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
                 <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
@@ -128,6 +124,10 @@
                 <span class="type-size" role="group" aria-label="Passage text size">
                   <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
                   <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
+                </span>
+                <span class="line-spacing" role="group" aria-label="Line spacing">
+                  <button type="button" class="btn" id="btn-leading-tighter" title="Tighter line spacing">Line −</button>
+                  <button type="button" class="btn" id="btn-leading-looser" title="Looser line spacing">Line +</button>
                 </span>
               </div>
             </details>
@@ -144,11 +144,14 @@
         </div>
         <p id="yesterday-line" class="muted focus-fold" hidden></p>
         <p class="focus-box focus-fold" id="book-focus"></p>
-        <p id="passage-availability" class="muted"></p>
-        <div class="reading-save">
-          <button type="button" class="btn" id="btn-save-reading" hidden>Save offline</button>
-          <button type="button" class="btn" id="btn-remove-reading" hidden>Remove saved text</button>
-        </div>
+        <details id="offline-tools" class="offline-tools">
+          <summary aria-expanded="false">Offline reading</summary>
+          <p id="passage-availability" class="muted"></p>
+          <div class="reading-save">
+            <button type="button" class="btn" id="btn-save-reading" hidden>Save offline</button>
+            <button type="button" class="btn" id="btn-remove-reading" hidden>Remove saved text</button>
+          </div>
+        </details>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
         <div id="passage-body" class="passage-body" aria-live="polite" aria-busy="true" inert></div>
       </article>
