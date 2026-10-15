@@ -301,6 +301,8 @@ select.toolbar-pill {
 }
 
 .card-head {
+  position: relative;
+  padding-right: 2.75rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -997,17 +999,35 @@ textarea:focus {
 }
 
 .more-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.weekend-card {
   position: relative;
-  display: flex;
-  justify-content: flex-end;
-  margin: 0 0 0.75rem;
+  padding-right: 4.1rem;
+}
+
+.weekend-card > .more-menu {
+  top: 1.25rem;
+  right: 1.35rem;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .more-menu-btn {
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  padding: 0.2rem 0.65rem;
-  line-height: 1;
   position: relative;
 }
 
@@ -1042,9 +1062,7 @@ textarea:focus {
   top: calc(100% + 0.35rem);
   right: 0;
   z-index: 30;
-  width: min(18rem, 100%);
-  min-width: min(15rem, 100%);
-  max-width: 100%;
+  width: min(18rem, calc(100vw - 5.5rem));
   padding: 0.4rem;
   background: var(--panel-solid);
   color: var(--text);
@@ -1074,20 +1092,9 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
-.reader-head > #checklist-status,
-.reader-head > #calendar-status {
+#checklist-status,
+#calendar-status {
   margin: 0.15rem 0 0.45rem;
-}
-
-@media (max-width: 560px) {
-  .more-menu {
-    grid-column: 1 / -1;
-    margin: 0.15rem 0 0;
-  }
-  .reader-head > #checklist-status,
-  .reader-head > #calendar-status {
-    grid-column: 1 / -1;
-  }
 }
 
 @media print {

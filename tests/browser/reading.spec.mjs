@@ -1101,6 +1101,42 @@ async function openMoreMenu(page) {
   await expect(page.locator("#btn-calendar")).toBeVisible();
 }
 
+test("keeps the overflow menu inside each visible day card", async ({ page }) => {
+  await page.addInitScript(() => { window.print = () => { window.__printed = true; }; });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  const more = page.locator("#btn-more");
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const [date, card] of [
+      ["2026-06-15", "#reading-panel .card"],
+      ["2026-06-20", "#weekend-panel"],
+      ["2026-06-01", "#before-panel"],
+    ]) {
+      await page.locator("#date-pick").fill(date);
+      await expect(page.locator(`${card} #btn-more`)).toBeVisible();
+      expect(await more.evaluate((el) => {
+        const rect = el.getBoundingClientRect();
+        return [rect.width, rect.height, getComputedStyle(el).borderRadius];
+      })).toEqual([32, 32, "8px"]);
+      await expect(page.locator("#more-menu")).toHaveCount(1);
+      await openMoreMenu(page);
+      const box = await page.locator("#more-menu-list").boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      await page.locator("#btn-checklist").click();
+      await expect(more).toHaveAttribute("aria-expanded", "false");
+      await expect.poll(() => page.evaluate(() => window.__printed)).toBe(true);
+      await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+      await expect(page.locator(`${card} #checklist-status`)).toHaveCount(1);
+      await openMoreMenu(page);
+      const downloading = page.waitForEvent("download");
+      await page.locator("#btn-calendar").click();
+      await downloading;
+      await expect(page.locator(`${card} #calendar-status`)).toBeVisible();
+    }
+  }
+});
+
 test("opens checklist and calendar actions from the overflow menu", async ({ page }) => {
   await page.addInitScript(() => {
     window.print = () => {

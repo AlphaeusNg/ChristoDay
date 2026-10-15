@@ -70,7 +70,9 @@ Last updated: 2026-10-15 (overflow menu for checklist and calendar)
 ## Latest cycle: move checklist and calendar into an overflow menu
 
 Print checklist and calendar download no longer have their own cards. A ⋯ menu
-in the reader header holds Print checklist and Download calendar (.ics). The
+inside the visible reading, weekend, or pre-start card holds Print checklist and
+Download calendar (.ics). Its reusable 32px icon button has 8px corners; status
+messages follow it between cards, and the dropdown fits phone widths. The
 button toggles the menu and `aria-expanded`. Escape closes it and returns focus
 to the button. A click outside closes it. Arrow keys move through the items.
 Choosing an item closes the menu, then runs that action. The checklist is
@@ -78,8 +80,8 @@ rendered when the day refreshes and again on `beforeprint`, so Ctrl/Cmd+P still
 prints it. The paper row uses one CSS checkbox; the extra ☐ glyph is gone.
 Version `2026.10.15.2`.
 
-Verification: the Node suites passed. All 45 Chromium journeys passed, including
-the ⋯ menu at 390px, Escape and outside-click close, print rows without the
+Verification: the Node suites passed. All 47 Chromium journeys passed, including
+the ⋯ menu in all three day cards at 320px and 390px, Escape and outside-click close, print rows without the
 extra box glyph, a `beforeprint` rebuild, and calendar download from the menu.
 
 ## Previous cycle: print a four-week reading checklist

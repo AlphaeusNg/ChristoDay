@@ -74,18 +74,6 @@
         </select>
       </div>
 
-      <div class="more-menu" id="more-menu">
-        <button type="button" class="btn more-menu-btn" id="btn-more" aria-label="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="more-menu-list" data-tooltip="More options"><span aria-hidden="true">⋯</span></button>
-        <div id="more-menu-list" role="menu" hidden>
-          <button type="button" class="btn" role="menuitem" id="btn-checklist" title="Prints an empty checkbox, the date, and the reference for each weekday in these four weeks. Journal notes and Scripture text stay off the page.">Print checklist</button>
-          <p id="checklist-range" class="muted"></p>
-          <button type="button" class="btn" role="menuitem" id="btn-calendar" title="References and reading links only. Import the file into your calendar. This snapshot does not synchronize, and importing the same dates again may create duplicates. In Google Calendar on a computer, open Settings → Import &amp; export → Import.">Download calendar (.ics)</button>
-          <p id="calendar-range" class="muted"></p>
-        </div>
-      </div>
-      <p id="checklist-status" class="muted" role="status" hidden></p>
-      <p id="calendar-status" class="muted" role="status" hidden></p>
-
       <p class="muted" id="reading-date"></p>
     </div>
 
@@ -115,6 +103,15 @@
     <section id="reading-panel" hidden>
       <article class="card">
         <div class="card-head">
+          <div class="more-menu" id="more-menu">
+            <button type="button" class="btn icon-btn more-menu-btn" id="btn-more" aria-label="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="more-menu-list" data-tooltip="More options"><span aria-hidden="true">⋯</span></button>
+            <div id="more-menu-list" role="menu" hidden>
+              <button type="button" class="btn" role="menuitem" id="btn-checklist" title="Prints an empty checkbox, the date, and the reference for each weekday in these four weeks. Journal notes and Scripture text stay off the page.">Print checklist</button>
+              <p id="checklist-range" class="muted"></p>
+              <button type="button" class="btn" role="menuitem" id="btn-calendar" title="References and reading links only. Import the file into your calendar. This snapshot does not synchronize, and importing the same dates again may create duplicates. In Google Calendar on a computer, open Settings → Import &amp; export → Import.">Download calendar (.ics)</button>
+              <p id="calendar-range" class="muted"></p>
+            </div>
+          </div>
           <span class="badge" id="book-badge">—</span>
           <div class="card-actions">
             <div class="reading-primary">
@@ -145,6 +142,8 @@
             </details>
           </div>
         </div>
+        <p id="checklist-status" class="muted" role="status" hidden></p>
+        <p id="calendar-status" class="muted" role="status" hidden></p>
         <p id="action-status" class="muted" role="status" hidden></p>
         <h2 class="passage-ref" id="passage-ref">—</h2>
         <div class="meta-row focus-fold">

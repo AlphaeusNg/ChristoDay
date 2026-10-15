@@ -150,12 +150,16 @@ assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
 assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
 assert.match(index, /id="reading-tools"/, "secondary reading tools can fold");
-assert.match(index, /id="btn-more"[^>]*aria-haspopup="menu"/, "reader header has an overflow menu");
+assert.match(index, /class="btn icon-btn more-menu-btn"/, "overflow button uses reusable icon styling");
+assert.match(css, /\.icon-btn\s*\{[^}]*width:\s*32px;[^}]*height:\s*32px;[^}]*border-radius:\s*8px;[^}]*padding:\s*0;/, "icon buttons are 32px squares with 8px corners");
+assert.match(index, /class="card-head">\s*<div class="more-menu"/, "overflow starts inside the reading card header");
+assert.match(readFileSync(join(root, "js/more-menu.js"), "utf8"), /attributeFilter: \["hidden"\]/, "overflow follows visible day panels");
+assert.match(index, /id="btn-more"[^>]*aria-haspopup="menu"/, "day card has an overflow menu");
 assert.match(index, /id="more-menu-list"[^>]*role="menu"/, "overflow menu lists checklist and calendar actions");
 assert.doesNotMatch(index, /id="reading-checklist"/, "checklist is not a separate card");
 assert.doesNotMatch(index, /id="reading-calendar"/, "calendar download is not a separate card");
-assert.match(css, /\.more-menu\s*\{[^}]*position:\s*relative/, "overflow menu anchors its dropdown");
-assert.match(css, /#more-menu-list\s*\{[^}]*position:\s*absolute/, "overflow menu drops down from the reader header");
+assert.match(css, /\.more-menu\s*\{[^}]*position:\s*absolute/, "overflow menu anchors its dropdown");
+assert.match(css, /#more-menu-list\s*\{[^}]*position:\s*absolute/, "overflow menu drops down from the day card");
 assert.match(css, /@media print[\s\S]*\.more-menu\s*\{[^}]*display:\s*none/, "overflow menu stays off the printed checklist");
 assert.doesNotMatch(
   readFileSync(join(root, "js/reading-checklist.js"), "utf8"),

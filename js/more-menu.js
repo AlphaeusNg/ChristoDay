@@ -1,4 +1,4 @@
-/** Reader-header overflow menu for checklist print and calendar download. */
+/** Day-card overflow menu for checklist print and calendar download. */
 (function () {
   "use strict";
 
@@ -7,6 +7,27 @@
     const button = document.getElementById("btn-more");
     const menu = document.getElementById("more-menu-list");
     if (!root || !button || !menu) return;
+
+    const panels = ["reading-panel", "weekend-panel", "before-panel"]
+      .map((id) => document.getElementById(id));
+    const statuses = ["checklist-status", "calendar-status"]
+      .map((id) => document.getElementById(id));
+
+    function placeMenu() {
+      const panel = panels.find((panel) => !panel.hidden);
+      if (!panel) return;
+      const anchor = panel.querySelector(".card-head") || panel;
+      if (root.parentElement === anchor) return;
+      close(false);
+      anchor.append(root);
+      const heading = panel.querySelector(".card-head, h2");
+      heading.after(...statuses);
+    }
+    const observer = new MutationObserver(placeMenu);
+    panels.forEach((panel) => observer.observe(panel, {
+      attributes: true, attributeFilter: ["hidden"],
+    }));
+    placeMenu();
 
     const items = () =>
       [...menu.querySelectorAll('[role="menuitem"]')].filter((item) => !item.disabled);
