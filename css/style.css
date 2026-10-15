@@ -396,26 +396,25 @@ html[data-line-spacing="open"] {
   margin: 0.15rem 0 0;
 }
 
+.reading-tools:not([open]) > :not(summary),
+.offline-tools:not([open]) > :not(summary) {
+  display: none;
+}
+
 .reading-tools > summary,
 .offline-tools > summary {
   cursor: pointer;
   list-style: none;
 }
 
-.reading-tools > summary::-webkit-details-marker {
+.reading-tools > summary::-webkit-details-marker,
+.offline-tools > summary::-webkit-details-marker {
   display: none;
 }
 
-.reading-tools > summary,
-.offline-tools > summary {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid var(--gold-line);
-  border-radius: 999px;
-  color: var(--gold);
-  background: var(--gold-soft);
+.reading-tools > summary::marker,
+.offline-tools > summary::marker {
+  content: "";
 }
 
 html[data-reading-focus="on"] .focus-fold {
@@ -956,3 +955,123 @@ textarea:focus {
 .offline-tools {
   margin: 0.25rem 0 0.85rem;
 }
+
+
+.icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: 8px;
+  anchor-name: --icon-tip;
+  anchor-scope: --icon-tip;
+}
+.icon-button[hidden] {
+  display: none;
+}
+.icon-button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon-button.fold-toggle {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border, #ffffff26);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+}
+.icon-button.fold-toggle svg {
+  width: 1rem;
+  height: 1rem;
+}
+.icon-button.fold-toggle:hover {
+  border-color: rgba(148, 163, 184, 0.55);
+  background: transparent;
+  color: var(--text);
+}
+.icon-button.fold-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.reading-tools[open] > .fold-toggle,
+.offline-tools[open] > .fold-toggle {
+  border-color: rgba(148, 163, 184, 0.55);
+  color: var(--text);
+}
+.icon-button::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: max-content;
+  max-width: min(12rem, calc(100vw - 1rem));
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 0.4rem;
+  background: #211e18;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+@supports (position-area: bottom center) {
+  .icon-button::after {
+    position: fixed;
+    top: auto;
+    left: auto;
+    transform: none;
+    position-anchor: --icon-tip;
+    position-area: bottom center;
+    position-try-fallbacks: flip-inline, flip-block, flip-inline flip-block;
+  }
+}
+.icon-button:focus-visible::after { opacity: 1; }
+@media (hover: hover) {
+  .icon-button:hover::after { opacity: 1; }
+}
+@media (hover: none) {
+  .icon-button.show-tip::after { opacity: 1; }
+}
+.icon-button[aria-pressed="true"]:not(.btn-primary) {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+}
+#btn-complete {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--gold), 0 2px 10px rgba(212, 175, 55, 0.35);
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #18150d;
+}
+#btn-complete.is-done { box-shadow: inset 0 0 0 2px #18150d, 0 0 0 1px var(--gold); }
+#btn-complete svg { stroke-width: 2.4; }
+.card-actions .icon-button,
+.type-size .icon-button,
+.line-spacing .icon-button {
+  min-width: 2rem;
+  border-radius: 8px;
+}
+.card-actions #btn-complete { min-width: 2.5rem; }

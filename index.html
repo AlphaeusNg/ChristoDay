@@ -106,28 +106,23 @@
           <span class="badge" id="book-badge">—</span>
           <div class="card-actions">
             <div class="reading-primary">
-              <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
-              <button type="button" class="btn" id="btn-focus" aria-pressed="false">Focus</button>
-              <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
-                <span aria-hidden="true">○</span> Mark complete
-              </button>
+              <button type="button" class="btn icon-button" id="btn-listen" aria-pressed="false" disabled aria-label="Listen" data-tip="Listen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5 19 12 9 19Z"/></svg></button>
+              <button type="button" class="btn icon-button" id="btn-focus" aria-pressed="false" aria-label="Focus" data-tip="Focus"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+              <button type="button" class="btn icon-button btn-primary" id="btn-complete" aria-pressed="false" aria-label="Mark complete" data-tip="Mark complete"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12l4 4L19 6"/></svg></button>
             </div>
             <details id="reading-tools" class="reading-tools">
-              <summary aria-expanded="false">Text &amp; share tools</summary>
+              <summary class="icon-button fold-toggle" role="button" aria-expanded="false" aria-label="Text &amp; share tools" data-tip="Text &amp; share tools"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 4H14M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></svg></summary>
               <div class="reading-secondary">
-                <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
-                <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
-                <label class="share-note" for="include-share-note">
-                  <input type="checkbox" id="include-share-note" />
-                  Include my note
-                </label>
+                <button type="button" class="btn icon-button" id="btn-copy" disabled aria-label="Copy" data-tip="Copy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 9h12v12H9ZM15 5V3H3v12h2"/></svg></button>
+                <button type="button" class="btn icon-button" id="btn-share" aria-label="Share" data-tip="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V3m-5 5 5-5 5 5M4 14v7h16v-7"/></svg></button>
+                <button type="button" class="btn icon-button" id="include-share-note" aria-label="Include my note: off" data-tip="Include my note: off" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 3h16v18H4ZM8 8h8M8 12h8M8 16h4"/></svg></button>
                 <span class="type-size" role="group" aria-label="Passage text size">
-                  <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
-                  <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
+                  <button type="button" class="btn icon-button" id="btn-type-smaller" aria-label="Smaller text" data-tip="Smaller text"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19 9 4l6 15M5 14h8m4-2h6"/></svg></button>
+                  <button type="button" class="btn icon-button" id="btn-type-larger" aria-label="Larger text" data-tip="Larger text"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19 9 4l6 15M5 14h8m4-2h6m-3-3v6"/></svg></button>
                 </span>
                 <span class="line-spacing" role="group" aria-label="Line spacing">
-                  <button type="button" class="btn" id="btn-leading-tighter" title="Tighter line spacing">Line −</button>
-                  <button type="button" class="btn" id="btn-leading-looser" title="Looser line spacing">Line +</button>
+                  <button type="button" class="btn icon-button" id="btn-leading-tighter" aria-label="Tighter line spacing" data-tip="Tighter line spacing"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 8h12M3 12h12M3 16h12m2-4h6"/></svg></button>
+                  <button type="button" class="btn icon-button" id="btn-leading-looser" aria-label="Looser line spacing" data-tip="Looser line spacing"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h12M3 12h12M3 20h12m2-8h6m-3-3v6"/></svg></button>
                 </span>
               </div>
             </details>
@@ -145,11 +140,11 @@
         <p id="yesterday-line" class="muted focus-fold" hidden></p>
         <p class="focus-box focus-fold" id="book-focus"></p>
         <details id="offline-tools" class="offline-tools">
-          <summary aria-expanded="false">Offline reading</summary>
+          <summary class="icon-button fold-toggle" role="button" aria-expanded="false" aria-label="Offline reading" data-tip="Offline reading"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 13v8m-4-4 4 4 4-4M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></summary>
           <p id="passage-availability" class="muted"></p>
           <div class="reading-save">
-            <button type="button" class="btn" id="btn-save-reading" hidden>Save offline</button>
-            <button type="button" class="btn" id="btn-remove-reading" hidden>Remove saved text</button>
+            <button type="button" class="btn icon-button" id="btn-save-reading" hidden aria-label="Save offline" data-tip="Save offline"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></button>
+            <button type="button" class="btn icon-button" id="btn-remove-reading" hidden aria-label="Remove saved text" data-tip="Remove saved text"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg></button>
           </div>
         </details>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
@@ -159,7 +154,7 @@
       <div id="ref-popover" class="ref-popover" hidden role="dialog" aria-labelledby="ref-popover-title">
         <div class="ref-popover-head">
           <p id="ref-popover-title" class="ref-popover-title"></p>
-          <button type="button" class="btn" id="ref-popover-close" aria-label="Close reference">Close</button>
+          <button type="button" class="btn icon-button" id="ref-popover-close" aria-label="Close reference" data-tip="Close reference"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
         </div>
         <div id="ref-popover-body" class="ref-popover-body" tabindex="0" aria-label="Reference text"></div>
       </div>

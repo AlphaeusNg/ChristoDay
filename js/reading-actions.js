@@ -95,7 +95,10 @@
     function applyShareNotePreference(on) {
       state().includeShareNote = on === true;
       const box = $("#include-share-note");
-      if (box) box.checked = state().includeShareNote;
+      if (box) {
+        box.setAttribute("aria-pressed", String(state().includeShareNote));
+        setLabel(box, "Include my note: " + (state().includeShareNote ? "on" : "off"));
+      }
       return state().includeShareNote;
     }
 
@@ -212,7 +215,10 @@
         syncDetailsExpanded(tools);
       }
       const button = $("#btn-focus");
-      if (button) button.setAttribute("aria-pressed", enabled ? "true" : "false");
+      if (button) {
+        button.setAttribute("aria-pressed", String(enabled));
+        setLabel(button, enabled ? "Exit focus" : "Focus");
+      }
       return enabled;
     }
 
@@ -226,7 +232,8 @@
       const btn = $("#btn-listen");
       if (btn) {
         btn.setAttribute("aria-pressed", active ? "true" : "false");
-        btn.textContent = active ? "Stop" : "Listen";
+        setLabel(btn, active ? "Stop" : "Listen");
+        btn.querySelector("path").setAttribute("d", active ? "M6 6h12v12H6Z" : "M9 5 19 12 9 19Z");
       }
     }
 
@@ -288,7 +295,27 @@
       if (run === speechRun && speaking) announceAction("Reading aloud…");
     }
 
+    function setLabel(button, label) {
+      button.setAttribute("aria-label", label);
+      button.setAttribute("data-tip", label);
+    }
+
     function bind() {
+      // Touch labels also appear during a long press, without delaying the action.
+      document.querySelectorAll(".icon-button").forEach((button) => {
+        let timer;
+        const hide = () => button.classList.remove("show-tip");
+        const show = () => {
+          if (!window.matchMedia("(hover: none)").matches) return;
+          clearTimeout(timer);
+          button.classList.add("show-tip");
+          timer = setTimeout(hide, 1500);
+        };
+        button.addEventListener("pointerdown", show);
+        button.addEventListener("click", show);
+        button.addEventListener("pointercancel", () => { clearTimeout(timer); hide(); });
+        button.addEventListener("blur", () => { clearTimeout(timer); hide(); });
+      });
       for (const selector of ["#reading-tools", "#offline-tools"]) {
         const details = $(selector);
         if (!(details instanceof HTMLDetailsElement)) continue;
@@ -304,8 +331,8 @@
       $("#btn-share")?.addEventListener("click", () => {
         shareReading().catch(() => {});
       });
-      $("#include-share-note")?.addEventListener("change", (event) => {
-        applyShareNotePreference(event.target.checked);
+      $("#include-share-note")?.addEventListener("click", () => {
+        applyShareNotePreference(!state().includeShareNote);
         deps.saveState();
       });
       $("#btn-type-smaller")?.addEventListener("click", () => shiftPassageSize(-1));

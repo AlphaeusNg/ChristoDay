@@ -463,9 +463,9 @@
     if (!btn) return;
     btn.classList.toggle("is-done", done);
     btn.setAttribute("aria-pressed", done ? "true" : "false");
-    btn.innerHTML = done
-      ? `<span aria-hidden="true">✓</span> Completed`
-      : `<span aria-hidden="true">○</span> Mark complete`;
+    const label = done ? "Completed" : "Mark complete";
+    btn.setAttribute("aria-label", label);
+    btn.setAttribute("data-tip", label);
   }
 
   function updateMeta() {

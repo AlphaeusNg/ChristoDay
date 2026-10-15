@@ -168,7 +168,7 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   await journal.fill(originalNote);
   await page.locator("#btn-complete").click();
   await openDetails(page, "reading-tools");
-  await page.locator("#include-share-note").check();
+  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
   await openDetails(page, "reading-tools");
   await page.locator("#btn-type-larger").click();
 
@@ -186,7 +186,7 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   await journal.fill("Temporary replacement");
   await page.locator("#btn-complete").click();
   await openDetails(page, "reading-tools");
-  await page.locator("#include-share-note").uncheck();
+  await page.getByRole("button", { name: "Include my note: on", exact: true }).click();
   await page.locator("#translation").selectOption("WEB");
   await openDetails(page, "reading-tools");
   await page.locator("#btn-type-smaller").click();
@@ -202,7 +202,7 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   await expect(page.locator("#backup-status")).toHaveText("Backup restored.");
   await expect(journal).toHaveValue(originalNote);
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("#include-share-note")).toBeChecked();
+  await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#translation")).toHaveValue("ESV");
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
   await expect(page).toHaveURL(/tr=ESV/);
@@ -709,7 +709,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   });
 
   await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
-  await expect(page.locator("#include-share-note")).not.toBeChecked();
+  await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "false");
   await page.locator("#journal").fill("Christ is the true King in this genealogy.");
   await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
@@ -721,7 +721,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   expect(copied).not.toContain("Christ is the true King");
 
   await openDetails(page, "reading-tools");
-  await page.locator("#include-share-note").check();
+  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
   await openDetails(page, "reading-tools");
   await page.locator("#btn-share").click();
   copied = await page.evaluate(() => window.__copied.at(-1));
@@ -777,10 +777,10 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
 
   await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await page.locator("#btn-listen").click();
   await expect(page.locator("#action-status")).toHaveText("Reading aloud…");
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "true");
   const spoken = await page.evaluate(() => window.__spoken.at(-1));
   expect(spoken).toContain("Matthew 1:1-17");
@@ -788,57 +788,57 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
 
   await page.locator("#btn-listen").click();
   await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(0);
 
   await page.keyboard.press("l");
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   await page.evaluate(() => window.__utterances.at(-1).onend());
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
 
   await page.keyboard.press("l");
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   await page.evaluate(() => window.__utterances.at(-1).onerror());
   await expect(page.locator("#action-status")).toHaveText("Could not read passage.");
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
 
   await page.locator("#btn-listen").click();
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   const spokenCount = await page.evaluate(() => window.__spoken.length);
   const cancelledBeforeTranslation = await page.evaluate(() => window.__cancelled);
   await page.locator("#translation").selectOption("ESV");
   await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeTranslation);
   expect(await page.evaluate(() => window.__spoken.length)).toBe(spokenCount);
   await page.locator("#btn-focus").click();
   await expect(page.locator("html")).toHaveAttribute("data-reading-focus", "on");
   await page.locator("#btn-listen").click();
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   const focusCancelled = await page.evaluate(() => window.__cancelled);
   await page.locator("#btn-focus").click();
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(focusCancelled);
   await page.evaluate(() => { window.__utterances.at(-1).onend(); window.__utterances.at(-1).onerror(); });
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("html")).not.toHaveAttribute("data-reading-focus", "on");
 
   await expect(page.locator("#passage-tr-label")).toHaveText("ESV");
 
   await page.locator("#btn-listen").click();
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   const replacementIndex = await page.evaluate(() => window.__utterances.length - 1);
   await page.evaluate(() => window.__utterances.at(-2).onend());
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "true");
   await page.evaluate(() => window.__utterances.at(-2).onerror());
   await expect(page.locator("#action-status")).toHaveText("Reading aloud…");
-  await expect(page.locator("#btn-listen")).toHaveText("Stop");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   await page.evaluate((index) => window.__utterances[index].onend(), replacementIndex);
-  await expect(page.locator("#btn-listen")).toHaveText("Listen");
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -1120,7 +1120,7 @@ test("downloads four weeks of references without private notes or passage text",
   await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
   await page.locator("#btn-complete").click();
   await openDetails(page, "reading-tools");
-  await page.locator("#include-share-note").check();
+  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
   await page.locator("#reading-calendar summary").click();
   await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -1247,7 +1247,21 @@ test("keeps labelled reading and offline tools folded until explored", async ({ 
     const details = page.locator(`#${id}`);
     const summary = details.locator("summary");
     await expect(summary).toBeVisible();
-    await expect(summary).toHaveText(label);
+    await expect(summary).toHaveAccessibleName(label);
+    await expect(summary).toHaveAttribute("data-tip", label);
+    await expect(summary).toHaveText("");
+    const summaryBox = await summary.boundingBox();
+    const completeBox = await page.locator("#btn-complete").boundingBox();
+    expect(summaryBox.width).toBeGreaterThanOrEqual(30);
+    expect(summaryBox.width).toBeLessThanOrEqual(36);
+    expect(summaryBox.height).toBeGreaterThanOrEqual(30);
+    expect(summaryBox.height).toBeLessThanOrEqual(36);
+    expect(summaryBox.width).toBeLessThan(completeBox.width);
+    await summary.hover();
+    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
+    await summary.evaluate((el) => el.focus({ focusVisible: true }));
+    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
+    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").content)).toContain(label);
     await expect(summary).toHaveAttribute("aria-expanded", "false");
     await expect(details).not.toHaveAttribute("open", "");
     for (const control of controls) await expect(page.locator(`#${control}`)).toBeHidden();
@@ -1268,4 +1282,52 @@ test("keeps labelled reading and offline tools folded until explored", async ({ 
   await page.locator("#reading-tools > summary").click();
   await page.locator("#btn-next").click();
   await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "true");
+});
+
+test("icon options expose names, state, and keyboard tooltips", async ({ page }) => {
+  await page.goto("./?d=2026-06-16&tr=ESV");
+  await expect(page.getByRole("button", { name: "Mark complete", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Mark complete", exact: true }).click();
+  const completed = page.getByRole("button", { name: "Completed", exact: true });
+  await expect(completed).toHaveAttribute("data-tip", "Completed");
+  await expect(completed).toHaveAttribute("aria-pressed", "true");
+  await openDetails(page, "reading-tools");
+  const note = page.locator("#include-share-note");
+  await expect(note).toHaveAccessibleName("Include my note: off");
+  await note.click();
+  await expect(note).toHaveAccessibleName("Include my note: on");
+  await expect(note).toHaveAttribute("data-tip", "Include my note: on");
+  for (const button of await page.locator("#reading-panel .icon-button").all()) {
+    await expect(button).toHaveAttribute("aria-label", /.+/);
+    await expect(button.locator("svg[aria-hidden='true']")).toHaveCount(1);
+    await expect(button).toHaveText("");
+  }
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await copy.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(copy).toBeFocused();
+  expect(await copy.evaluate(el => getComputedStyle(el, "::after").opacity)).toBe("1");
+});
+
+test("touch icon labels appear on press and expire after tap", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, baseURL: test.info().project.use.baseURL, serviceWorkers: "block" });
+  const page = await context.newPage();
+  await page.route(/^https:\/\//, route => route.fulfill({ status: 200, body: "" }));
+  await page.goto("./?d=2026-06-16&tr=ESV");
+  const focus = page.locator("#btn-focus");
+  const tools = page.locator("#reading-tools > summary");
+  await expect(focus).toBeVisible();
+  await expect(focus).toHaveAccessibleName("Focus");
+  await expect(tools).toHaveAccessibleName("Text & share tools");
+  await expect(tools).toBeVisible();
+  await tools.dispatchEvent("pointerdown", { pointerType: "touch" });
+  await expect(tools).toHaveClass(/show-tip/);
+  await focus.dispatchEvent("pointerdown", { pointerType: "touch" });
+  await expect(focus).toHaveClass(/show-tip/);
+  await focus.tap();
+  await expect(focus).toHaveAccessibleName("Exit focus");
+  await expect(focus).toHaveAttribute("data-tip", "Exit focus");
+  await expect(focus).not.toHaveClass(/show-tip/, { timeout: 2500 });
+  await context.close();
 });

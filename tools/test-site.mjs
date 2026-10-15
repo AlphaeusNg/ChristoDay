@@ -147,8 +147,15 @@ assert.match(index, /id="passage-availability"/, "offline availability exists pe
 assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
 assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
-for (const id of ["reading-tools", "offline-tools"]) {
-  assert.match(index, new RegExp(`<details id="${id}" class="[^"]+">\\s*<summary aria-expanded="false">`), `${id} starts closed with a labelled summary`);
+for (const [id, label] of [
+  ["reading-tools", "Text &amp; share tools"],
+  ["offline-tools", "Offline reading"],
+]) {
+  assert.match(
+    index,
+    new RegExp(`<details id="${id}" class="[^"]+">\\s*<summary class="icon-button fold-toggle" role="button" aria-expanded="false" aria-label="${label}" data-tip="${label}"><svg[^>]*aria-hidden="true"`),
+    `${id} starts closed as a compact labelled icon summary`
+  );
 }
 assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
 assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");

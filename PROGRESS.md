@@ -1755,3 +1755,8 @@ Validation: All Node gates with oversized/full-library cases and 30 Chromium jou
 Offline passage hydration and writes reject duplicate chapter/verse coordinates. The same verse number in different chapters remains valid. WEB-only terms and 30-slot cap stay unchanged.
 
 Validation: All Node gates and 30 Chromium journeys passed.
+
+
+## Unreleased — Icon reading controls
+
+Built with Codex CLI, then finished with Grok Build. Reading options now use inline SVG icons with accessible names, state-aware tooltips, and brief touch/long-press labels. Completion retains its gold primary styling. Text & share tools and Offline reading fold toggles are compact icon buttons, about 2rem, outlined and muted, with the same hover, focus-visible, and touch tooltips. Browser checks use accessible names for icon states. Version stays `2026.10.15.2`.
