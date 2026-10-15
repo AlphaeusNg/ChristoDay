@@ -1252,11 +1252,10 @@ test("keeps labelled reading and offline tools folded until explored", async ({ 
     await expect(summary).toHaveText("");
     const summaryBox = await summary.boundingBox();
     const completeBox = await page.locator("#btn-complete").boundingBox();
-    expect(summaryBox.width).toBeGreaterThanOrEqual(30);
-    expect(summaryBox.width).toBeLessThanOrEqual(36);
-    expect(summaryBox.height).toBeGreaterThanOrEqual(30);
-    expect(summaryBox.height).toBeLessThanOrEqual(36);
-    expect(summaryBox.width).toBeLessThan(completeBox.width);
+    expect(summaryBox.width).toBeCloseTo(40, 0);
+    expect(summaryBox.height).toBeCloseTo(40, 0);
+    expect(completeBox.width).toBeCloseTo(40, 0);
+    expect(completeBox.height).toBeCloseTo(40, 0);
     await summary.hover();
     expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
     await summary.evaluate((el) => el.focus({ focusVisible: true }));
