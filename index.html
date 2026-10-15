@@ -201,6 +201,14 @@
       <p id="calendar-status" class="muted" role="status" hidden></p>
     </details>
 
+    <details id="reading-checklist" class="card" hidden>
+      <summary>Print a paper checklist</summary>
+      <p id="checklist-range" class="muted"></p>
+      <button type="button" class="btn" id="btn-checklist">Print checklist</button>
+      <p class="muted">Prints an empty checkbox, the date, and the reference for each weekday in these four weeks. Journal notes and Scripture text stay off the page.</p>
+      <p id="checklist-status" class="muted" role="status" hidden></p>
+    </details>
+
     <details id="journal-history" class="card" hidden>
       <summary>Journal history</summary>
       <p class="muted history-note">Search stays on this device. Notes are never uploaded.</p>
@@ -262,6 +270,8 @@
     <span>Not affiliated with any Bible publisher · Translations via public APIs</span>
   </footer>
 
+  <section id="reading-checklist-print" class="checklist-print" aria-label="Printable reading checklist"></section>
+
   <style>
     .sr-only {
       position: absolute;
@@ -284,6 +294,7 @@
   <script src="js/reading-actions.js"></script>
   <script src="js/journal-backup.js"></script>
   <script src="js/reading-calendar.js"></script>
+  <script src="js/reading-checklist.js"></script>
   <script src="js/ref-popover.js"></script>
   <script src="js/journal-history.js"></script>
   <script src="js/offline-readings.js"></script>

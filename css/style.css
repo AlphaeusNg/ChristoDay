@@ -954,3 +954,76 @@ textarea:focus {
     --passage-size: 1.28rem;
   }
 }
+
+.checklist-print {
+  display: none;
+}
+
+.checklist-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.checklist-range {
+  margin: 0 0 0.85rem;
+}
+
+.checklist-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.checklist-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.22rem 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.checklist-box {
+  flex: 0 0 auto;
+  width: 1.1em;
+  border: 1px solid currentColor;
+  text-align: center;
+  line-height: 1.15;
+}
+
+@media print {
+  html {
+    color-scheme: light;
+  }
+  html,
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+  }
+  body > *:not(#reading-checklist-print) {
+    display: none !important;
+  }
+  #reading-checklist-print {
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  #reading-checklist-print * {
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    color: #000 !important;
+    text-shadow: none !important;
+  }
+  .checklist-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

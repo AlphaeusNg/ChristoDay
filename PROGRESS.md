@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-15 (clearer reading lines)
+Last updated: 2026-10-15 (printable reading checklist)
 
 ## Current state
 
@@ -59,15 +59,28 @@ Last updated: 2026-10-15 (clearer reading lines)
 - A page left open across Singapore midnight updates Today labels without a reload.
   An unattended today view moves from Friday to the weekend and from Sunday to Monday.
   An actively edited historical note stays put, and completion still applies to that date.
-- Deployment version: `2026.10.14.1`.
-- GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
+- Deployment version: `2026.10.15.2`.
+- GitHub Actions runs 27 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: name the weekend and offline actions
+## Latest cycle: print a four-week reading checklist
+
+Added a collapsed checklist card beside the calendar card. Print a reference-only
+list for 28 calendar days from the displayed date, or from the 2026-06-15 epoch
+when that date is earlier. Each weekday row has an empty checkbox, the date, and
+the book reference. Weekends stay off the page. The list uses the existing
+Singapore schedule and Jude rotation. Print styles show only that list, in black
+on white, with no page background, and keep each row intact.
+
+The checklist module accepts the validated plan and date only. It does not read
+journal notes, completion, reflection answers, or Scripture text. Its runtime is
+in the offline shell. CI runs the checklist regressions. Version `2026.10.15.2`.
+
+## Previous cycle: name the weekend and offline actions
 
 Weekend buttons say "Open last Friday". Saturday and Sunday still say there is no reading and the plan resumes Monday. Offline WEB copy tells the reader to save the passage on this device. The about summary names the Christ-centered weekday plan. Version `2026.10.15.1`.
 

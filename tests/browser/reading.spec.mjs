@@ -1137,6 +1137,73 @@ for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["
   });
 }
 
+test("prints a four-week reference checklist without journal or passage text", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-body")).toContainText("book 65 chapter");
+  await page.locator("#journal").fill("PRIVATE CHECKLIST SENTINEL");
+  await page.locator("#btn-complete").click();
+  await page.locator("#reading-checklist summary").click();
+  await expect(page.locator("#checklist-range")).toContainText("2026-06-15 to 2026-07-12");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.evaluate(() => { window.print = () => { window.__checklistPrinted = true; }; });
+  await page.locator("#btn-checklist").click();
+  await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+  await page.emulateMedia({ media: "print" });
+  const rows = page.locator("#reading-checklist-print .checklist-row");
+  await expect(rows).toHaveCount(20);
+  await expect(rows.first()).toContainText("☐");
+  await expect(rows.first()).toContainText("2026-06-15");
+  await expect(rows.first()).toContainText("Monday");
+  await expect(rows.first()).toContainText("Jude 1:1-25");
+  await expect(page.locator("#reading-checklist-print")).toContainText("Matthew 1:1-17");
+  const printed = await page.locator("#reading-checklist-print").innerText();
+  expect(printed).not.toContain("PRIVATE CHECKLIST SENTINEL");
+  expect(printed).not.toContain("book 65 chapter");
+  expect(printed).not.toContain("Where does this passage");
+  expect(printed).not.toContain("2026-06-20");
+  expect(printed).not.toContain("2026-06-21");
+  await expect(page.locator("#reading-checklist-print")).toBeVisible();
+  await expect(page.locator("#journal")).toBeHidden();
+  await expect(page.locator("#passage-body")).toBeHidden();
+  await expect(page.locator("#questions")).toBeHidden();
+  await expect(page.locator("#reading-calendar")).toBeHidden();
+  const ink = await rows.first().evaluate((el) => {
+    const style = getComputedStyle(el);
+    const sheet = getComputedStyle(el.closest("#reading-checklist-print"));
+    return {
+      color: style.color,
+      rowBackground: style.backgroundColor,
+      sheetBackground: sheet.backgroundColor,
+      breakInside: style.breakInside,
+    };
+  });
+  expect(ink.color).toBe("rgb(0, 0, 0)");
+  expect(ink.sheetBackground).toBe("rgb(255, 255, 255)");
+  expect(ink.rowBackground === "rgba(0, 0, 0, 0)" || ink.rowBackground === "transparent").toBe(true);
+  expect(ink.breakInside).toBe("avoid");
+
+  await page.emulateMedia({ media: "screen" });
+  for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
+    await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => { window.print = () => { window.__checklistPrinted = true; }; });
+    await page.locator("#reading-checklist summary").click();
+    await expect(page.locator("#checklist-range")).toContainText(`${start} to ${end}`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator("#btn-checklist").click();
+    await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+    await page.emulateMedia({ media: "print" });
+    await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+    const text = await page.locator("#reading-checklist-print").innerText();
+    const rowText = (await page.locator("#reading-checklist-print .checklist-row").allInnerTexts()).join("\n");
+    expect(rowText).not.toContain("2026-06-20");
+    expect(text).not.toContain("book ");
+    if (date === "2026-06-01") expect(text).toContain("Jude 1:1-25");
+    await expect(page.locator("#passage-body")).toBeHidden();
+    await page.emulateMedia({ media: "screen" });
+  }
+});
+
 test("reports a calendar download failure without affecting the reading", async ({ page }) => {
   await page.goto("./?d=2026-06-16", { waitUntil: "domcontentloaded" });
   await page.locator("#reading-calendar summary").click();
@@ -1162,7 +1229,7 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await page.evaluate((scale) => {
       document.documentElement.style.fontSize = `${scale * 100}%`;
       document.documentElement.style.scrollBehavior = "auto";
-      for (const id of ["reading-calendar", "journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+      for (const id of ["reading-calendar", "reading-checklist", "journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
     }, textScale);
     await page.locator("#journal").fill("A long journal entry: " + "averylongunbrokenword".repeat(20));
     const geometry = await page.evaluate(() => {

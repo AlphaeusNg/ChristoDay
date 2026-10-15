@@ -24,6 +24,7 @@
   let popovers = null;
   let journalHistory = null;
   let calendar = null;
+  let checklist = null;
 
   function bindAutoHideHeader() {
     const header = $(".topbar");
@@ -278,6 +279,11 @@
       getCurrentYmd: () => currentYmd,
       getTranslation: currentTranslation,
     });
+    checklist = ChristoChecklist.create({
+      $,
+      getPlan: () => plan,
+      getCurrentYmd: () => currentYmd,
+    });
     journalHistory = ChristoJournalHistory.create({
       $,
       getEntries: journalEntries,
@@ -332,6 +338,7 @@
     actions.bind();
     backups.bind();
     calendar.bind();
+    checklist.bind();
     $("#btn-prev")?.addEventListener("click", () => shiftDay(-1));
     $("#btn-next")?.addEventListener("click", () => shiftDay(1));
     $("#btn-today")?.addEventListener("click", () => renderDay(ChristoSchedule.partsInSingapore().ymd));
@@ -528,6 +535,7 @@
     const seq = ++renderSeq;
     currentYmd = ymd;
     calendar?.refresh();
+    checklist?.refresh();
     actions?.stopListening();
     const reading = ChristoSchedule.resolveReading(plan, ymd);
     const datePick = $("#date-pick");

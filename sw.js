@@ -18,6 +18,7 @@ const PRECACHE = [
   "./js/reading-actions.js",
   "./js/journal-backup.js",
   "./js/reading-calendar.js",
+  "./js/reading-checklist.js",
   "./js/ref-popover.js",
   "./js/journal-history.js",
   "./js/offline-readings.js",
