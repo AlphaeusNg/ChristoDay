@@ -84,7 +84,7 @@
       const item = event.target.closest?.('[role="menuitem"]');
       if (!item || !menu.contains(item) || item.disabled) return;
       if (item.hasAttribute("data-menu-stay")) return;
-      close(false);
+      close(true);
     }, true);
 
     document.addEventListener("click", (event) => {
@@ -96,6 +96,11 @@
       if (event.key === "Escape") {
         if (!isOpen()) return;
         event.preventDefault();
+        close(true);
+        return;
+      }
+      if (event.key === "Tab" && isOpen() && menu.contains(document.activeElement)) {
+        // Restore the trigger before native Tab chooses the adjacent visible control.
         close(true);
         return;
       }

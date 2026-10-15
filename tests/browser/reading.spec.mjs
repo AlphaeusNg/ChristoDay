@@ -1676,3 +1676,37 @@ test("more options icon button shows its tooltip on hover and focus", async ({ p
   await expect(more).toBeFocused();
   await expect.poll(tipOpacity).toBe("1");
 });
+
+
+test("overflow actions and Tab keep keyboard focus outside hidden content", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: async () => { throw new Error("clipboard unavailable"); },
+    } });
+    document.execCommand = () => true;
+  });
+  await page.goto("./?d=2026-06-16&tr=ESV");
+  const trigger = page.locator("#btn-more");
+  await trigger.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#btn-focus")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#more-menu-list")).toBeHidden();
+  expect(await page.evaluate(() => document.activeElement !== document.body
+    && !document.activeElement.closest("[hidden]"))).toBe(true);
+  await trigger.focus();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#more-menu-list")).toBeHidden();
+  await expect(page.locator("#btn-complete")).toBeFocused();
+  await trigger.click();
+  await page.locator("#btn-copy").click();
+  await expect(page.locator("#more-menu-list")).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await page.evaluate(() => { document.execCommand = () => { throw new Error("copy denied"); }; });
+  await trigger.click();
+  await page.locator("#btn-copy").click();
+  await expect(page.locator("#action-status")).toHaveText("Could not copy passage.");
+  await expect(trigger).toBeFocused();
+  await expect(page.locator("textarea")).toHaveCount(1);
+});

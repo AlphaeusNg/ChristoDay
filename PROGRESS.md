@@ -1803,3 +1803,10 @@ Validation: All Node gates and 30 Chromium journeys passed.
 ## Unreleased
 
 Reading days keep Listen, Mark complete, and More options on one line with the book badge. Focus, text and share tools, offline reading, Print checklist, and Download calendar are grouped in that menu. Icon buttons are 32px ghost controls with 18px icons, hover and focus tooltips, and brief touch labels. Mark complete uses a 1px gold outline and fills gold when the day is done. Weekend and pre-start cards keep the same menu for print and calendar. Version stays `2026.10.15.2`.
+
+
+## 2026-10-16 — Preserve keyboard focus when overflow actions close
+
+Tab and Shift+Tab close the day-card overflow menu before native traversal from its trigger. One-shot actions return focus to the trigger before hiding, so copy, calendar downloads and printing do not strand focus in hidden content. Added a real reading journey for both Tab directions and copy. The four-week checklist and rest-day menus remain available. Deployment stamp: 2026.10.16.1.
+
+Clipboard fallback now removes its temporary textarea in a finally block and restores focus even if the browser copy command throws. Validation: all eleven Node gates and all 53 Chromium journeys passed. The new journey deterministically exercises successful and failed clipboard fallback plus both Tab directions. JavaScript syntax and whitespace checks passed.

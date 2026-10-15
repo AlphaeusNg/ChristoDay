@@ -52,19 +52,21 @@
       } catch {
         /* fall through */
       }
+      const focused = document.activeElement;
+      const ta = document.createElement("textarea");
       try {
-        const ta = document.createElement("textarea");
         ta.value = text;
         ta.setAttribute("readonly", "");
         ta.style.position = "fixed";
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        const ok = document.execCommand("copy");
-        ta.remove();
-        return ok;
+        return document.execCommand("copy");
       } catch {
         return false;
+      } finally {
+        ta.remove();
+        focused?.focus({ preventScroll: true });
       }
     }
 
