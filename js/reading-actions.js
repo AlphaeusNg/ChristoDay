@@ -198,8 +198,11 @@
       );
     }
 
-    function syncDetailsExpanded(details) {
-      details.querySelector("summary")?.setAttribute("aria-expanded", String(details.open));
+    function syncFoldExpanded(button, expanded) {
+      const panel = document.getElementById(button.getAttribute("aria-controls"));
+      if (!panel) return;
+      panel.hidden = !expanded;
+      button.setAttribute("aria-expanded", String(expanded));
     }
 
     function applyFocus(on) {
@@ -210,10 +213,7 @@
       if (enabled) root.setAttribute("data-reading-focus", "on");
       else root.removeAttribute("data-reading-focus");
       const tools = $("#reading-tools");
-      if (enabled && tools instanceof HTMLDetailsElement) {
-        tools.open = false;
-        syncDetailsExpanded(tools);
-      }
+      if (enabled && tools) syncFoldExpanded(tools, false);
       const button = $("#btn-focus");
       if (button) {
         button.setAttribute("aria-pressed", String(enabled));
@@ -233,7 +233,7 @@
       if (btn) {
         btn.setAttribute("aria-pressed", active ? "true" : "false");
         setLabel(btn, active ? "Stop" : "Listen");
-        btn.querySelector("path").setAttribute("d", active ? "M6 6h12v12H6Z" : "M9 5 19 12 9 19Z");
+        btn.querySelector("path").setAttribute("d", active ? "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" : "M6 3l14 9-14 9z");
       }
     }
 
@@ -317,10 +317,12 @@
         button.addEventListener("blur", () => { clearTimeout(timer); hide(); });
       });
       for (const selector of ["#reading-tools", "#offline-tools"]) {
-        const details = $(selector);
-        if (!(details instanceof HTMLDetailsElement)) continue;
-        syncDetailsExpanded(details);
-        details.addEventListener("toggle", () => syncDetailsExpanded(details));
+        const button = $(selector);
+        if (!button) continue;
+        syncFoldExpanded(button, button.getAttribute("aria-expanded") === "true");
+        button.addEventListener("click", () => {
+          syncFoldExpanded(button, button.getAttribute("aria-expanded") !== "true");
+        });
       }
       $("#btn-copy")?.addEventListener("click", () => {
         copyVisiblePassage().catch(() => {});

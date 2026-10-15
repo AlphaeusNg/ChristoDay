@@ -3,9 +3,11 @@ import { readFile } from "node:fs/promises";
 
 const runtimeErrors = new WeakMap();
 
-async function openDetails(page, id) {
-  const details = page.locator(`#${id}`);
-  if (!await details.evaluate((el) => el.open)) await details.locator("summary").click();
+async function openFold(page, id) {
+  const button = page.getByRole("button", { name: id === "reading-tools" ? "Text & share tools" : "Offline reading", exact: true });
+  if (await button.getAttribute("aria-expanded") !== "true") await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator(`#${id}-panel`)).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -72,7 +74,7 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await datePicker.dispatchEvent("change");
 
   await expect(page.locator("#reading-panel")).toBeVisible();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await expect(page.locator("#btn-copy")).toBeVisible();
   await expect(page.locator("#btn-share")).toBeVisible();
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
@@ -167,9 +169,9 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   const originalNote = "Christ keeps every part of this story.";
   await journal.fill(originalNote);
   await page.locator("#btn-complete").click();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-type-larger").click();
 
   const downloadPromise = page.waitForEvent("download");
@@ -185,10 +187,10 @@ test("downloads and safely restores the private journal", async ({ page }) => {
 
   await journal.fill("Temporary replacement");
   await page.locator("#btn-complete").click();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.getByRole("button", { name: "Include my note: on", exact: true }).click();
   await page.locator("#translation").selectOption("WEB");
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-type-smaller").click();
 
   const dialogPromise = page.waitForEvent("dialog");
@@ -671,7 +673,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
 
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-copy").click();
   await expect(page.locator("#action-status")).toBeVisible();
   await expect(page.locator("#action-status")).toHaveText("Copied passage.");
@@ -684,7 +686,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
 
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   copied = await page.evaluate(() => window.__copied.at(-1));
@@ -711,7 +713,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "false");
   await page.locator("#journal").fill("Christ is the true King in this genealogy.");
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   let copied = await page.evaluate(() => window.__copied.at(-1));
@@ -720,9 +722,9 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   expect(copied).toMatch(/d=2026-06-16/);
   expect(copied).not.toContain("Christ is the true King");
 
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-share").click();
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
@@ -741,7 +743,7 @@ test("uses the Web Share API when it is available", async ({ page }) => {
 
   await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Shared today's reading.");
   const shares = await page.evaluate(() => window.__shares);
@@ -855,7 +857,7 @@ test("resizes the passage and remembers the choice", async ({ page }) => {
   await expect(page.locator("#btn-type-larger")).toBeDisabled();
   await expect(page.locator("#btn-type-smaller")).toBeEnabled();
 
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-type-smaller").click();
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "md");
   await expect(page.locator("#action-status")).toHaveText("Default passage text.");
@@ -924,7 +926,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("not saved yet");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
-  await openDetails(page, "offline-tools");
+  await openFold(page, "offline-tools");
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Saved this WEB reading on this device.");
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
@@ -954,7 +956,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("saved on this device");
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
-  await openDetails(page, "offline-tools");
+  await openFold(page, "offline-tools");
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
   await expect(page.locator("#btn-remove-reading")).toBeHidden();
@@ -1016,7 +1018,7 @@ test("keeps navigation, completion, and journal available in focus mode", async 
   await expect(page.locator("#btn-listen")).toBeVisible();
   await expectPrimaryVisible();
   const beforeLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.locator("#btn-leading-looser").click();
   await expect(page.locator("html")).toHaveAttribute("data-line-spacing", "open");
   const afterLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
@@ -1102,7 +1104,7 @@ test("keeps journal and reading usable when access to device storage is denied",
   await expect(page.locator("#storage-status")).toContainText("may be lost when this tab closes");
   await page.locator("#btn-complete").click();
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
-  await openDetails(page, "offline-tools");
+  await openFold(page, "offline-tools");
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Could not save on this device.");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
@@ -1119,7 +1121,7 @@ test("downloads four weeks of references without private notes or passage text",
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
   await page.locator("#btn-complete").click();
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
   await page.locator("#reading-calendar summary").click();
   await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
@@ -1244,8 +1246,8 @@ test("keeps labelled reading and offline tools folded until explored", async ({ 
     ["reading-tools", "Text & share tools", ["btn-leading-looser", "btn-type-larger"]],
     ["offline-tools", "Offline reading", ["btn-save-reading"]],
   ]) {
-    const details = page.locator(`#${id}`);
-    const summary = details.locator("summary");
+    const panel = page.locator(`#${id}-panel`);
+    const summary = page.getByRole("button", { name: label, exact: true });
     await expect(summary).toBeVisible();
     await expect(summary).toHaveAccessibleName(label);
     await expect(summary).toHaveAttribute("data-tip", label);
@@ -1262,25 +1264,27 @@ test("keeps labelled reading and offline tools folded until explored", async ({ 
     expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
     expect(await summary.evaluate((el) => getComputedStyle(el, "::after").content)).toContain(label);
     await expect(summary).toHaveAttribute("aria-expanded", "false");
-    await expect(details).not.toHaveAttribute("open", "");
+    await expect(panel).toBeHidden();
     for (const control of controls) await expect(page.locator(`#${control}`)).toBeHidden();
     await summary.click();
     await expect(summary).toHaveAttribute("aria-expanded", "true");
+    await expect(panel).toBeVisible();
     for (const control of controls) await expect(page.locator(`#${control}`)).toBeVisible();
     await summary.click();
     await expect(summary).toHaveAttribute("aria-expanded", "false");
+    await expect(panel).toBeHidden();
   }
   await page.keyboard.press("+");
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
-  await page.locator("#reading-tools > summary").click();
+  await page.getByRole("button", { name: "Text & share tools", exact: true }).click();
   await page.locator("#btn-focus").click();
-  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "false");
   await expect(page.locator(".stats")).toBeHidden();
   await page.locator("#btn-focus").click();
-  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "false");
-  await page.locator("#reading-tools > summary").click();
+  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Text & share tools", exact: true }).click();
   await page.locator("#btn-next").click();
-  await expect(page.locator("#reading-tools > summary")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "true");
 });
 
 test("icon options expose names, state, and keyboard tooltips", async ({ page }) => {
@@ -1290,7 +1294,7 @@ test("icon options expose names, state, and keyboard tooltips", async ({ page })
   const completed = page.getByRole("button", { name: "Completed", exact: true });
   await expect(completed).toHaveAttribute("data-tip", "Completed");
   await expect(completed).toHaveAttribute("aria-pressed", "true");
-  await openDetails(page, "reading-tools");
+  await openFold(page, "reading-tools");
   const note = page.locator("#include-share-note");
   await expect(note).toHaveAccessibleName("Include my note: off");
   await note.click();
@@ -1315,7 +1319,7 @@ test("touch icon labels appear on press and expire after tap", async ({ browser 
   await page.route(/^https:\/\//, route => route.fulfill({ status: 200, body: "" }));
   await page.goto("./?d=2026-06-16&tr=ESV");
   const focus = page.locator("#btn-focus");
-  const tools = page.locator("#reading-tools > summary");
+  const tools = page.getByRole("button", { name: "Text & share tools", exact: true });
   await expect(focus).toBeVisible();
   await expect(focus).toHaveAccessibleName("Focus");
   await expect(tools).toHaveAccessibleName("Text & share tools");
@@ -1330,3 +1334,39 @@ test("touch icon labels appear on press and expire after tap", async ({ browser 
   await expect(focus).not.toHaveClass(/show-tip/, { timeout: 2500 });
   await context.close();
 });
+
+for (const width of [1366, 390]) {
+  test(`reading controls stay on one row at ${width}px with full-width panels below`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("./?d=2026-06-16&tr=WEB");
+    await expect(page.locator("#passage-body")).toContainText("WEB book 40");
+    const row = page.locator(".reading-primary");
+    await expect(row.locator("button")).toHaveCount(5);
+    const assertRow = async () => {
+      const boxes = await row.locator("button").evaluateAll(buttons => buttons.map(button => {
+        const { top, right, bottom, left } = button.getBoundingClientRect();
+        return { top, right, bottom, left };
+      }));
+      for (const box of boxes) {
+        expect(Math.abs(box.top - boxes[0].top)).toBeLessThan(1);
+        expect(box.left).toBeGreaterThanOrEqual(0);
+        expect(box.right).toBeLessThanOrEqual(width);
+      }
+      for (let i = 1; i < boxes.length; i++) expect(boxes[i].left).toBeGreaterThanOrEqual(boxes[i - 1].right);
+    };
+    await assertRow();
+    for (const [id, label] of [["reading-tools", "Text & share tools"], ["offline-tools", "Offline reading"]]) {
+      const toggle = page.getByRole("button", { name: label, exact: true });
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      const panel = page.locator(`#${id}-panel`);
+      await expect(panel).toBeVisible();
+      const panelBox = await panel.boundingBox();
+      const headBox = await page.locator("#reading-panel .card-head").boundingBox();
+      expect(panelBox.y).toBeGreaterThanOrEqual(headBox.y + headBox.height);
+      expect(panelBox.x).toBeCloseTo(headBox.x, 0);
+      expect(panelBox.width).toBeCloseTo(headBox.width, 0);
+      await assertRow();
+    }
+  });
+}

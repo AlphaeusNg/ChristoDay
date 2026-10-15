@@ -153,9 +153,10 @@ for (const [id, label] of [
 ]) {
   assert.match(
     index,
-    new RegExp(`<details id="${id}" class="[^"]+">\\s*<summary class="icon-button fold-toggle" role="button" aria-expanded="false" aria-label="${label}" data-tip="${label}"><svg[^>]*aria-hidden="true"`),
-    `${id} starts closed as a compact labelled icon summary`
+    new RegExp(`<button type="button" class="btn icon-button fold-toggle" id="${id}" aria-controls="${id}-panel" aria-expanded="false" aria-label="${label}" data-tip="${label}"><svg[^>]*aria-hidden="true"`),
+    `${id} starts collapsed as a compact labelled toggle button`
   );
+  assert.match(index, new RegExp(`<div id="${id}-panel" class="${id}" hidden>`), `${id} panel starts hidden`);
 }
 assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
 assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");
@@ -246,3 +247,8 @@ assert.match(
 console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`
 );
+
+const primaryControls = index.match(/<div class="reading-primary">([\s\S]*?)<\/div>/)?.[1];
+assert(primaryControls, "primary reading controls have a shared row");
+assert.equal((primaryControls.match(/<button /g) || []).length, 5, "all five reading controls share the primary row");
+assert.match(css, /\.reading-primary\s*\{\s*flex-wrap:\s*nowrap;/, "primary controls never wrap");
