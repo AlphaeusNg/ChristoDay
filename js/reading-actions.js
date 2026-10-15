@@ -198,13 +198,6 @@
       );
     }
 
-    function syncFoldExpanded(button, expanded) {
-      const panel = document.getElementById(button.getAttribute("aria-controls"));
-      if (!panel) return;
-      panel.hidden = !expanded;
-      button.setAttribute("aria-expanded", String(expanded));
-    }
-
     function applyFocus(on) {
       const enabled = on === true;
       if (!enabled && state().readingFocus && speaking) stopListening();
@@ -212,8 +205,6 @@
       const root = document.documentElement;
       if (enabled) root.setAttribute("data-reading-focus", "on");
       else root.removeAttribute("data-reading-focus");
-      const tools = $("#reading-tools");
-      if (enabled && tools) syncFoldExpanded(tools, false);
       const button = $("#btn-focus");
       if (button) {
         button.setAttribute("aria-pressed", String(enabled));
@@ -297,7 +288,9 @@
 
     function setLabel(button, label) {
       button.setAttribute("aria-label", label);
-      button.setAttribute("data-tip", label);
+      if (button.hasAttribute("data-tip")) button.setAttribute("data-tip", label);
+      const text = button.querySelector(".menu-item-label");
+      if (text) text.textContent = label;
     }
 
     function bind() {
@@ -316,14 +309,6 @@
         button.addEventListener("pointercancel", () => { clearTimeout(timer); hide(); });
         button.addEventListener("blur", () => { clearTimeout(timer); hide(); });
       });
-      for (const selector of ["#reading-tools", "#offline-tools"]) {
-        const button = $(selector);
-        if (!button) continue;
-        syncFoldExpanded(button, button.getAttribute("aria-expanded") === "true");
-        button.addEventListener("click", () => {
-          syncFoldExpanded(button, button.getAttribute("aria-expanded") !== "true");
-        });
-      }
       $("#btn-copy")?.addEventListener("click", () => {
         copyVisiblePassage().catch(() => {});
       });

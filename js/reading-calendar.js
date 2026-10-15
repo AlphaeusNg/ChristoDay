@@ -85,8 +85,6 @@
       if (status) { status.hidden = !message; status.textContent = message; }
     }
     function refresh() {
-      const card = $("#reading-calendar");
-      if (card) card.hidden = false;
       try {
         const window = range(deps.getPlan(), deps.getCurrentYmd());
         $("#calendar-range").textContent = `${window.start} to ${window.end} · Weekday references and reading links. All-day dates follow the Singapore plan.`;

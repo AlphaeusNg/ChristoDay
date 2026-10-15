@@ -3,11 +3,12 @@ import { readFile } from "node:fs/promises";
 
 const runtimeErrors = new WeakMap();
 
-async function openFold(page, id) {
-  const button = page.getByRole("button", { name: id === "reading-tools" ? "Text & share tools" : "Offline reading", exact: true });
-  if (await button.getAttribute("aria-expanded") !== "true") await button.click();
-  await expect(button).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator(`#${id}-panel`)).toBeVisible();
+async function openMoreMenu(page) {
+  const more = page.locator("#btn-more");
+  if ((await more.getAttribute("aria-expanded")) !== "true") await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#btn-checklist")).toBeVisible();
+  await expect(page.locator("#btn-calendar")).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -74,7 +75,7 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await datePicker.dispatchEvent("change");
 
   await expect(page.locator("#reading-panel")).toBeVisible();
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await expect(page.locator("#btn-copy")).toBeVisible();
   await expect(page.locator("#btn-share")).toBeVisible();
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
@@ -169,9 +170,9 @@ test("downloads and safely restores the private journal", async ({ page }) => {
   const originalNote = "Christ keeps every part of this story.";
   await journal.fill(originalNote);
   await page.locator("#btn-complete").click();
-  await openFold(page, "reading-tools");
-  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
+  await page.locator("#include-share-note").click();
+  await openMoreMenu(page);
   await page.locator("#btn-type-larger").click();
 
   const downloadPromise = page.waitForEvent("download");
@@ -187,10 +188,10 @@ test("downloads and safely restores the private journal", async ({ page }) => {
 
   await journal.fill("Temporary replacement");
   await page.locator("#btn-complete").click();
-  await openFold(page, "reading-tools");
-  await page.getByRole("button", { name: "Include my note: on", exact: true }).click();
+  await openMoreMenu(page);
+  await page.locator("#include-share-note").click();
   await page.locator("#translation").selectOption("WEB");
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-type-smaller").click();
 
   const dialogPromise = page.waitForEvent("dialog");
@@ -673,7 +674,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
 
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-copy").click();
   await expect(page.locator("#action-status")).toBeVisible();
   await expect(page.locator("#action-status")).toHaveText("Copied passage.");
@@ -686,7 +687,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
 
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   copied = await page.evaluate(() => window.__copied.at(-1));
@@ -713,7 +714,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "false");
   await page.locator("#journal").fill("Christ is the true King in this genealogy.");
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Copied today's reading.");
   let copied = await page.evaluate(() => window.__copied.at(-1));
@@ -722,9 +723,9 @@ test("includes the journal note in share only when opted in", async ({ page }) =
   expect(copied).toMatch(/d=2026-06-16/);
   expect(copied).not.toContain("Christ is the true King");
 
-  await openFold(page, "reading-tools");
-  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
+  await page.locator("#include-share-note").click();
+  await openMoreMenu(page);
   await page.locator("#btn-share").click();
   copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
@@ -743,7 +744,7 @@ test("uses the Web Share API when it is available", async ({ page }) => {
 
   await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-share").click();
   await expect(page.locator("#action-status")).toHaveText("Shared today's reading.");
   const shares = await page.evaluate(() => window.__shares);
@@ -816,11 +817,14 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeTranslation);
   expect(await page.evaluate(() => window.__spoken.length)).toBe(spokenCount);
+  await openMoreMenu(page);
   await page.locator("#btn-focus").click();
   await expect(page.locator("html")).toHaveAttribute("data-reading-focus", "on");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
   await page.locator("#btn-listen").click();
   await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
   const focusCancelled = await page.evaluate(() => window.__cancelled);
+  await openMoreMenu(page);
   await page.locator("#btn-focus").click();
   await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(focusCancelled);
@@ -857,7 +861,7 @@ test("resizes the passage and remembers the choice", async ({ page }) => {
   await expect(page.locator("#btn-type-larger")).toBeDisabled();
   await expect(page.locator("#btn-type-smaller")).toBeEnabled();
 
-  await openFold(page, "reading-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-type-smaller").click();
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "md");
   await expect(page.locator("#action-status")).toHaveText("Default passage text.");
@@ -926,9 +930,11 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("not saved yet");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
-  await openFold(page, "offline-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Saved this WEB reading on this device.");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "false");
+  await openMoreMenu(page);
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
   await expect(page.locator("#btn-save-reading")).toBeHidden();
@@ -938,13 +944,17 @@ test("saves a permitted reading for offline use and refuses the others", async (
 
   await page.locator("#translation").selectOption("NIV");
   await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await openMoreMenu(page);
   await expect(page.locator("#btn-save-reading")).toBeHidden();
+  await expect(page.locator("#btn-remove-reading")).toBeHidden();
   await expect(page.locator("#passage-availability")).toContainText("not stored");
   await expect(page.locator("#passage-availability")).not.toContainText("offline slots");
   expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("\"NIV\"");
 
   await page.locator("#translation").selectOption("WEB");
+  await openMoreMenu(page);
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
+  await expect(page.locator("#btn-save-reading")).toBeHidden();
   await page.route(/^https:\/\/bolls\.life\//, async (route) => {
     await route.fulfill({
       status: 200,
@@ -956,7 +966,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-availability")).toContainText("saved on this device");
   await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
-  await openFold(page, "offline-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
   await expect(page.locator("#btn-remove-reading")).toBeHidden();
@@ -1012,14 +1022,20 @@ test("keeps navigation, completion, and journal available in focus mode", async 
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expectPrimaryVisible();
   await expectNoHorizontalOverflow();
+  await expect(page.locator("#btn-copy")).toBeHidden();
+  await expect(page.locator("#btn-listen")).toBeVisible();
+  await expect(page.locator("#btn-complete")).toBeVisible();
+  await expect(page.locator("#btn-more")).toBeVisible();
+  await openMoreMenu(page);
   await page.locator("#btn-focus").click();
   await expect(page.locator("html")).toHaveAttribute("data-reading-focus", "on");
-  await expect(page.locator("#btn-copy")).toBeHidden();
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#btn-focus")).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#btn-listen")).toBeVisible();
   await expectPrimaryVisible();
   const beforeLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
-  await openFold(page, "reading-tools");
   await page.locator("#btn-leading-looser").click();
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("html")).toHaveAttribute("data-line-spacing", "open");
   const afterLeading = await page.evaluate(() => getComputedStyle(document.querySelector("#passage-body")).lineHeight);
   expect(Number.parseFloat(afterLeading)).toBeGreaterThan(Number.parseFloat(beforeLeading));
@@ -1104,7 +1120,7 @@ test("keeps journal and reading usable when access to device storage is denied",
   await expect(page.locator("#storage-status")).toContainText("may be lost when this tab closes");
   await page.locator("#btn-complete").click();
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
-  await openFold(page, "offline-tools");
+  await openMoreMenu(page);
   await page.locator("#btn-save-reading").click();
   await expect(page.locator("#action-status")).toHaveText("Could not save on this device.");
   await expect(page.locator("#passage-availability")).toContainText("0 of 30 offline slots used");
@@ -1116,14 +1132,130 @@ test("keeps journal and reading usable when access to device storage is denied",
 });
 
 
+test("keeps the overflow menu inside each visible day card", async ({ page }) => {
+  await page.addInitScript(() => { window.print = () => { window.__printed = true; }; });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  const more = page.locator("#btn-more");
+  const dayCards = [
+    ["2026-06-15", "#reading-panel .card"],
+    ["2026-06-20", "#weekend-panel"],
+    ["2026-06-01", "#before-panel"],
+  ];
+  for (const width of [1366, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const [date, card] of dayCards) {
+      await page.locator("#date-pick").fill(date);
+      await expect(page.locator(`${card} #btn-more`)).toBeVisible();
+      expect(await more.evaluate((el) => {
+        const rect = el.getBoundingClientRect();
+        const svg = el.querySelector("svg").getBoundingClientRect();
+        return [rect.width, rect.height, getComputedStyle(el).borderRadius, svg.width, svg.height];
+      })).toEqual([32, 32, "8px", 18, 18]);
+    }
+  }
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const [date, card] of dayCards) {
+      await page.locator("#date-pick").fill(date);
+      await expect(page.locator(`${card} #btn-more`)).toBeVisible();
+      await expect(page.locator("#more-menu")).toHaveCount(1);
+      await openMoreMenu(page);
+      if (date === "2026-06-15") {
+        await expect(page.locator("#btn-focus")).toBeVisible();
+        await expect(page.getByText("Text & share tools", { exact: true })).toBeVisible();
+        await expect(page.getByText("Offline reading", { exact: true })).toBeVisible();
+      } else {
+        await expect(page.locator("#btn-focus")).toBeHidden();
+        await expect(page.locator("#btn-copy")).toBeHidden();
+        await page.keyboard.press("ArrowDown");
+        await expect(page.locator("#btn-checklist")).toBeFocused();
+        await page.keyboard.press("ArrowDown");
+        await expect(page.locator("#btn-calendar")).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(more).toBeFocused();
+        await expect(more).toHaveAttribute("aria-expanded", "false");
+        await openMoreMenu(page);
+      }
+      const box = await page.locator("#more-menu-list").boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      await page.locator("#btn-checklist").click();
+      await expect(more).toHaveAttribute("aria-expanded", "false");
+      await expect.poll(() => page.evaluate(() => window.__printed)).toBe(true);
+      await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+      await expect(page.locator(`${card} #checklist-status`)).toHaveCount(1);
+      await openMoreMenu(page);
+      const downloading = page.waitForEvent("download");
+      await page.locator("#btn-calendar").click();
+      await downloading;
+      await expect(page.locator(`${card} #calendar-status`)).toBeVisible();
+    }
+  }
+});
+
+test("opens checklist and calendar actions from the overflow menu", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.print = () => {
+      window.__checklistPrinted = true;
+      window.__printMenuExpanded = document.getElementById("btn-more")?.getAttribute("aria-expanded");
+    };
+  });
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  const more = page.locator("#btn-more");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("#more-menu-list")).toBeHidden();
+  await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#btn-checklist")).toBeVisible();
+  await expect(page.locator("#btn-calendar")).toBeVisible();
+  await expect(page.locator("#btn-checklist")).toHaveText("Print checklist");
+  await expect(page.locator("#btn-calendar")).toHaveText("Download calendar (.ics)");
+  const menuBox = await page.locator("#more-menu-list").evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: window.innerWidth };
+  });
+  expect(menuBox.left).toBeGreaterThanOrEqual(-1);
+  expect(menuBox.right).toBeLessThanOrEqual(menuBox.width + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(page.locator("#btn-focus")).toBeVisible();
+  await expect(page.locator("#btn-copy")).toBeEnabled();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#btn-focus")).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#btn-copy")).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator("#btn-focus")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(more).toBeFocused();
+  await more.click();
+  await page.locator("#stat-streak").click();
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await more.click();
+  await page.locator("#btn-checklist").click();
+  await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+  expect(await page.evaluate(() => window.__printMenuExpanded)).toBe("false");
+  await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  const downloadPromise = page.waitForEvent("download");
+  await more.click();
+  await page.locator("#btn-calendar").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("christoday-readings-2026-06-15-to-2026-07-12.ics");
+  await expect(page.locator("#calendar-status")).toContainText("Downloaded 20 reading dates");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+});
+
 test("downloads four weeks of references without private notes or passage text", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
   await page.locator("#btn-complete").click();
-  await openFold(page, "reading-tools");
-  await page.getByRole("button", { name: "Include my note: off", exact: true }).click();
-  await page.locator("#reading-calendar summary").click();
+  await openMoreMenu(page);
+  await page.locator("#include-share-note").click();
+  await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const downloadPromise = page.waitForEvent("download");
@@ -1142,6 +1274,7 @@ test("downloads four weeks of references without private notes or passage text",
   await expect(page.locator("#journal")).toHaveValue("PRIVATE CALENDAR SENTINEL");
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
   await page.locator("#btn-next").click();
+  await openMoreMenu(page);
   await expect(page.locator("#calendar-range")).toContainText("2026-06-16 to 2026-07-13");
   await expect(page.locator("#calendar-status")).toBeHidden();
 });
@@ -1149,7 +1282,7 @@ test("downloads four weeks of references without private notes or passage text",
 for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
   test(`downloads calendar from rest or pre-start day ${date}`, async ({ page }) => {
     await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
-    await page.locator("#reading-calendar summary").click();
+    await openMoreMenu(page);
     await expect(page.locator("#calendar-range")).toContainText(`${start} to ${end}`);
     const downloadPromise = page.waitForEvent("download");
     await page.locator("#btn-calendar").click();
@@ -1161,9 +1294,91 @@ for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["
   });
 }
 
+test("prints a four-week reference checklist without journal or passage text", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.print = () => { window.__checklistPrinted = true; };
+  });
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#passage-body")).toContainText("book 65 chapter");
+  await page.locator("#journal").fill("PRIVATE CHECKLIST SENTINEL");
+  await page.locator("#btn-complete").click();
+  await openMoreMenu(page);
+  await expect(page.locator("#checklist-range")).toContainText("2026-06-15 to 2026-07-12");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator("#btn-checklist").click();
+  await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+  await page.emulateMedia({ media: "print" });
+  const rows = page.locator("#reading-checklist-print .checklist-row");
+  await expect(rows).toHaveCount(20);
+  const box = rows.first().locator(".checklist-box");
+  await expect(box).toHaveText("");
+  const boxStyle = await box.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { text: el.textContent, border: parseFloat(style.borderTopWidth), height: parseFloat(style.height) };
+  });
+  expect(boxStyle.text).toBe("");
+  expect(boxStyle.border).toBeGreaterThan(0);
+  expect(boxStyle.height).toBeGreaterThan(0);
+  await expect(rows.first()).toContainText("2026-06-15");
+  await expect(rows.first()).toContainText("Monday");
+  await expect(rows.first()).toContainText("Jude 1:1-25");
+  await expect(page.locator("#reading-checklist-print")).toContainText("Matthew 1:1-17");
+  const printed = await page.locator("#reading-checklist-print").innerText();
+  expect(printed).not.toContain("PRIVATE CHECKLIST SENTINEL");
+  expect(printed).not.toContain("☐");
+  expect(printed).not.toContain("book 65 chapter");
+  expect(printed).not.toContain("Where does this passage");
+  expect(printed).not.toContain("2026-06-20");
+  expect(printed).not.toContain("2026-06-21");
+  await expect(page.locator("#reading-checklist-print")).toBeVisible();
+  await expect(page.locator("#journal")).toBeHidden();
+  await expect(page.locator("#passage-body")).toBeHidden();
+  await expect(page.locator("#questions")).toBeHidden();
+  await expect(page.locator(".more-menu")).toBeHidden();
+  const ink = await rows.first().evaluate((el) => {
+    const style = getComputedStyle(el);
+    const sheet = getComputedStyle(el.closest("#reading-checklist-print"));
+    return {
+      color: style.color,
+      rowBackground: style.backgroundColor,
+      sheetBackground: sheet.backgroundColor,
+      breakInside: style.breakInside,
+    };
+  });
+  expect(ink.color).toBe("rgb(0, 0, 0)");
+  expect(ink.sheetBackground).toBe("rgb(255, 255, 255)");
+  expect(ink.rowBackground === "rgba(0, 0, 0, 0)" || ink.rowBackground === "transparent").toBe(true);
+  expect(ink.breakInside).toBe("avoid");
+
+  await page.emulateMedia({ media: "screen" });
+  await page.evaluate(() => {
+    document.getElementById("reading-checklist-print").replaceChildren();
+    window.dispatchEvent(new Event("beforeprint"));
+  });
+  await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+  for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
+    await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
+    await openMoreMenu(page);
+    await expect(page.locator("#checklist-range")).toContainText(`${start} to ${end}`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator("#btn-checklist").click();
+    await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+    await page.emulateMedia({ media: "print" });
+    await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+    const text = await page.locator("#reading-checklist-print").innerText();
+    const rowText = (await page.locator("#reading-checklist-print .checklist-row").allInnerTexts()).join("\n");
+    expect(rowText).not.toContain("2026-06-20");
+    expect(text).not.toContain("book ");
+    if (date === "2026-06-01") expect(text).toContain("Jude 1:1-25");
+    await expect(page.locator("#passage-body")).toBeHidden();
+    await page.emulateMedia({ media: "screen" });
+  }
+});
+
 test("reports a calendar download failure without affecting the reading", async ({ page }) => {
   await page.goto("./?d=2026-06-16", { waitUntil: "domcontentloaded" });
-  await page.locator("#reading-calendar summary").click();
+  await openMoreMenu(page);
   await page.evaluate(() => { URL.createObjectURL = () => { throw new Error("blocked download"); }; });
   await page.locator("#btn-calendar").click();
   await expect(page.locator("#calendar-status")).toContainText("Could not download a calendar");
@@ -1186,7 +1401,8 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await page.evaluate((scale) => {
       document.documentElement.style.fontSize = `${scale * 100}%`;
       document.documentElement.style.scrollBehavior = "auto";
-      for (const id of ["reading-calendar", "journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+      for (const id of ["journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+      document.getElementById("btn-more").click();
     }, textScale);
     await page.locator("#journal").fill("A long journal entry: " + "averylongunbrokenword".repeat(20));
     const geometry = await page.evaluate(() => {
@@ -1210,6 +1426,9 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     expect(geometry.outside).toEqual([]);
     expect(geometry.undersized).toEqual([]);
     expect(geometry.searchFont).toBeGreaterThanOrEqual(13 * textScale);
+    if ((await page.locator("#btn-more").getAttribute("aria-expanded")) === "true") {
+      await page.locator("#btn-more").click();
+    }
 
     await page.locator("#passage-body .fn-mark").click();
     const popover = page.locator("#ref-popover");
@@ -1237,136 +1456,223 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
   });
 }
 
-test("keeps labelled reading and offline tools folded until explored", async ({ page }) => {
+test("keeps reading tools in More options and leaves shortcuts working", async ({ page }) => {
   await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-body")).toContainText("WEB book 40");
-  await expect(page.locator("#btn-complete")).toBeVisible();
-  await expect(page.locator(".reading-primary .btn-primary")).toHaveCount(1);
-  for (const [id, label, controls] of [
-    ["reading-tools", "Text & share tools", ["btn-leading-looser", "btn-type-larger"]],
-    ["offline-tools", "Offline reading", ["btn-save-reading"]],
-  ]) {
-    const panel = page.locator(`#${id}-panel`);
-    const summary = page.getByRole("button", { name: label, exact: true });
-    await expect(summary).toBeVisible();
-    await expect(summary).toHaveAccessibleName(label);
-    await expect(summary).toHaveAttribute("data-tip", label);
-    await expect(summary).toHaveText("");
-    const summaryBox = await summary.boundingBox();
-    const completeBox = await page.locator("#btn-complete").boundingBox();
-    expect(summaryBox.width).toBeCloseTo(40, 0);
-    expect(summaryBox.height).toBeCloseTo(40, 0);
-    expect(completeBox.width).toBeCloseTo(40, 0);
-    expect(completeBox.height).toBeCloseTo(40, 0);
-    await summary.hover();
-    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
-    await summary.evaluate((el) => el.focus({ focusVisible: true }));
-    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
-    expect(await summary.evaluate((el) => getComputedStyle(el, "::after").content)).toContain(label);
-    await expect(summary).toHaveAttribute("aria-expanded", "false");
-    await expect(panel).toBeHidden();
-    for (const control of controls) await expect(page.locator(`#${control}`)).toBeHidden();
-    await summary.click();
-    await expect(summary).toHaveAttribute("aria-expanded", "true");
-    await expect(panel).toBeVisible();
-    for (const control of controls) await expect(page.locator(`#${control}`)).toBeVisible();
-    await summary.click();
-    await expect(summary).toHaveAttribute("aria-expanded", "false");
-    await expect(panel).toBeHidden();
+  await expect(page.locator(".fold-toggle")).toHaveCount(0);
+  await expect(page.locator("#btn-focus")).toBeHidden();
+  await expect(page.locator("#btn-copy")).toBeHidden();
+  await openMoreMenu(page);
+  for (const label of ["Text & share tools", "Offline reading", "Print & calendar"]) {
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
+  for (const id of [
+    "btn-focus", "btn-copy", "btn-share", "include-share-note",
+    "btn-type-smaller", "btn-type-larger", "btn-leading-tighter", "btn-leading-looser",
+    "passage-availability", "btn-save-reading", "btn-checklist", "btn-calendar",
+  ]) {
+    await expect(page.locator(`#${id}`)).toBeVisible();
+  }
+  const focus = page.locator("#btn-focus");
+  await focus.click();
+  await expect(focus).toHaveAttribute("aria-pressed", "true");
+  await expect(focus).toHaveAccessibleName("Exit focus");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator(".stats")).toBeHidden();
+  const note = page.locator("#include-share-note");
+  await note.click();
+  await expect(note).toHaveAttribute("aria-pressed", "true");
+  await expect(note).toHaveAccessibleName("Include my note: on");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
+  await page.locator("#btn-leading-looser").click();
+  await expect(page.locator("html")).toHaveAttribute("data-line-spacing", "open");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#btn-more")).toBeFocused();
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("+");
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
-  await page.getByRole("button", { name: "Text & share tools", exact: true }).click();
-  await page.locator("#btn-focus").click();
-  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "false");
-  await expect(page.locator(".stats")).toBeHidden();
-  await page.locator("#btn-focus").click();
-  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "false");
-  await page.getByRole("button", { name: "Text & share tools", exact: true }).click();
-  await page.locator("#btn-next").click();
-  await expect(page.getByRole("button", { name: "Text & share tools", exact: true })).toHaveAttribute("aria-expanded", "true");
+  await openMoreMenu(page);
+  await expect(page.locator("#btn-type-larger")).toBeDisabled();
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
 });
 
-test("icon options expose names, state, and keyboard tooltips", async ({ page }) => {
+test("icon options expose names, quiet styles, and keyboard tooltips", async ({ page }) => {
   await page.goto("./?d=2026-06-16&tr=ESV");
-  await expect(page.getByRole("button", { name: "Mark complete", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Mark complete", exact: true }).click();
-  const completed = page.getByRole("button", { name: "Completed", exact: true });
-  await expect(completed).toHaveAttribute("data-tip", "Completed");
-  await expect(completed).toHaveAttribute("aria-pressed", "true");
-  await openFold(page, "reading-tools");
+  const listen = page.locator("#btn-listen");
+  const complete = page.getByRole("button", { name: "Mark complete", exact: true });
+  await expect(listen).toBeEnabled();
+  await expect(complete).toBeVisible();
+  const metrics = await listen.evaluate((el) => {
+    const style = getComputedStyle(el);
+    const svg = el.querySelector("svg").getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      borderTopWidth: style.borderTopWidth,
+      background: style.backgroundColor,
+      color: style.color,
+      svgWidth: svg.width,
+      svgHeight: svg.height,
+    };
+  });
+  expect(metrics).toMatchObject({
+    width: 32,
+    height: 32,
+    borderTopWidth: "0px",
+    background: "rgba(0, 0, 0, 0)",
+    color: "rgb(148, 163, 184)",
+    svgWidth: 18,
+    svgHeight: 18,
+  });
+  await listen.hover();
+  await expect.poll(() => listen.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(148, 163, 184, 0.12)");
+  await expect.poll(() => listen.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(232, 238, 248)");
+  const idle = await complete.evaluate((el) => {
+    const style = getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      borderTopWidth: style.borderTopWidth,
+      borderTopStyle: style.borderTopStyle,
+      background: style.backgroundColor,
+      color: style.color,
+    };
+  });
+  expect(idle).toMatchObject({
+    width: 32,
+    height: 32,
+    borderTopWidth: "1px",
+    borderTopStyle: "solid",
+    background: "rgba(0, 0, 0, 0)",
+    color: "rgb(201, 162, 39)",
+  });
+  await complete.click();
+  const done = page.getByRole("button", { name: "Completed", exact: true });
+  await expect(done).toHaveAttribute("data-tip", "Completed");
+  await expect(done).toHaveAttribute("aria-pressed", "true");
+  await expect(done).toHaveClass(/is-done/);
+  await expect.poll(() => done.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(201, 162, 39)");
+  await expect.poll(() => done.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(24, 21, 13)");
+  await openMoreMenu(page);
   const note = page.locator("#include-share-note");
   await expect(note).toHaveAccessibleName("Include my note: off");
   await note.click();
   await expect(note).toHaveAccessibleName("Include my note: on");
-  await expect(note).toHaveAttribute("data-tip", "Include my note: on");
+  await expect(note.locator(".menu-item-label")).toHaveText("Include my note: on");
+  await expect(page.locator("#btn-more")).toHaveAttribute("aria-expanded", "true");
   for (const button of await page.locator("#reading-panel .icon-button").all()) {
     await expect(button).toHaveAttribute("aria-label", /.+/);
     await expect(button.locator("svg[aria-hidden='true']")).toHaveCount(1);
     await expect(button).toHaveText("");
   }
-  const copy = page.getByRole("button", { name: "Copy", exact: true });
-  await copy.focus();
-  await page.keyboard.press("Tab");
+  await page.locator("#btn-complete").focus();
   await page.keyboard.press("Shift+Tab");
-  await expect(copy).toBeFocused();
-  expect(await copy.evaluate(el => getComputedStyle(el, "::after").opacity)).toBe("1");
+  await expect(listen).toBeFocused();
+  expect(await listen.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
+  expect(await listen.evaluate((el) => getComputedStyle(el, "::after").content)).toContain("Listen");
 });
 
 test("touch icon labels appear on press and expire after tap", async ({ browser }) => {
-  const context = await browser.newContext({ hasTouch: true, isMobile: true, baseURL: test.info().project.use.baseURL, serviceWorkers: "block" });
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+    baseURL: test.info().project.use.baseURL,
+    serviceWorkers: "block",
+  });
   const page = await context.newPage();
-  await page.route(/^https:\/\//, route => route.fulfill({ status: 200, body: "" }));
+  await page.route(/^https:\/\//, (route) => route.fulfill({ status: 200, body: "" }));
   await page.goto("./?d=2026-06-16&tr=ESV");
-  const focus = page.locator("#btn-focus");
-  const tools = page.getByRole("button", { name: "Text & share tools", exact: true });
-  await expect(focus).toBeVisible();
-  await expect(focus).toHaveAccessibleName("Focus");
-  await expect(tools).toHaveAccessibleName("Text & share tools");
-  await expect(tools).toBeVisible();
-  await tools.dispatchEvent("pointerdown", { pointerType: "touch" });
-  await expect(tools).toHaveClass(/show-tip/);
-  await focus.dispatchEvent("pointerdown", { pointerType: "touch" });
-  await expect(focus).toHaveClass(/show-tip/);
-  await focus.tap();
-  await expect(focus).toHaveAccessibleName("Exit focus");
-  await expect(focus).toHaveAttribute("data-tip", "Exit focus");
-  await expect(focus).not.toHaveClass(/show-tip/, { timeout: 2500 });
+  const listen = page.locator("#btn-listen");
+  const more = page.locator("#btn-more");
+  await expect(listen).toBeEnabled();
+  await expect(listen).toHaveAccessibleName("Listen");
+  await expect(more).toHaveAccessibleName("More options");
+  await listen.dispatchEvent("pointerdown", { pointerType: "touch" });
+  await expect(listen).toHaveClass(/show-tip/);
+  await more.dispatchEvent("pointerdown", { pointerType: "touch" });
+  await expect(more).toHaveClass(/show-tip/);
+  await more.tap();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(more).not.toHaveClass(/show-tip/, { timeout: 2500 });
   await context.close();
 });
 
 for (const width of [1366, 390]) {
-  test(`reading controls stay on one row at ${width}px with full-width panels below`, async ({ page }) => {
+  test(`reading badge and icon buttons stay on one line at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("./?d=2026-06-16&tr=WEB");
+    await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#passage-body")).toContainText("WEB book 40");
-    const row = page.locator(".reading-primary");
-    await expect(row.locator("button")).toHaveCount(5);
+    await expect(page.locator(".fold-toggle")).toHaveCount(0);
+    await expect(page.locator("#btn-focus")).toBeHidden();
+    await expect(page.locator("#btn-copy")).toBeHidden();
     const assertRow = async () => {
-      const boxes = await row.locator("button").evaluateAll(buttons => buttons.map(button => {
-        const { top, right, bottom, left } = button.getBoundingClientRect();
-        return { top, right, bottom, left };
-      }));
-      for (const box of boxes) {
-        expect(Math.abs(box.top - boxes[0].top)).toBeLessThan(1);
-        expect(box.left).toBeGreaterThanOrEqual(0);
-        expect(box.right).toBeLessThanOrEqual(width);
+      const row = await page.evaluate(() => {
+        const visible = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden";
+        const box = (el) => {
+          const rect = el.getBoundingClientRect();
+          return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+        };
+        const head = document.querySelector("#reading-panel .card-head");
+        const buttons = ["btn-listen", "btn-complete", "btn-more"].map((id) => document.getElementById(id)).filter(visible);
+        return {
+          head: box(head),
+          badge: box(document.getElementById("book-badge")),
+          buttons: buttons.map((button) => ({ id: button.id, ...box(button) })),
+        };
+      });
+      expect(row.buttons.map((button) => button.id)).toEqual(["btn-listen", "btn-complete", "btn-more"]);
+      expect(row.head.bottom - row.head.top).toBeLessThan(56);
+      const badgeMid = (row.badge.top + row.badge.bottom) / 2;
+      const buttonMid = (row.buttons[0].top + row.buttons[0].bottom) / 2;
+      expect(Math.abs(badgeMid - buttonMid)).toBeLessThan(8);
+      expect(row.badge.left).toBeGreaterThanOrEqual(-1);
+      expect(row.badge.right).toBeLessThanOrEqual(row.buttons[0].left + 1);
+      for (const button of row.buttons) {
+        expect(Math.abs(button.top - row.buttons[0].top)).toBeLessThan(1);
+        expect(button.left).toBeGreaterThanOrEqual(-1);
+        expect(button.right).toBeLessThanOrEqual(width + 1);
+        expect(button.top).toBeGreaterThanOrEqual(row.head.top - 1);
+        expect(button.bottom).toBeLessThanOrEqual(row.head.bottom + 1);
       }
-      for (let i = 1; i < boxes.length; i++) expect(boxes[i].left).toBeGreaterThanOrEqual(boxes[i - 1].right);
+      for (let index = 1; index < row.buttons.length; index += 1) {
+        expect(row.buttons[index].left).toBeGreaterThanOrEqual(row.buttons[index - 1].right - 1);
+      }
     };
     await assertRow();
-    for (const [id, label] of [["reading-tools", "Text & share tools"], ["offline-tools", "Offline reading"]]) {
-      const toggle = page.getByRole("button", { name: label, exact: true });
-      await toggle.click();
-      await expect(toggle).toHaveAttribute("aria-expanded", "true");
-      const panel = page.locator(`#${id}-panel`);
-      await expect(panel).toBeVisible();
-      const panelBox = await panel.boundingBox();
-      const headBox = await page.locator("#reading-panel .card-head").boundingBox();
-      expect(panelBox.y).toBeGreaterThanOrEqual(headBox.y + headBox.height);
-      expect(panelBox.x).toBeCloseTo(headBox.x, 0);
-      expect(panelBox.width).toBeCloseTo(headBox.width, 0);
-      await assertRow();
-    }
+    await openMoreMenu(page);
+    await expect(page.locator("#btn-focus")).toBeVisible();
+    await expect(page.locator("#btn-copy")).toBeVisible();
+    await expect(page.getByText("Text & share tools", { exact: true })).toBeVisible();
+    await expect(page.getByText("Offline reading", { exact: true })).toBeVisible();
+    await expect(page.getByText("Print & calendar", { exact: true })).toBeVisible();
+    await assertRow();
   });
 }
+
+test("more options icon button shows its tooltip on hover and focus", async ({ page }) => {
+  await page.goto("./?d=2026-06-15");
+  const more = page.locator("#btn-more");
+  await expect(more).toHaveAttribute("aria-label", "More options");
+  await expect(more).toHaveAttribute("data-tip", "More options");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  const tipOpacity = () => more.evaluate((el) => getComputedStyle(el, "::after").opacity);
+  await page.mouse.move(0, 0);
+  await expect.poll(tipOpacity).toBe("0");
+  await more.hover();
+  await expect.poll(tipOpacity).toBe("1");
+  expect(await more.evaluate((el) => getComputedStyle(el, "::after").content)).toContain("More options");
+  await page.mouse.move(0, 0);
+  await expect.poll(tipOpacity).toBe("0");
+  await page.locator("#btn-next").focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await more.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(more).toBeFocused();
+  await expect.poll(tipOpacity).toBe("1");
+});

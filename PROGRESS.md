@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-15 (declutter the first screen)
+Last updated: 2026-10-15 (reading tools in the overflow menu)
 
 ## Current state
 
@@ -38,13 +38,16 @@ Last updated: 2026-10-15 (declutter the first screen)
 - Reader chrome leads with today's date, streak, and passage: collapsed hero
   lede, `#about` in `<details>`, one-row gold-outline day toolbar, and weekend /
   pre-start Preview Monday + Last Friday actions with a Mon–Fri completion strip.
-- Reading days expose Copy (Y), Listen (L), Share, and A−/A+ passage size.
-  Copy writes the visible reference plus passage text; Listen reads it aloud
-  and stops on a second press or day change; Share uses the Web Share API when
-  present and otherwise copies date + reference + URL. `?d=YYYY-MM-DD` and
-  optional `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall
-  back to today; date and translation changes `replaceState` so a copied URL
-  matches the screen. Passage size persists on-device.
+- Reading days show Listen (L), Mark complete (C), and More options on one line
+  with the book badge. The menu holds Focus, Copy (Y), Share, the include-note
+  toggle, text size (−/+), line spacing, offline save and remove, Print checklist,
+  and Download calendar. Shortcuts still work with the menu closed. Copy writes
+  the visible reference plus passage text; Listen reads it aloud and stops on a
+  second press or day change; Share uses the Web Share API when present and
+  otherwise copies date + reference + URL. `?d=YYYY-MM-DD` and optional
+  `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall back to
+  today; date and translation changes `replaceState` so a copied URL matches the
+  screen. Passage size persists on-device.
 - Journal history filters by date and book and searches note text on device only.
   Selecting a result opens that reading and its note. Nothing in the search is uploaded.
 - WEB passages can be saved explicitly for offline use, up to 30 at a time, and removed
@@ -53,21 +56,27 @@ Last updated: 2026-10-15 (declutter the first screen)
   many of the 30 slots are used and lists the stored dates. Removing a reading frees
   its slot on the next paint. Saved WEB text survives reload.
 - Reading actions/speech, journal backup, and reference popovers live in their own
-  scripts. Scheduling is unchanged. Focus mode limits the passage to 65ch, adjusts
-  line spacing, and folds secondary tools. Navigation, completion, and the journal
-  stay available at phone width and at a 320px layout.
+  scripts. Scheduling is unchanged. Focus mode limits the passage to 65ch and
+  adjusts line spacing. Reading tools live in More options. Navigation, completion,
+  and the journal stay available at phone width and at a 320px layout.
 - A page left open across Singapore midnight updates Today labels without a reload.
   An unattended today view moves from Friday to the weekend and from Sunday to Monday.
   An actively edited historical note stays put, and completion still applies to that date.
-- Deployment version: `2026.10.14.1`.
-- GitHub Actions runs 25 workflow-policy assertions plus schedule, Bible, state,
+- Deployment version: `2026.10.15.2`.
+- GitHub Actions runs 27 workflow-policy assertions plus schedule, Bible, state,
   site/offline structure, service-worker behavior, complete JavaScript syntax checks, and separate real
   Chromium reading and installed-service-worker journeys on Node 24 LTS with
   locked test dependencies, read-only permissions, stale-run cancellation, and
   a five-minute timeout.
 - Zero-build static site; journal and completion state remain device-local.
 
-## Latest cycle: declutter the first screen
+## Latest cycle: quiet icons and one overflow menu
+
+The reading card keeps the book badge, Listen, Mark complete, and More options on one line. Focus, text and share tools, offline reading, Print checklist, and Download calendar are grouped in that menu. Toggles and steppers keep the menu open. Weekend and pre-start cards keep print and calendar there. Icon buttons are 32px ghost controls with 18px icons. Mark complete uses a gold outline and fills gold when the day is done. Version `2026.10.15.2`.
+
+Validation: all 11 Node suites and all 52 Chromium journeys passed.
+
+## Previous cycle: declutter the first screen
 
 Keep Listen, Focus, and Mark complete in the primary row. Text & share tools
 (including type size and line spacing) and Offline reading start folded with
@@ -77,6 +86,40 @@ Version `2026.10.15.2`.
 
 Validation: all Node suites, JavaScript syntax checks, and the full Playwright
 suite (44 tests, including new default-folding coverage) pass.
+
+## Previous cycle: move checklist and calendar into an overflow menu
+
+Print checklist and calendar download no longer have their own cards. A more-options menu
+inside the visible reading, weekend, or pre-start card holds Print checklist and
+Download calendar (.ics). The shared icon button is 40×40 with 12px corners, a centred
+24px three-dot icon, and a transparent 48px tap target. Narrow layouts do not stretch it.
+Status messages follow it between cards, and the dropdown fits phone widths. The
+button toggles the menu and `aria-expanded`. Escape closes it and returns focus
+to the button. A click outside closes it. Arrow keys move through the items.
+Choosing an item closes the menu, then runs that action. The checklist is
+rendered when the day refreshes and again on `beforeprint`, so Ctrl/Cmd+P still
+prints it. The paper row uses one CSS checkbox; the extra ☐ glyph is gone.
+Version `2026.10.15.2`.
+
+Verification: the Node suites passed. All 47 Chromium journeys passed, including the
+40×40 button (12px radius, 24px icon) in the reading, weekend, and pre-start
+cards at 1366px and 390px, the menu in all three cards at 320px and 390px,
+Escape and outside-click close, print rows without the extra box glyph, a
+`beforeprint` rebuild, and calendar download from the menu.
+
+## Previous cycle: print a four-week reading checklist
+
+Added a collapsed checklist card beside the calendar card. Print a reference-only
+list for 28 calendar days from the displayed date, or from the 2026-06-15 epoch
+when that date is earlier. Each weekday row has an empty checkbox, the date, and
+the book reference. Weekends stay off the page. The list uses the existing
+Singapore schedule and Jude rotation. Print styles show only that list, in black
+on white, with no page background, and keep each row intact.
+
+The checklist module accepts the validated plan and date only. It does not read
+journal notes, completion, reflection answers, or Scripture text. Its runtime is
+in the offline shell. CI runs the checklist regressions. Version `2026.10.15.2`.
+
 
 ## Previous cycle: name the weekend and offline actions
 
@@ -1757,6 +1800,6 @@ Offline passage hydration and writes reject duplicate chapter/verse coordinates.
 Validation: All Node gates and 30 Chromium journeys passed.
 
 
-## Unreleased — Icon reading controls
+## Unreleased
 
-Built with Codex CLI, then finished with Grok Build. Reading options now use inline SVG icons with accessible names, state-aware tooltips, and brief touch/long-press labels. Completion retains its gold primary styling. Text & share tools and Offline reading fold toggles are compact icon buttons, about 2rem, outlined and muted, with the same hover, focus-visible, and touch tooltips. Browser checks use accessible names for icon states. Version stays `2026.10.15.2`.
+Reading days keep Listen, Mark complete, and More options on one line with the book badge. Focus, text and share tools, offline reading, Print checklist, and Download calendar are grouped in that menu. Icon buttons are 32px ghost controls with 18px icons, hover and focus tooltips, and brief touch labels. Mark complete uses a 1px gold outline and fills gold when the day is done. Weekend and pre-start cards keep the same menu for print and calendar. Version stays `2026.10.15.2`.

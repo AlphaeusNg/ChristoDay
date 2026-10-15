@@ -70,6 +70,8 @@ const requiredRuntime = [
   "./js/reading-actions.js",
   "./js/journal-backup.js",
   "./js/reading-calendar.js",
+  "./js/reading-checklist.js",
+  "./js/more-menu.js",
   "./js/ref-popover.js",
   "./js/journal-history.js",
   "./js/offline-readings.js",
@@ -147,17 +149,44 @@ assert.match(index, /id="passage-availability"/, "offline availability exists pe
 assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
 assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
-for (const [id, label] of [
-  ["reading-tools", "Text &amp; share tools"],
-  ["offline-tools", "Offline reading"],
-]) {
-  assert.match(
-    index,
-    new RegExp(`<button type="button" class="btn icon-button fold-toggle" id="${id}" aria-controls="${id}-panel" aria-expanded="false" aria-label="${label}" data-tip="${label}"><svg[^>]*aria-hidden="true"`),
-    `${id} starts collapsed as a compact labelled toggle button`
-  );
-  assert.match(index, new RegExp(`<div id="${id}-panel" class="${id}" hidden>`), `${id} panel starts hidden`);
-}
+assert.doesNotMatch(index, /fold-toggle|id="reading-tools"|id="offline-tools"|reading-tools-panel/, "fold toggles are removed");
+assert.doesNotMatch(index, /\bicon-btn\b/, "markup uses the shared icon-button class");
+assert.doesNotMatch(css, /\.icon-btn\b/, "styles use the shared icon-button class");
+assert.match(css, /--icon-btn-size:\s*32px;\s*--icon-btn-radius:\s*8px;\s*--icon-size:\s*18px;\s*--icon-stroke:\s*1\.75;\s*--icon-btn-target:\s*44px;\s*--icon-btn-gap:\s*4px;/, "shared icon-button tokens");
+assert.match(css, /\.btn\.icon-button\s*\{[^}]*width:\s*var\(--icon-btn-size\);[^}]*min-width:\s*var\(--icon-btn-size\);[^}]*height:\s*var\(--icon-btn-size\);[^}]*min-height:\s*var\(--icon-btn-size\);[^}]*padding:\s*0;[^}]*border:\s*0;[^}]*border-radius:\s*var\(--icon-btn-radius\);[^}]*background:\s*transparent;[^}]*color:\s*var\(--muted\);/, "icon buttons are quiet 32px squares");
+assert.match(css, /\.btn\.icon-button:hover,\s*\.btn\.icon-button:focus-visible\s*\{[^}]*background:\s*rgba\(148,\s*163,\s*184,\s*0\.12\);[^}]*color:\s*var\(--text\);/, "icon button hover and focus are subtle");
+assert.match(css, /\.btn\.icon-button svg,\s*\.menu-item svg\s*\{[^}]*width:\s*var\(--icon-size\);[^}]*height:\s*var\(--icon-size\);[^}]*stroke-width:\s*var\(--icon-stroke\);/, "icon glyphs are 18px");
+assert.match(css, /#btn-complete\.icon-button\s*\{[^}]*border:\s*1px solid var\(--gold-line\);[^}]*background:\s*transparent;[^}]*color:\s*var\(--gold\);/, "mark complete is a gold outline");
+assert.match(css, /#btn-complete\.icon-button\.is-done,\s*#btn-complete\.icon-button\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--gold\);[^}]*color:\s*#18150d;/, "completed days fill the mark-complete button");
+assert.match(index, /class="btn icon-button more-menu-btn" id="btn-more"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*data-tip="More options"/, "more options uses the shared icon button");
+assert.match(index, /id="btn-more"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*>\s*(?:<circle [^>]*\/>\s*){3}<\/svg>/, "more button uses a three-dot icon");
+assert.doesNotMatch(index, /⋯|☐/, "no unicode glyph icons");
+assert.match(index, /class="card-head">\s*<span class="badge" id="book-badge">/, "book badge leads the reading header");
+assert.match(index, /id="btn-focus"[^>]*aria-pressed="false"[^>]*data-menu-stay/, "focus stays available inside the menu");
+assert.match(index, /id="include-share-note"[^>]*aria-pressed="false"[^>]*data-menu-stay/, "include-note stays a pressed toggle");
+assert.match(index, /id="btn-type-larger"[^>]*data-menu-stay/, "text size steppers keep the menu open");
+assert.match(index, /id="btn-leading-looser"[^>]*data-menu-stay/, "line spacing steppers keep the menu open");
+const moreMenu = readFileSync(join(root, "js/more-menu.js"), "utf8");
+assert.match(moreMenu, /attributeFilter:\s*\["hidden"\]/, "overflow follows visible day panels");
+assert.match(moreMenu, /menu-reading-only/, "reading tools hide on weekend and pre-start cards");
+assert.match(moreMenu, /data-menu-stay/, "toggles and steppers can keep the menu open");
+assert.match(index, /id="more-menu-list"[^>]*role="menu"/, "overflow menu lists reading, checklist, and calendar actions");
+assert.doesNotMatch(index, /id="reading-checklist"/, "checklist is not a separate card");
+assert.doesNotMatch(index, /id="reading-calendar"/, "calendar download is not a separate card");
+assert.match(css, /\.more-menu\s*\{[^}]*position:\s*relative/, "reading overflow sits in the button row");
+assert.match(css, /\.weekend-card > \.more-menu\s*\{[^}]*position:\s*absolute/, "weekend overflow anchors to the card");
+assert.match(css, /#more-menu-list\s*\{[^}]*position:\s*absolute/, "overflow menu drops down from the day card");
+assert.match(css, /@media print[\s\S]*\.more-menu\s*\{[^}]*display:\s*none/, "overflow menu stays off the printed checklist");
+assert.doesNotMatch(
+  readFileSync(join(root, "js/reading-checklist.js"), "utf8"),
+  /#reading-checklist(?!-)/,
+  "checklist refresh must not toggle a removed card"
+);
+assert.doesNotMatch(
+  readFileSync(join(root, "js/reading-calendar.js"), "utf8"),
+  /#reading-calendar/,
+  "calendar refresh must not toggle a removed card"
+);
 assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
 assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");
 assert.match(css, /--passage-leading/, "line spacing uses the passage leading token");
@@ -167,6 +196,8 @@ for (const script of [
   "js/reading-actions.js",
   "js/journal-backup.js",
   "js/reading-calendar.js",
+  "js/reading-checklist.js",
+  "js/more-menu.js",
   "js/ref-popover.js",
   "js/journal-history.js",
   "js/offline-readings.js",
@@ -248,7 +279,21 @@ console.log(
   `test-site.mjs: local references valid; ${precache.length} precache entries verified`
 );
 
-const primaryControls = index.match(/<div class="reading-primary">([\s\S]*?)<\/div>/)?.[1];
-assert(primaryControls, "primary reading controls have a shared row");
-assert.equal((primaryControls.match(/<button /g) || []).length, 5, "all five reading controls share the primary row");
-assert.match(css, /\.reading-primary\s*\{\s*flex-wrap:\s*nowrap;/, "primary controls never wrap");
+const primaryStart = index.indexOf('class="reading-primary"');
+const menuListStart = index.indexOf('id="more-menu-list"');
+assert(primaryStart >= 0 && menuListStart > primaryStart, "reading row precedes the overflow menu");
+const primarySlice = index.slice(primaryStart, menuListStart);
+assert.equal((primarySlice.match(/<button /g) || []).length, 3, "reading row shows Listen, Mark complete, and More options");
+for (const id of ["btn-listen", "btn-complete", "btn-more"]) {
+  assert.match(primarySlice, new RegExp(`id="${id}"`), `${id} stays in the reading row`);
+}
+assert.doesNotMatch(primarySlice, /id="btn-focus"|id="btn-copy"|fold-toggle/, "reading tools are not inline in the header");
+const menuSlice = index.slice(menuListStart, index.indexOf('id="action-status"'));
+for (const id of ["btn-focus", "btn-copy", "btn-share", "include-share-note", "btn-type-smaller", "btn-type-larger", "btn-leading-tighter", "btn-leading-looser", "passage-availability", "btn-save-reading", "btn-remove-reading", "btn-checklist", "btn-calendar"]) {
+  assert.match(menuSlice, new RegExp(`id="${id}"`), `${id} stays in the overflow menu`);
+}
+assert.match(menuSlice, /Text &amp; share tools/, "text tools are grouped in the menu");
+assert.match(menuSlice, /Offline reading/, "offline tools are grouped in the menu");
+assert.match(menuSlice, /Print &amp; calendar/, "print and calendar are grouped in the menu");
+assert.match(css, /\.card-head\s*\{[^}]*flex-wrap:\s*nowrap/, "book badge and reading controls stay on one line");
+assert.match(css, /\.reading-primary\s*\{[^}]*flex-wrap:\s*nowrap/, "primary controls never wrap");
