@@ -40,6 +40,8 @@ jobs:
         run: node tools/test-calendar.mjs
       - name: Singapore day rollover tests
         run: node tools/test-today.mjs
+      - name: Reading checklist tests
+        run: node tools/test-checklist.mjs
       - name: Site and offline structure
         run: node tools/test-site.mjs
       - name: Service worker behavior

@@ -113,7 +113,7 @@ test("preserves foreign caches and reloads the reading shell offline", async ({ 
   await expect(page.locator("#passage-body .fallback-ref")).toContainText("Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText("schedule still works fully offline");
 
-  await page.locator("#reading-calendar summary").click();
+  await page.locator("#btn-more").click();
   const calendarDownload = page.waitForEvent("download");
   await page.locator("#btn-calendar").click();
   const calendar = await calendarDownload;

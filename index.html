@@ -60,10 +60,10 @@
 
       <div class="toolbar" role="toolbar" aria-label="Day navigation">
         <div class="toolbar-nav">
-          <button type="button" class="btn" id="btn-prev" title="Previous day (←)" aria-label="Previous day">←</button>
+          <button type="button" class="btn icon-button" id="btn-prev" aria-label="Previous day" data-tip="Previous day (←)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"/></svg></button>
           <button type="button" class="btn" id="btn-today" title="Jump to today (T)">Today</button>
           <button type="button" class="btn" id="btn-continue-incomplete" hidden>Continue incomplete</button>
-          <button type="button" class="btn" id="btn-next" title="Next day (→)" aria-label="Next day">→</button>
+          <button type="button" class="btn icon-button" id="btn-next" aria-label="Next day" data-tip="Next day (→)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></button>
         </div>
         <input type="date" id="date-pick" class="toolbar-pill" aria-label="Pick calendar date" />
         <select id="translation" class="toolbar-pill" aria-label="Bible translation">
@@ -104,35 +104,50 @@
       <article class="card">
         <div class="card-head">
           <span class="badge" id="book-badge">—</span>
-          <div class="card-actions">
-            <div class="reading-primary">
-              <button type="button" class="btn" id="btn-listen" title="Read passage aloud (L)" aria-pressed="false" disabled>Listen</button>
-              <button type="button" class="btn" id="btn-focus" aria-pressed="false">Focus</button>
-              <span class="line-spacing" role="group" aria-label="Line spacing">
-                <button type="button" class="btn" id="btn-leading-tighter" title="Tighter line spacing">Line −</button>
-                <button type="button" class="btn" id="btn-leading-looser" title="Looser line spacing">Line +</button>
-              </span>
-              <button type="button" class="btn btn-primary" id="btn-complete" aria-pressed="false">
-                <span aria-hidden="true">○</span> Mark complete
-              </button>
-            </div>
-            <details id="reading-tools" class="reading-tools" open>
-              <summary>More tools</summary>
-              <div class="reading-secondary">
-                <button type="button" class="btn" id="btn-copy" title="Copy passage (Y)" disabled>Copy</button>
-                <button type="button" class="btn" id="btn-share" title="Share today's reading">Share</button>
-                <label class="share-note" for="include-share-note">
-                  <input type="checkbox" id="include-share-note" />
-                  Include my note
-                </label>
-                <span class="type-size" role="group" aria-label="Passage text size">
-                  <button type="button" class="btn" id="btn-type-smaller" title="Smaller text (−)">A−</button>
-                  <button type="button" class="btn" id="btn-type-larger" title="Larger text (+)">A+</button>
-                </span>
+          <div class="reading-primary">
+            <button type="button" class="btn icon-button" id="btn-listen" aria-pressed="false" disabled aria-label="Listen" data-tip="Listen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3l14 9-14 9z"/></svg></button>
+            <button type="button" class="btn icon-button btn-primary" id="btn-complete" aria-pressed="false" aria-label="Mark complete" data-tip="Mark complete"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg></button>
+            <div class="more-menu" id="more-menu">
+              <button type="button" class="btn icon-button more-menu-btn" id="btn-more" aria-label="More options" aria-haspopup="menu" aria-expanded="false" aria-controls="more-menu-list" data-tip="More options"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              <div id="more-menu-list" role="menu" hidden>
+                <div class="menu-section menu-reading-only">
+                  <button type="button" class="menu-item" role="menuitem" id="btn-focus" aria-pressed="false" aria-label="Focus" data-menu-stay><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg><span class="menu-item-label">Focus</span></button>
+                </div>
+                <div class="menu-section menu-reading-only">
+                  <p class="menu-label">Text &amp; share tools</p>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-copy" disabled aria-label="Copy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2zM4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg><span class="menu-item-label">Copy</span></button>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-share" aria-label="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg><span class="menu-item-label">Share</span></button>
+                  <button type="button" class="menu-item" role="menuitem" id="include-share-note" aria-pressed="false" aria-label="Include my note: off" data-menu-stay><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/></svg><span class="menu-item-label">Include my note: off</span></button>
+                  <div class="menu-stepper" role="group" aria-label="Passage text size">
+                    <span class="menu-stepper-label">Text size</span>
+                    <button type="button" class="menu-step" role="menuitem" id="btn-type-smaller" aria-label="Smaller text" data-menu-stay>−</button>
+                    <button type="button" class="menu-step" role="menuitem" id="btn-type-larger" aria-label="Larger text" data-menu-stay>+</button>
+                  </div>
+                  <div class="menu-stepper" role="group" aria-label="Line spacing">
+                    <span class="menu-stepper-label">Line spacing</span>
+                    <button type="button" class="menu-step" role="menuitem" id="btn-leading-tighter" aria-label="Tighter line spacing" data-menu-stay>−</button>
+                    <button type="button" class="menu-step" role="menuitem" id="btn-leading-looser" aria-label="Looser line spacing" data-menu-stay>+</button>
+                  </div>
+                </div>
+                <div class="menu-section menu-reading-only">
+                  <p class="menu-label">Offline reading</p>
+                  <p id="passage-availability" class="muted"></p>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-save-reading" hidden aria-label="Save offline"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span class="menu-item-label">Save offline</span></button>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-remove-reading" hidden aria-label="Remove saved text"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg><span class="menu-item-label">Remove saved text</span></button>
+                </div>
+                <div class="menu-section">
+                  <p class="menu-label">Print &amp; calendar</p>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-checklist" title="Prints an empty checkbox, the date, and the reference for each weekday in these four weeks. Journal notes and Scripture text stay off the page.">Print checklist</button>
+                  <p id="checklist-range" class="muted"></p>
+                  <button type="button" class="menu-item" role="menuitem" id="btn-calendar" title="References and reading links only. Import the file into your calendar. This snapshot does not synchronize, and importing the same dates again may create duplicates. In Google Calendar on a computer, open Settings → Import &amp; export → Import.">Download calendar (.ics)</button>
+                  <p id="calendar-range" class="muted"></p>
+                </div>
               </div>
-            </details>
+            </div>
           </div>
         </div>
+        <p id="checklist-status" class="muted" role="status" hidden></p>
+        <p id="calendar-status" class="muted" role="status" hidden></p>
         <p id="action-status" class="muted" role="status" hidden></p>
         <h2 class="passage-ref" id="passage-ref">—</h2>
         <div class="meta-row focus-fold">
@@ -144,11 +159,6 @@
         </div>
         <p id="yesterday-line" class="muted focus-fold" hidden></p>
         <p class="focus-box focus-fold" id="book-focus"></p>
-        <p id="passage-availability" class="muted"></p>
-        <div class="reading-save">
-          <button type="button" class="btn" id="btn-save-reading" hidden>Save offline</button>
-          <button type="button" class="btn" id="btn-remove-reading" hidden>Remove saved text</button>
-        </div>
         <p id="passage-status" class="status" hidden>Loading Scripture…</p>
         <div id="passage-body" class="passage-body" aria-live="polite" aria-busy="true" inert></div>
       </article>
@@ -156,7 +166,7 @@
       <div id="ref-popover" class="ref-popover" hidden role="dialog" aria-labelledby="ref-popover-title">
         <div class="ref-popover-head">
           <p id="ref-popover-title" class="ref-popover-title"></p>
-          <button type="button" class="btn" id="ref-popover-close" aria-label="Close reference">Close</button>
+          <button type="button" class="btn icon-button" id="ref-popover-close" aria-label="Close reference" data-tip="Close reference"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </div>
         <div id="ref-popover-body" class="ref-popover-body" tabindex="0" aria-label="Reference text"></div>
       </div>
@@ -189,16 +199,6 @@
       <summary id="weekly-catch-up-summary">This week’s unfinished readings</summary>
       <p class="muted">Choose a reading to catch up. Each day keeps its own journal and completion.</p>
       <div id="weekly-catch-up-list" class="journal-backup" role="group" aria-label="Unfinished readings this week"></div>
-    </details>
-
-    <details id="reading-calendar" class="card" hidden>
-      <summary>Add readings to your calendar</summary>
-      <p id="calendar-range" class="muted"></p>
-      <button type="button" class="btn" id="btn-calendar">Download four weeks (.ics)</button>
-      <p class="muted">The file includes references and reading links. Journal notes and Scripture text stay out of it.</p>
-      <p class="muted">Import the file into your calendar, then choose reminders there. This is a snapshot and does not synchronize. Importing the same dates again may create duplicates.</p>
-      <p class="muted">In Google Calendar on a computer, open Settings → Import &amp; export → Import.</p>
-      <p id="calendar-status" class="muted" role="status" hidden></p>
     </details>
 
     <details id="journal-history" class="card" hidden>
@@ -262,6 +262,8 @@
     <span>Not affiliated with any Bible publisher · Translations via public APIs</span>
   </footer>
 
+  <section id="reading-checklist-print" class="checklist-print" aria-label="Printable reading checklist"></section>
+
   <style>
     .sr-only {
       position: absolute;
@@ -284,10 +286,12 @@
   <script src="js/reading-actions.js"></script>
   <script src="js/journal-backup.js"></script>
   <script src="js/reading-calendar.js"></script>
+  <script src="js/reading-checklist.js"></script>
   <script src="js/ref-popover.js"></script>
   <script src="js/journal-history.js"></script>
   <script src="js/offline-readings.js"></script>
   <script src="js/today-rollover.js"></script>
+  <script src="js/more-menu.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
