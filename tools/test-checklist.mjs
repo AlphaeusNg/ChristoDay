@@ -92,4 +92,53 @@ assert.equal(clean.count, 20);
 for (const invalid of ["2026-02-30", "bad", "9999-12-04"]) assert.throws(() => checklist.build(plan, invalid));
 assert.throws(() => checklist.build(null, "2026-06-15"));
 
+const checklistSource = readFileSync(join(root, "js/reading-checklist.js"), "utf8");
+assert.equal(checklistSource.includes("☐"), false);
+assert.match(checklistSource, /beforeprint/);
+const css = readFileSync(join(root, "css/style.css"), "utf8");
+assert.match(css, /\.checklist-box\s*\{[^}]*display:\s*inline-block/);
+assert.match(css, /\.checklist-box\s*\{[^}]*height:\s*1\.1em/);
+
+function makeNode() {
+  return {
+    className: "",
+    textContent: "",
+    hidden: false,
+    disabled: false,
+    children: [],
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+    replaceChildren() { this.children = []; },
+    append(...items) { this.children.push(...items); },
+  };
+}
+const uiNodes = {};
+for (const id of ["reading-checklist-print", "checklist-range", "btn-checklist", "checklist-status"]) {
+  uiNodes[id] = makeNode();
+}
+sandbox.document = { createElement: makeNode };
+const view = checklist.create({
+  $: (selector) => uiNodes[selector.slice(1)] || null,
+  getPlan: () => plan,
+  getCurrentYmd: () => "2026-06-15",
+});
+view.refresh();
+function walk(node, visit) {
+  visit(node);
+  for (const child of node.children || []) walk(child, visit);
+}
+const boxes = [];
+const text = [];
+walk(uiNodes["reading-checklist-print"], (node) => {
+  text.push(node.textContent);
+  if (node.className === "checklist-box") boxes.push(node);
+});
+assert.equal(boxes.length, 20);
+for (const box of boxes) {
+  assert.equal(box.textContent, "");
+  assert.equal(box.attributes["aria-hidden"], "true");
+}
+assert.equal(text.join("\n").includes("☐"), false);
+assert.equal(uiNodes["checklist-range"].textContent.includes("2026-06-15 to 2026-07-12"), true);
+
 console.log("test-checklist.mjs: epoch and ordinary windows, Jude rotation, month/year boundary, weekends excluded, 20 reference-only entries passed");

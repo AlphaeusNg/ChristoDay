@@ -58,7 +58,6 @@
         const box = document.createElement("span");
         box.className = "checklist-box";
         box.setAttribute("aria-hidden", "true");
-        box.textContent = "☐";
         const text = document.createElement("span");
         text.className = "checklist-entry";
         text.textContent = `${entry.date} ${entry.weekday} ${entry.reference}`;
@@ -68,8 +67,6 @@
       section.append(title, rangeText, list);
     }
     function refresh() {
-      const card = $("#reading-checklist");
-      if (card) card.hidden = false;
       try {
         const result = build(deps.getPlan(), deps.getCurrentYmd());
         render(result);
@@ -91,6 +88,13 @@
     }
     function bind() {
       $("#btn-checklist")?.addEventListener("click", printChecklist);
+      window.addEventListener("beforeprint", () => {
+        try {
+          render(build(deps.getPlan(), deps.getCurrentYmd()));
+        } catch {
+          /* Keep the checklist from the last successful refresh. */
+        }
+      });
     }
     return { bind, refresh };
   }

@@ -1093,13 +1093,73 @@ test("keeps journal and reading usable when access to device storage is denied",
 });
 
 
+async function openMoreMenu(page) {
+  const more = page.locator("#btn-more");
+  if ((await more.getAttribute("aria-expanded")) !== "true") await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#btn-checklist")).toBeVisible();
+  await expect(page.locator("#btn-calendar")).toBeVisible();
+}
+
+test("opens checklist and calendar actions from the overflow menu", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.print = () => {
+      window.__checklistPrinted = true;
+      window.__printMenuExpanded = document.getElementById("btn-more")?.getAttribute("aria-expanded");
+    };
+  });
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
+  const more = page.locator("#btn-more");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("#more-menu-list")).toBeHidden();
+  await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#btn-checklist")).toBeVisible();
+  await expect(page.locator("#btn-calendar")).toBeVisible();
+  await expect(page.locator("#btn-checklist")).toHaveText("Print checklist");
+  await expect(page.locator("#btn-calendar")).toHaveText("Download calendar (.ics)");
+  const menuBox = await page.locator("#more-menu-list").evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: window.innerWidth };
+  });
+  expect(menuBox.left).toBeGreaterThanOrEqual(-1);
+  expect(menuBox.right).toBeLessThanOrEqual(menuBox.width + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#btn-checklist")).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#btn-calendar")).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator("#btn-checklist")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(more).toBeFocused();
+  await more.click();
+  await page.locator("#stat-streak").click();
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await more.click();
+  await page.locator("#btn-checklist").click();
+  await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
+  expect(await page.evaluate(() => window.__printMenuExpanded)).toBe("false");
+  await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  const downloadPromise = page.waitForEvent("download");
+  await more.click();
+  await page.locator("#btn-calendar").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("christoday-readings-2026-06-15-to-2026-07-12.ics");
+  await expect(page.locator("#calendar-status")).toContainText("Downloaded 20 reading dates");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+});
+
 test("downloads four weeks of references without private notes or passage text", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   await page.locator("#journal").fill("PRIVATE CALENDAR SENTINEL");
   await page.locator("#btn-complete").click();
   await page.locator("#include-share-note").check();
-  await page.locator("#reading-calendar summary").click();
+  await openMoreMenu(page);
   await expect(page.locator("#calendar-range")).toContainText("2026-06-15 to 2026-07-12");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const downloadPromise = page.waitForEvent("download");
@@ -1118,6 +1178,7 @@ test("downloads four weeks of references without private notes or passage text",
   await expect(page.locator("#journal")).toHaveValue("PRIVATE CALENDAR SENTINEL");
   await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
   await page.locator("#btn-next").click();
+  await openMoreMenu(page);
   await expect(page.locator("#calendar-range")).toContainText("2026-06-16 to 2026-07-13");
   await expect(page.locator("#calendar-status")).toBeHidden();
 });
@@ -1125,7 +1186,7 @@ test("downloads four weeks of references without private notes or passage text",
 for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
   test(`downloads calendar from rest or pre-start day ${date}`, async ({ page }) => {
     await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
-    await page.locator("#reading-calendar summary").click();
+    await openMoreMenu(page);
     await expect(page.locator("#calendar-range")).toContainText(`${start} to ${end}`);
     const downloadPromise = page.waitForEvent("download");
     await page.locator("#btn-calendar").click();
@@ -1138,27 +1199,38 @@ for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["
 }
 
 test("prints a four-week reference checklist without journal or passage text", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.print = () => { window.__checklistPrinted = true; };
+  });
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-body")).toContainText("book 65 chapter");
   await page.locator("#journal").fill("PRIVATE CHECKLIST SENTINEL");
   await page.locator("#btn-complete").click();
-  await page.locator("#reading-checklist summary").click();
+  await openMoreMenu(page);
   await expect(page.locator("#checklist-range")).toContainText("2026-06-15 to 2026-07-12");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.evaluate(() => { window.print = () => { window.__checklistPrinted = true; }; });
   await page.locator("#btn-checklist").click();
   await expect.poll(() => page.evaluate(() => window.__checklistPrinted)).toBe(true);
   await page.emulateMedia({ media: "print" });
   const rows = page.locator("#reading-checklist-print .checklist-row");
   await expect(rows).toHaveCount(20);
-  await expect(rows.first()).toContainText("☐");
+  const box = rows.first().locator(".checklist-box");
+  await expect(box).toHaveText("");
+  const boxStyle = await box.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { text: el.textContent, border: parseFloat(style.borderTopWidth), height: parseFloat(style.height) };
+  });
+  expect(boxStyle.text).toBe("");
+  expect(boxStyle.border).toBeGreaterThan(0);
+  expect(boxStyle.height).toBeGreaterThan(0);
   await expect(rows.first()).toContainText("2026-06-15");
   await expect(rows.first()).toContainText("Monday");
   await expect(rows.first()).toContainText("Jude 1:1-25");
   await expect(page.locator("#reading-checklist-print")).toContainText("Matthew 1:1-17");
   const printed = await page.locator("#reading-checklist-print").innerText();
   expect(printed).not.toContain("PRIVATE CHECKLIST SENTINEL");
+  expect(printed).not.toContain("☐");
   expect(printed).not.toContain("book 65 chapter");
   expect(printed).not.toContain("Where does this passage");
   expect(printed).not.toContain("2026-06-20");
@@ -1167,7 +1239,7 @@ test("prints a four-week reference checklist without journal or passage text", a
   await expect(page.locator("#journal")).toBeHidden();
   await expect(page.locator("#passage-body")).toBeHidden();
   await expect(page.locator("#questions")).toBeHidden();
-  await expect(page.locator("#reading-calendar")).toBeHidden();
+  await expect(page.locator(".more-menu")).toBeHidden();
   const ink = await rows.first().evaluate((el) => {
     const style = getComputedStyle(el);
     const sheet = getComputedStyle(el.closest("#reading-checklist-print"));
@@ -1184,10 +1256,14 @@ test("prints a four-week reference checklist without journal or passage text", a
   expect(ink.breakInside).toBe("avoid");
 
   await page.emulateMedia({ media: "screen" });
+  await page.evaluate(() => {
+    document.getElementById("reading-checklist-print").replaceChildren();
+    window.dispatchEvent(new Event("beforeprint"));
+  });
+  await expect(page.locator("#reading-checklist-print .checklist-row")).toHaveCount(20);
   for (const [date, start, end] of [["2026-06-20", "2026-06-20", "2026-07-17"], ["2026-06-01", "2026-06-15", "2026-07-12"]]) {
     await page.goto(`./?d=${date}&tr=WEB`, { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => { window.print = () => { window.__checklistPrinted = true; }; });
-    await page.locator("#reading-checklist summary").click();
+    await openMoreMenu(page);
     await expect(page.locator("#checklist-range")).toContainText(`${start} to ${end}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator("#btn-checklist").click();
@@ -1206,7 +1282,7 @@ test("prints a four-week reference checklist without journal or passage text", a
 
 test("reports a calendar download failure without affecting the reading", async ({ page }) => {
   await page.goto("./?d=2026-06-16", { waitUntil: "domcontentloaded" });
-  await page.locator("#reading-calendar summary").click();
+  await openMoreMenu(page);
   await page.evaluate(() => { URL.createObjectURL = () => { throw new Error("blocked download"); }; });
   await page.locator("#btn-calendar").click();
   await expect(page.locator("#calendar-status")).toContainText("Could not download a calendar");
@@ -1229,7 +1305,8 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await page.evaluate((scale) => {
       document.documentElement.style.fontSize = `${scale * 100}%`;
       document.documentElement.style.scrollBehavior = "auto";
-      for (const id of ["reading-calendar", "reading-checklist", "journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+      for (const id of ["journal-history", "weekly-catch-up"]) document.getElementById(id).open = true;
+      document.getElementById("btn-more").click();
     }, textScale);
     await page.locator("#journal").fill("A long journal entry: " + "averylongunbrokenword".repeat(20));
     const geometry = await page.evaluate(() => {
@@ -1253,6 +1330,9 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     expect(geometry.outside).toEqual([]);
     expect(geometry.undersized).toEqual([]);
     expect(geometry.searchFont).toBeGreaterThanOrEqual(13 * textScale);
+    if ((await page.locator("#btn-more").getAttribute("aria-expanded")) === "true") {
+      await page.locator("#btn-more").click();
+    }
 
     await page.locator("#passage-body .fn-mark").click();
     const popover = page.locator("#ref-popover");
@@ -1279,3 +1359,25 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await expect(popover).toBeHidden();
   });
 }
+
+test("more options icon button shows its tooltip on hover and focus", async ({ page }) => {
+  await page.goto("./?d=2026-06-15");
+  const more = page.locator("#btn-more");
+  await expect(more).toHaveAttribute("aria-label", "More options");
+  await expect(more).toHaveAttribute("data-tooltip", "More options");
+  const tipOpacity = () => more.evaluate((el) => getComputedStyle(el, "::after").opacity);
+  await page.mouse.move(0, 0);
+  await expect.poll(tipOpacity).toBe("0");
+  await more.hover();
+  await expect.poll(tipOpacity).toBe("1");
+  await page.mouse.move(0, 0);
+  await expect.poll(tipOpacity).toBe("0");
+  await page.locator("#btn-next").focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await more.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(more).toBeFocused();
+  await expect.poll(tipOpacity).toBe("1");
+});

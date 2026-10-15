@@ -71,6 +71,7 @@ const requiredRuntime = [
   "./js/journal-backup.js",
   "./js/reading-calendar.js",
   "./js/reading-checklist.js",
+  "./js/more-menu.js",
   "./js/ref-popover.js",
   "./js/journal-history.js",
   "./js/offline-readings.js",
@@ -149,6 +150,23 @@ assert.match(index, /id="btn-focus"/, "reading focus mode can be toggled");
 assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened");
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
 assert.match(index, /id="reading-tools"/, "secondary reading tools can fold");
+assert.match(index, /id="btn-more"[^>]*aria-haspopup="menu"/, "reader header has an overflow menu");
+assert.match(index, /id="more-menu-list"[^>]*role="menu"/, "overflow menu lists checklist and calendar actions");
+assert.doesNotMatch(index, /id="reading-checklist"/, "checklist is not a separate card");
+assert.doesNotMatch(index, /id="reading-calendar"/, "calendar download is not a separate card");
+assert.match(css, /\.more-menu\s*\{[^}]*position:\s*relative/, "overflow menu anchors its dropdown");
+assert.match(css, /#more-menu-list\s*\{[^}]*position:\s*absolute/, "overflow menu drops down from the reader header");
+assert.match(css, /@media print[\s\S]*\.more-menu\s*\{[^}]*display:\s*none/, "overflow menu stays off the printed checklist");
+assert.doesNotMatch(
+  readFileSync(join(root, "js/reading-checklist.js"), "utf8"),
+  /#reading-checklist(?!-)/,
+  "checklist refresh must not toggle a removed card"
+);
+assert.doesNotMatch(
+  readFileSync(join(root, "js/reading-calendar.js"), "utf8"),
+  /#reading-calendar/,
+  "calendar refresh must not toggle a removed card"
+);
 assert.match(css, /html\[data-reading-focus="on"\] \.passage-body/, "focus mode keeps a comfortable passage measure");
 assert.match(css, /max-width:\s*65ch/, "focus mode limits line width");
 assert.match(css, /--passage-leading/, "line spacing uses the passage leading token");
@@ -159,6 +177,7 @@ for (const script of [
   "js/journal-backup.js",
   "js/reading-calendar.js",
   "js/reading-checklist.js",
+  "js/more-menu.js",
   "js/ref-popover.js",
   "js/journal-history.js",
   "js/offline-readings.js",

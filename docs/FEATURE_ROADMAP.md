@@ -58,24 +58,26 @@ the same dates again may create duplicates.
 
 1. Optional user-selected reminder time, only after testing timed timezone events
    and calendar import behavior; do not imply notifications from this site.
-2. Printable reference checklist for readers who plan on paper. Implemented in
-   version `2026.10.15.2`. Scope and defaults are below.
+2. Printable reference checklist for readers who plan on paper. Open it from
+   the ⋯ menu in the reader header (version `2026.10.15.2`). Scope and defaults
+   are below.
 3. Longer-range preview with an explicit date range, preserving the deterministic
    schedule and compact phone reader.
 
 ## Printable checklist — scope and defaults
 
-Implemented. A collapsed card beside the calendar card prints a reference-only
-checklist for the same window as the `.ics` export. The window is 28 calendar
-days beginning at the displayed date. When that date is before the plan starts,
-the window begins at the 2026-06-15 epoch. Weekends stay off the page. Each row
-is an empty checkbox, the date, the weekday, and the book reference from the
-existing Asia/Singapore schedule, including the Jude rotation.
+Implemented. The ⋯ menu in the reader header prints a reference-only
+checklist for the same window as the `.ics` export. That menu also downloads
+the calendar file. The window is 28 calendar days beginning at the displayed
+date. When that date is before the plan starts, the window begins at the
+2026-06-15 epoch. Weekends stay off the page. Each row is an empty checkbox,
+the date, the weekday, and the book reference from the existing Asia/Singapore
+schedule, including the Jude rotation. The checkbox is the CSS box only.
 
 Defaults: four weeks, weekday readings only, and references only. The list has
 no passage text, journal notes, reflection answers, or completion state. Print
 styles show that list alone, in black on white, with no page background, and
-keep each row together. The checklist card is available on weekday, weekend,
+keep each row together. The ⋯ menu is available on weekday, weekend,
 and pre-start views, including phone width, and its script is in the offline shell.
 
 ## Limits

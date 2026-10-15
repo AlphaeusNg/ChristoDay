@@ -988,13 +988,112 @@ textarea:focus {
 
 .checklist-box {
   flex: 0 0 auto;
+  display: inline-block;
   width: 1.1em;
+  height: 1.1em;
   border: 1px solid currentColor;
   text-align: center;
   line-height: 1.15;
 }
 
+.more-menu {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.75rem;
+}
+
+.more-menu-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.2rem 0.65rem;
+  line-height: 1;
+  position: relative;
+}
+
+.more-menu-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.35rem);
+  z-index: 31;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  background: var(--text);
+  color: var(--panel-solid);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.more-menu-btn[data-tooltip]:hover::after,
+.more-menu-btn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+}
+
+.more-menu-btn[aria-expanded="true"]::after {
+  opacity: 0 !important;
+}
+
+#more-menu-list {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 30;
+  width: min(18rem, 100%);
+  min-width: min(15rem, 100%);
+  max-width: 100%;
+  padding: 0.4rem;
+  background: var(--panel-solid);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+#more-menu-list[hidden] {
+  display: none;
+}
+
+#more-menu-list [role="menuitem"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.15rem 0;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#more-menu-list .muted {
+  margin: 0.15rem 0.45rem 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.reader-head > #checklist-status,
+.reader-head > #calendar-status {
+  margin: 0.15rem 0 0.45rem;
+}
+
+@media (max-width: 560px) {
+  .more-menu {
+    grid-column: 1 / -1;
+    margin: 0.15rem 0 0;
+  }
+  .reader-head > #checklist-status,
+  .reader-head > #calendar-status {
+    grid-column: 1 / -1;
+  }
+}
+
 @media print {
+  .more-menu {
+    display: none !important;
+  }
   html {
     color-scheme: light;
   }
