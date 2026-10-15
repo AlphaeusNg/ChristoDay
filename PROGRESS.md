@@ -3,7 +3,7 @@
 This file tracks current status, prioritized opportunities, verification, and
 completed autonomous improvement cycles.
 
-Last updated: 2026-10-15 (overflow menu for checklist and calendar)
+Last updated: 2026-10-15 (shared 40px icon button)
 
 ## Current state
 
@@ -69,10 +69,11 @@ Last updated: 2026-10-15 (overflow menu for checklist and calendar)
 
 ## Latest cycle: move checklist and calendar into an overflow menu
 
-Print checklist and calendar download no longer have their own cards. A ⋯ menu
+Print checklist and calendar download no longer have their own cards. A more-options menu
 inside the visible reading, weekend, or pre-start card holds Print checklist and
-Download calendar (.ics). Its reusable 32px icon button has 8px corners; status
-messages follow it between cards, and the dropdown fits phone widths. The
+Download calendar (.ics). The shared icon button is 40×40 with 12px corners, a centred
+24px three-dot icon, and a transparent 48px tap target. Narrow layouts do not stretch it.
+Status messages follow it between cards, and the dropdown fits phone widths. The
 button toggles the menu and `aria-expanded`. Escape closes it and returns focus
 to the button. A click outside closes it. Arrow keys move through the items.
 Choosing an item closes the menu, then runs that action. The checklist is
@@ -80,9 +81,11 @@ rendered when the day refreshes and again on `beforeprint`, so Ctrl/Cmd+P still
 prints it. The paper row uses one CSS checkbox; the extra ☐ glyph is gone.
 Version `2026.10.15.2`.
 
-Verification: the Node suites passed. All 47 Chromium journeys passed, including
-the ⋯ menu in all three day cards at 320px and 390px, Escape and outside-click close, print rows without the
-extra box glyph, a `beforeprint` rebuild, and calendar download from the menu.
+Verification: the Node suites passed. All 47 Chromium journeys passed, including the
+40×40 button (12px radius, 24px icon) in the reading, weekend, and pre-start
+cards at 1366px and 390px, the menu in all three cards at 320px and 390px,
+Escape and outside-click close, print rows without the extra box glyph, a
+`beforeprint` rebuild, and calendar download from the menu.
 
 ## Previous cycle: print a four-week reading checklist
 

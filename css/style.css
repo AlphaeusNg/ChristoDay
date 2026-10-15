@@ -17,6 +17,12 @@
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
   --radius: 14px;
   --shadow: 0 24px 60px rgba(2, 6, 23, 0.45);
+  --icon-btn-size: 40px;
+  --icon-btn-radius: 12px;
+  --icon-size: 24px;
+  --icon-stroke: 2;
+  --icon-btn-target: 48px;
+  --icon-btn-gap: 8px;
 }
 
 *,
@@ -945,6 +951,16 @@ textarea:focus {
     padding: 0.4rem 0.62rem;
     font-size: 0.82rem;
   }
+  .card-actions .icon-btn,
+  .toolbar .icon-btn,
+  .reading-primary .icon-btn {
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+    min-width: var(--icon-btn-size);
+    min-height: var(--icon-btn-size);
+    padding: 0;
+    border-radius: var(--icon-btn-radius);
+  }
   html[data-passage-size="sm"] {
     --passage-size: 0.98rem;
   }
@@ -1015,16 +1031,28 @@ textarea:focus {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  border-radius: 8px;
+  width: var(--icon-btn-size);
+  height: var(--icon-btn-size);
+  min-width: var(--icon-btn-size);
+  min-height: var(--icon-btn-size);
+  border-radius: var(--icon-btn-radius);
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   line-height: 1;
+}
+
+.icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: calc((var(--icon-btn-size) - var(--icon-btn-target)) / 2);
+}
+
+.icon-btn svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 .more-menu-btn {

@@ -1105,19 +1105,28 @@ test("keeps the overflow menu inside each visible day card", async ({ page }) =>
   await page.addInitScript(() => { window.print = () => { window.__printed = true; }; });
   await page.goto("./?d=2026-06-15&tr=ESV", { waitUntil: "domcontentloaded" });
   const more = page.locator("#btn-more");
-  for (const width of [320, 390]) {
+  const dayCards = [
+    ["2026-06-15", "#reading-panel .card"],
+    ["2026-06-20", "#weekend-panel"],
+    ["2026-06-01", "#before-panel"],
+  ];
+  for (const width of [1366, 390]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const [date, card] of [
-      ["2026-06-15", "#reading-panel .card"],
-      ["2026-06-20", "#weekend-panel"],
-      ["2026-06-01", "#before-panel"],
-    ]) {
+    for (const [date, card] of dayCards) {
       await page.locator("#date-pick").fill(date);
       await expect(page.locator(`${card} #btn-more`)).toBeVisible();
       expect(await more.evaluate((el) => {
         const rect = el.getBoundingClientRect();
-        return [rect.width, rect.height, getComputedStyle(el).borderRadius];
-      })).toEqual([32, 32, "8px"]);
+        const svg = el.querySelector("svg").getBoundingClientRect();
+        return [rect.width, rect.height, getComputedStyle(el).borderRadius, svg.width, svg.height];
+      })).toEqual([40, 40, "12px", 24, 24]);
+    }
+  }
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const [date, card] of dayCards) {
+      await page.locator("#date-pick").fill(date);
+      await expect(page.locator(`${card} #btn-more`)).toBeVisible();
       await expect(page.locator("#more-menu")).toHaveCount(1);
       await openMoreMenu(page);
       const box = await page.locator("#more-menu-list").boundingBox();

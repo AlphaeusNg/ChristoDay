@@ -151,7 +151,12 @@ assert.match(index, /id="btn-leading-tighter"/, "line spacing can be tightened")
 assert.match(index, /id="btn-leading-looser"/, "line spacing can be loosened");
 assert.match(index, /id="reading-tools"/, "secondary reading tools can fold");
 assert.match(index, /class="btn icon-btn more-menu-btn"/, "overflow button uses reusable icon styling");
-assert.match(css, /\.icon-btn\s*\{[^}]*width:\s*32px;[^}]*height:\s*32px;[^}]*border-radius:\s*8px;[^}]*padding:\s*0;/, "icon buttons are 32px squares with 8px corners");
+assert.match(css, /--icon-btn-size:\s*40px;\s*--icon-btn-radius:\s*12px;\s*--icon-size:\s*24px;\s*--icon-stroke:\s*2;\s*--icon-btn-target:\s*48px;\s*--icon-btn-gap:\s*8px;/, "shared icon-button tokens");
+assert.match(css, /\.icon-btn\s*\{[^}]*width:\s*var\(--icon-btn-size\);[^}]*height:\s*var\(--icon-btn-size\);[^}]*min-width:\s*var\(--icon-btn-size\);[^}]*min-height:\s*var\(--icon-btn-size\);[^}]*border-radius:\s*var\(--icon-btn-radius\);[^}]*padding:\s*0;/, "icon buttons are 40px squares with 12px corners");
+assert.match(css, /\.icon-btn svg\s*\{[^}]*width:\s*var\(--icon-size\);[^}]*height:\s*var\(--icon-size\);/, "icon button glyphs are 24px");
+assert.match(css, /\.card-actions \.icon-btn\s*,[\s\S]*?min-height:\s*var\(--icon-btn-size\);[^}]*padding:\s*0;/, "narrow card actions do not inflate icon buttons");
+assert.match(index, /id="btn-more"[^>]*><svg class="icon"[^>]*viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"[^>]*>(<circle [^>]*\/>){3}<\/svg>/, "more button uses a Lucide more-horizontal SVG");
+assert.doesNotMatch(index, /⋯|☐/, "no unicode glyph icons");
 assert.match(index, /class="card-head">\s*<div class="more-menu"/, "overflow starts inside the reading card header");
 assert.match(readFileSync(join(root, "js/more-menu.js"), "utf8"), /attributeFilter: \["hidden"\]/, "overflow follows visible day panels");
 assert.match(index, /id="btn-more"[^>]*aria-haspopup="menu"/, "day card has an overflow menu");
