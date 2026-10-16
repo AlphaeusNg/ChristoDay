@@ -1,7 +1,3 @@
-## 2026-10-16 — Asset freshness and translation availability
-
-Version `2026.10.16.2` bypasses HTTP cache during worker installation and shell refresh, versions CSS/JS URLs, and gives icon SVGs standalone presentation attributes. WEB is the default; saved NIV preferences migrate to WEB. Invalid chapter rows and provider notices are rejected, with a translation-switch control. Regression coverage checks fresh worker requests, SVG visibility at 1000px, preference migration, and notice recovery.
-
 # ChristoDay Continuous Improvement Progress
 
 This file tracks current status, prioritized opportunities, verification, and
@@ -49,13 +45,13 @@ Last updated: 2026-10-15 (reading tools in the overflow menu)
   the visible reference plus passage text; Listen reads it aloud and stops on a
   second press or day change; Share uses the Web Share API when present and
   otherwise copies date + reference + URL. `?d=YYYY-MM-DD` and optional
-  `?tr=WEB|ESV|NKJV` open that day/translation; invalid dates fall back to
+  `?tr=NIV|ESV|NKJV|WEB` open that day/translation; invalid dates fall back to
   today; date and translation changes `replaceState` so a copied URL matches the
   screen. Passage size persists on-device.
 - Journal history filters by date and book and searches note text on device only.
   Selecting a result opens that reading and its note. Nothing in the search is uploaded.
 - WEB passages can be saved explicitly for offline use, up to 30 at a time, and removed
-  in one step. ESV and NKJV text is not stored; those days stay reference-only.
+  in one step. NIV, ESV, and NKJV text is not stored; those days stay reference-only.
   Availability is shown per date and translation. For WEB, that line also reports how
   many of the 30 slots are used and lists the stored dates. Removing a reading frees
   its slot on the next paint. Saved WEB text survives reload.
@@ -180,7 +176,7 @@ failed WEB-save feedback, and installed-worker offline reload. Version
 
 ## Previous cycle: show which offline reading slots are used
 
-WEB availability keeps its sentence and appends `N of 30 offline slots used`, plus the stored dates when any slot is in use. ESV and NKJV stay on the refusal text. Save and remove update the count on the next paint. Version `2026.10.05.1`.
+WEB availability keeps its sentence and appends `N of 30 offline slots used`, plus the stored dates when any slot is in use. NIV, ESV, and NKJV stay on the refusal text. Save and remove update the count on the next paint. Version `2026.10.05.1`.
 
 ## Previous cycle: journal history, permitted offline text, and a calmer reader
 
@@ -195,7 +191,7 @@ Today label that stays honest after Singapore midnight.
 - Added on-device journal history with date range, book, and text filters. A result
   opens the original weekday and note. The search module does not call the network.
 - WEB (public domain) can be saved on device, bounded at 30 readings, and removed.
-  ESV and NKJV are refused and never written. Failed live loads use a saved
+  NIV, ESV, and NKJV are refused and never written. Failed live loads use a saved
   WEB copy when one exists, otherwise the existing reference-only fallback.
 - Moved copy/share/listen/type size, backup/restore, and reference popovers into
   `js/reading-actions.js`, `js/journal-backup.js`, and `js/ref-popover.js`.
@@ -214,7 +210,7 @@ Today label that stays honest after Singapore midnight.
   permission/bound/removal, Singapore rollover, site structure with 18 precache
   entries, service-worker behavior, and workflow policy 25 pass.
 - Chromium: 24 reading journeys and 2 installed-worker journeys pass, including
-  history search without upload, WEB save/reload/remove, ESV refusal, midnight
+  history search without upload, WEB save/reload/remove, NIV refusal, midnight
   label recovery, and focus mode at 390px and 320px.
 
 ## Previous cycle: keep retained Scripture safe while updating
@@ -392,7 +388,7 @@ narration and chapter comments never reached the page.
 | Priority | Opportunity | Category | Impact | Effort / risk | Evidence / dependencies | Status |
 |---|---|---|---|---|---|---|
 | — | Local journal history with date, book, and text search | Continuity / UX | Medium: older notes were only reachable by remembering the date | Small / low | On-device filter; a result opens the original reading and note; no upload | Completed in Cycle 52 |
-| — | Save a bounded offline copy only when terms allow it | Reliability / rights | Medium: copyrighted translations must stay reference-only offline | Small / low | WEB public-domain copies; ESV/NKJV refused; availability and removal | Completed in Cycle 52 |
+| — | Save a bounded offline copy only when terms allow it | Reliability / rights | Medium: copyrighted translations must stay reference-only offline | Small / low | WEB public-domain copies; NIV/ESV/NKJV refused; availability and removal | Completed in Cycle 52 |
 | — | Split reading actions, backup UI, and reference popovers | Maintainability | Medium: app.js owned speech, backup, and popovers together | Small / low | Modules keep speech generations, restore, and popovers; existing journeys pass | Completed in Cycle 52 |
 | — | Restrained reading-focus mode | UX | Medium: phone reading was full-width with every control open | Small / low | 65ch measure, line spacing, folded tools; nav, completion, and journal stay visible | Completed in Cycle 52 |
 | — | Recover stale Today labels across Singapore midnight | Correctness | Medium: a tab left open kept yesterday's Today chrome | Small / low | Friday-to-weekend and Sunday-to-Monday move only when the note is not being edited | Completed in Cycle 52 |
@@ -431,7 +427,7 @@ narration and chapter comments never reached the page.
 ### Cycle 53 — Offline slot count on WEB availability (2026-10-05)
 
 WEB availability appends `N of 30 offline slots used` and, when slots are in use,
-the stored dates in ascending order. ESV and NKJV keep the existing refusal
+the stored dates in ascending order. NIV, ESV, and NKJV keep the existing refusal
 and do not show a slot count. Removal updates the count without a reload.
 Version `2026.10.05.1`.
 
@@ -707,7 +703,7 @@ text, share today's reading, or reopen a specific date/translation from a URL.
    announces through a small `role="status"` (Y is optional).
 2. Add Share that prefers the Web Share API and otherwise copies
    `date · ref · URL`.
-3. Honor `?d=YYYY-MM-DD` and optional `?tr=WEB|ESV|NKJV` on boot. Invalid
+3. Honor `?d=YYYY-MM-DD` and optional `?tr=NIV|ESV|NKJV|WEB` on boot. Invalid
    dates fall back to today. `replaceState` when the user changes date or
    translation so a copied URL matches the screen.
 4. Keep `#date-pick`, `#translation`, `#reading-panel`, `#fatal`, and
@@ -922,7 +918,7 @@ tests remained green.
 
 **Changes**
 
-- Added a real Chromium journey that forces the WEB Matthew chapter boundary to
+- Added a real Chromium journey that forces the NIV Matthew chapter boundary to
   return a structurally invalid payload.
 - Verified the exact Matthew reference, visible failure explanation,
   reference-only body, and unavailable live-translation label.
@@ -1203,7 +1199,7 @@ state should preserve valid journal entries and safely default everything else.
 - Syntax checks passed for every `js/*.js` file and `sw.js`.
 - `git diff --check`: passed.
 - Valid completed journal data survives hydration; malformed `days` and corrupt
-  JSON yield a writable `{ translation: "WEB", days: {} }` state.
+  JSON yield a writable `{ translation: "NIV", days: {} }` state.
 
 **Scores (change-specific)**
 
@@ -1643,7 +1639,7 @@ persistence could regress together while every focused contract stayed green.
 1. Boot the fetched and validated plan in a real Chromium page without relying
    on third-party availability.
 2. Render a deterministic Matthew date, navigate to Mark, and overlap a slow
-   WEB fetch with a newer ESV request.
+   NIV fetch with a newer ESV request.
 3. Prove the newer passage stays visible and persisted after stale work settles,
    with page/console errors treated as failures.
 4. Lock exact dependencies and run the browser gate in CI after cheap suites.
@@ -1653,7 +1649,7 @@ persistence could regress together while every focused contract stayed green.
 - Added exact Playwright `1.62.1` test metadata and lockfile plus a single-worker
   local-server Chromium configuration.
 - Added a browser journey that boots the live DOM, selects 2026-06-16, verifies
-  Matthew 1:1-17, navigates to Mark 1:1-8, and switches from a delayed WEB
+  Matthew 1:1-17, navigates to Mark 1:1-8, and switches from a delayed NIV
   response to ESV.
 - Asserted final passage text/status, saved global/day translation state, fatal
   visibility, and absence of page or console errors after the stale window.
@@ -1814,3 +1810,17 @@ Reading days keep Listen, Mark complete, and More options on one line with the b
 Tab and Shift+Tab close the day-card overflow menu before native traversal from its trigger. One-shot actions return focus to the trigger before hiding, so copy, calendar downloads and printing do not strand focus in hidden content. Added a real reading journey for both Tab directions and copy. The four-week checklist and rest-day menus remain available. Deployment stamp: 2026.10.16.1.
 
 Clipboard fallback now removes its temporary textarea in a finally block and restores focus even if the browser copy command throws. Validation: all eleven Node gates and all 53 Chromium journeys passed. The new journey deterministically exercises successful and failed clipboard fallback plus both Tab directions. JavaScript syntax and whitespace checks passed.
+
+
+## 2026-10-17 — Return reference-popover focus to its source
+
+Closing a reference popover returns focus from its controls to the original verse marker. Reading another reference inside the popover preserves that original trigger. Dismissal while focus is elsewhere does not steal it, and removed triggers are ignored. Version 2026.10.17.1.
+
+Validation: All eleven Node gates and all 53 Chromium journeys passed. Enlarged-text/phone journeys now verify focus returns after closing the reference popover.
+
+
+## 2026-10-17 — Integrate icon freshness and available translations (PR #13)
+
+Merged current main into the PR and reconciled deployment stamp and local asset URLs at 2026.10.17.2. Worker installation and shell refresh bypass the HTTP cache; inline icons retain explicit size and stroke attributes. WEB is the default, and saved NIV preferences migrate while retaining notes and completion. Provider notices and malformed chapter rows offer a translation switch. Saved WEB readings still open for empty, malformed and provider-notice responses; the PR’s initial bypass of this fallback was removed. Historical progress entries retain their original facts. Deploy instructions now pair version.js with local asset query stamps.
+
+Validation: all eleven Node gates, per-file JavaScript syntax, whitespace checks, and all 55 Chromium journeys passed, including the extended saved-WEB recovery cases and installed-worker offline reload. Direct provider checks confirmed WEB returns integer-numbered verse rows while NIV returns a notice.

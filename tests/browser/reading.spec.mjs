@@ -955,17 +955,22 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await openMoreMenu(page);
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
   await expect(page.locator("#btn-save-reading")).toBeHidden();
+  let unavailablePayload = [];
   await page.route(/^https:\/\/bolls\.life\//, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([]),
+      body: JSON.stringify(unavailablePayload),
     });
   });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
-  await expect(page.locator("#passage-availability")).toContainText("saved on this device");
-  await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
+  for (const payload of [[], { notice: "unavailable" }, [{ verse: 1, text: "Biblica, Inc. has prohibited me" }]]) {
+    unavailablePayload = payload;
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
+    await expect(page.locator("#passage-body")).not.toContainText("Biblica");
+    await expect(page.locator("#passage-availability")).toContainText("saved on this device");
+    await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
+  }
   await openMoreMenu(page);
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
@@ -1453,6 +1458,7 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await expect.poll(() => page.locator("#ref-popover-body").evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
     await page.locator("#ref-popover-close").click();
     await expect(popover).toBeHidden();
+    await expect(page.locator("#passage-body .fn-mark")).toBeFocused();
   });
 }
 

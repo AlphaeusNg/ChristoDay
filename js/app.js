@@ -801,7 +801,7 @@
       prefetchNextReading(reading, tr, seq);
     } catch (err) {
       if (controller.signal.aborted || seq !== renderSeq) return;
-      if (err.code !== "TRANSLATION_NOTICE" && paintSavedPassage(reading, tr)) return;
+      if (paintSavedPassage(reading, tr)) return;
       status.hidden = false;
       if (err.code === "TRANSLATION_NOTICE") {
         status.textContent = "This translation isn't available right now. Try another translation.";

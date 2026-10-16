@@ -57,6 +57,7 @@ Playwright boots the real page with controlled Bible API responses, navigates fr
 ## Conventions
 
 - Zero-build; dark gold portfolio aesthetic
+- On deploy, bump `js/version.js` and every local CSS/JS `?v=` stamp in `index.html` together.
 - Schedule must stay deterministic; tests cover start week + Jude rotation
 - Invalid or unreachable fetched plan data must stay on the user-safe fatal recovery surface
 - Do not ship secrets; journal is localStorage only

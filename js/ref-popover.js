@@ -8,6 +8,7 @@
   function create(deps) {
     const $ = deps.$;
     let previewController = null;
+    let openingAnchor = null;
 
     function escapeHtml(value) {
       return String(value)
@@ -22,8 +23,11 @@
       previewController = null;
       const popover = $("#ref-popover");
       if (!popover) return;
+      const returnFocus = popover.contains(document.activeElement);
       popover.hidden = true;
       popover.removeAttribute("style");
+      if (returnFocus && openingAnchor?.isConnected) openingAnchor.focus({ preventScroll: true });
+      openingAnchor = null;
     }
 
     function place(anchor) {
@@ -51,6 +55,7 @@
       const heading = $("#ref-popover-title");
       const body = $("#ref-popover-body");
       if (!popover || !heading || !body) return;
+      if (!popover.contains(anchor)) openingAnchor = anchor;
       heading.textContent = title;
       body.innerHTML = bodyHtml;
       place(anchor);
