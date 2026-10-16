@@ -1453,6 +1453,7 @@ for (const width of [320, 375, 768, 1280]) for (const textScale of [1, 2]) {
     await expect.poll(() => page.locator("#ref-popover-body").evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
     await page.locator("#ref-popover-close").click();
     await expect(popover).toBeHidden();
+    await expect(page.locator("#passage-body .fn-mark")).toBeFocused();
   });
 }
 

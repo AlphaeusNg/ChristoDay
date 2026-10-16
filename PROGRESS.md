@@ -1810,3 +1810,10 @@ Reading days keep Listen, Mark complete, and More options on one line with the b
 Tab and Shift+Tab close the day-card overflow menu before native traversal from its trigger. One-shot actions return focus to the trigger before hiding, so copy, calendar downloads and printing do not strand focus in hidden content. Added a real reading journey for both Tab directions and copy. The four-week checklist and rest-day menus remain available. Deployment stamp: 2026.10.16.1.
 
 Clipboard fallback now removes its temporary textarea in a finally block and restores focus even if the browser copy command throws. Validation: all eleven Node gates and all 53 Chromium journeys passed. The new journey deterministically exercises successful and failed clipboard fallback plus both Tab directions. JavaScript syntax and whitespace checks passed.
+
+
+## 2026-10-17 — Return reference-popover focus to its source
+
+Closing a reference popover returns focus from its controls to the original verse marker. Reading another reference inside the popover preserves that original trigger. Dismissal while focus is elsewhere does not steal it, and removed triggers are ignored. Version 2026.10.17.1.
+
+Validation: All eleven Node gates and all 53 Chromium journeys passed. Enlarged-text/phone journeys now verify focus returns after closing the reference popover.
