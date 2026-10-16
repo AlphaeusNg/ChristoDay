@@ -6,7 +6,7 @@
 
   const $ = (sel, el = document) => el.querySelector(sel);
 
-  const TRANSLATIONS = new Set(["NIV", "ESV", "NKJV", "WEB"]);
+  const TRANSLATIONS = new Set(["WEB", "ESV", "NKJV"]);
 
   let plan = null;
   let state = ChristoState.loadState();
@@ -179,13 +179,13 @@
   }
 
   function currentTranslation() {
-    return TRANSLATIONS.has(state.translation) ? state.translation : "NIV";
+    return TRANSLATIONS.has(state.translation) ? state.translation : "WEB";
   }
 
   function writeDeepLink(ymd, translation) {
     const url = new URL(location.href);
     url.searchParams.set("d", ymd);
-    url.searchParams.set("tr", TRANSLATIONS.has(translation) ? translation : "NIV");
+    url.searchParams.set("tr", TRANSLATIONS.has(translation) ? translation : "WEB");
     const next = `${url.pathname}${url.search}${url.hash}`;
     const current = `${location.pathname}${location.search}${location.hash}`;
     if (next !== current) history.replaceState(null, "", next);
@@ -610,7 +610,7 @@
     const day = ensureDay(ymd);
     $("#journal").value = day.journal || "";
     const tr = $("#translation");
-    if (tr) tr.value = state.translation || day.translation || "NIV";
+    if (tr) tr.value = state.translation || day.translation || "WEB";
     updateCompleteButton(!!day.completed);
     journalHistory?.refresh();
 
@@ -774,7 +774,7 @@
     }
     refreshReadingAvailability("pending");
 
-    const tr = state.translation || "NIV";
+    const tr = state.translation || "WEB";
     const previousController = passageController;
     const previousPrefetchController = nextPassageController;
     const controller = new AbortController();
@@ -803,7 +803,17 @@
       if (controller.signal.aborted || seq !== renderSeq) return;
       if (paintSavedPassage(reading, tr)) return;
       status.hidden = false;
-      status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
+      if (err.code === "TRANSLATION_NOTICE") {
+        status.textContent = "This translation isn't available right now. Try another translation.";
+        const switchButton = document.createElement("button");
+        switchButton.type = "button";
+        switchButton.className = "btn";
+        switchButton.textContent = "Choose translation";
+        switchButton.addEventListener("click", () => $("#translation").focus());
+        status.append(" ", switchButton);
+      } else {
+        status.innerHTML = `Could not load live text (${escapeHtml(err.message || "network")}). Open <strong>${escapeHtml(reading.fullRef)}</strong> in your Bible app, or try another translation.`;
+      }
       lastPassage = null;
       passageSource = "reference";
       popovers?.hide();

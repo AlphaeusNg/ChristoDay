@@ -3,7 +3,7 @@
   "use strict";
 
   const DAYS = 28;
-  const TRANSLATIONS = new Set(["NIV", "ESV", "NKJV", "WEB"]);
+  const TRANSLATIONS = new Set(["WEB", "ESV", "NKJV"]);
   const READER_URL = "https://alphaeusng.github.io/ChristoDay/";
   const encoder = new TextEncoder();
 
@@ -41,9 +41,9 @@
     return { start, end: ChristoSchedule.addDaysYmd(start, DAYS - 1) };
   }
 
-  function build(plan, selectedYmd, translation = "NIV", now = new Date()) {
+  function build(plan, selectedYmd, translation = "WEB", now = new Date()) {
     const window = range(plan, selectedYmd);
-    const tr = TRANSLATIONS.has(translation) ? translation : "NIV";
+    const tr = TRANSLATIONS.has(translation) ? translation : "WEB";
     const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
     const dateValue = (ymd) => ymd.replace(/-/g, "");
     const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ChristoDay//Reading Plan//EN", "CALSCALE:GREGORIAN"];

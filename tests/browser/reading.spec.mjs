@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
     );
     if (url.hostname === "bolls.life" && bibleRequest) {
       const [, translation, bookId, chapter] = bibleRequest;
-      if (translation === "NIV" && bookId === "41" && chapter === "1") {
+      if (translation === "WEB" && bookId === "41" && chapter === "1") {
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
       const verses = Array.from({ length: 120 }, (_, index) => ({
@@ -68,8 +68,8 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await expect(page.locator("#translation")).toBeVisible();
 
   const datePicker = page.locator("#date-pick");
-  const slowNivRequest = page.waitForRequest((request) =>
-    /\/get-(?:text|chapter)\/NIV\/41\/1\//.test(request.url())
+  const slowWebRequest = page.waitForRequest((request) =>
+    /\/get-(?:text|chapter)\/WEB\/41\/1\//.test(request.url())
   );
   await datePicker.fill("2026-06-16");
   await datePicker.dispatchEvent("change");
@@ -79,13 +79,13 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
   await expect(page.locator("#btn-copy")).toBeVisible();
   await expect(page.locator("#btn-share")).toBeVisible();
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await expect(page.locator("#passage-tr-label")).toHaveText("NIV");
-  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-tr-label")).toHaveText("WEB");
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   await expect(page.locator("#passage-body .verse")).toHaveCount(17);
   await expect(page.locator("#passage-body .vnum").first()).toBeVisible();
   await expect(page).toHaveURL(/d=2026-06-16/);
 
-  await slowNivRequest;
+  await slowWebRequest;
   await page.locator("#btn-next").click();
   await expect(datePicker).toHaveValue("2026-06-17");
   await expect(page.locator("#passage-ref")).toHaveText("Mark 1:1-8");
@@ -107,9 +107,9 @@ test("boots, navigates, and keeps the newest translation", async ({ page }) => {
 });
 
 test("keeps the last good passage painted while the next fetch runs", async ({ page }) => {
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
   const priorHtml = await page.locator("#passage-body").innerHTML();
   expect(priorHtml.trim().length).toBeGreaterThan(0);
 
@@ -255,7 +255,7 @@ test("keeps a restored backup usable when permanent storage is denied", async ({
       return originalSetItem.call(this, key, value);
     };
   });
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
 
   const backup = {
@@ -304,7 +304,7 @@ test("prefetches the next weekday in the selected translation", async ({ page })
 });
 
 test("keeps the reading usable when live passage text fails", async ({ page }) => {
-  await page.route(/\/get-(?:text|chapter)\/NIV\/40\/1\/$/, async (route) => {
+  await page.route(/\/get-(?:text|chapter)\/WEB\/40\/1\/$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -321,7 +321,7 @@ test("keeps the reading usable when live passage text fails", async ({ page }) =
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#passage-status")).toBeVisible();
   await expect(page.locator("#passage-status")).toContainText(
-    "Could not load live text (Bible API returned invalid chapter data).",
+    "This translation isn't available right now. Try another translation.",
   );
   await expect(page.locator("#passage-body")).toContainText("Read: Matthew 1:1-17");
   await expect(page.locator("#passage-body")).toContainText(
@@ -395,24 +395,24 @@ test("resumes the newest unfinished journal even when it is older than 80 weekda
     localStorage.setItem(
       "christoday.v1",
       JSON.stringify({
-        translation: "NIV",
+        translation: "WEB",
         days: {
           "2026-06-16": {
             completed: false,
             journal: "Return to the grace I saw in Matthew.",
-            translation: "NIV",
+            translation: "WEB",
           },
           "2026-06-17": {
             completed: true,
             journal: "A completed later entry should not be resumed.",
-            translation: "NIV",
+            translation: "WEB",
           },
         },
       }),
     );
   });
 
-  await page.goto("./?d=2027-01-15&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2027-01-15&tr=WEB", { waitUntil: "domcontentloaded" });
 
   const resume = page.locator("#btn-continue-incomplete");
   await expect(resume).toBeVisible();
@@ -427,25 +427,25 @@ test("counts completed reading days without impossible saved dates", async ({ pa
     localStorage.setItem(
       "christoday.v1",
       JSON.stringify({
-        translation: "NIV",
+        translation: "WEB",
         days: {
-          "2026-06-15": { completed: true, journal: "A real plan day.", translation: "NIV" },
+          "2026-06-15": { completed: true, journal: "A real plan day.", translation: "WEB" },
           "2026-06-20": {
             completed: true,
             journal: "A weekend cannot be completed.",
-            translation: "NIV",
+            translation: "WEB",
           },
           "2026-06-08": {
             completed: true,
             journal: "Before the plan began.",
-            translation: "NIV",
+            translation: "WEB",
           },
         },
       }),
     );
   });
 
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
 
   await expect(page.locator("#reading-panel")).toBeVisible();
   await expect(page.locator("#stat-done")).toHaveText("1");
@@ -649,11 +649,11 @@ test("falls back to today when the deep-link date is invalid", async ({ page }) 
   await page.goto("./?d=2026-02-30&tr=KJV", { waitUntil: "domcontentloaded" });
   const today = singaporeYmd();
   await expect(page.locator("#date-pick")).toHaveValue(today);
-  await expect(page.locator("#translation")).toHaveValue("NIV");
+  await expect(page.locator("#translation")).toHaveValue("WEB");
   await expect(page).toHaveURL(new RegExp(`d=${today}`));
   await expect(page).not.toHaveURL(/2026-02-30/);
   await expect(page).not.toHaveURL(/tr=KJV/);
-  await expect(page).toHaveURL(/tr=NIV/);
+  await expect(page).toHaveURL(/tr=WEB/);
 });
 
 test("copies the visible passage and shares a dated reading link", async ({ page }) => {
@@ -670,9 +670,9 @@ test("copies the visible passage and shares a dated reading link", async ({ page
     });
   });
 
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
-  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
 
   await openMoreMenu(page);
   await page.locator("#btn-copy").click();
@@ -680,7 +680,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   await expect(page.locator("#action-status")).toHaveText("Copied passage.");
   let copied = await page.evaluate(() => window.__copied.at(-1));
   expect(copied).toContain("Matthew 1:1-17");
-  expect(copied).toContain("NIV book 40 chapter 1 verse 1");
+  expect(copied).toContain("WEB book 40 chapter 1 verse 1");
 
   await page.keyboard.press("y");
   expect(await page.evaluate(() => window.__copied.length)).toBeGreaterThanOrEqual(2);
@@ -694,7 +694,7 @@ test("copies the visible passage and shares a dated reading link", async ({ page
   expect(copied).toContain("Tuesday, 16 June 2026");
   expect(copied).toContain("Matthew 1:1-17");
   expect(copied).toMatch(/d=2026-06-16/);
-  expect(copied).toMatch(/tr=NIV/);
+  expect(copied).toMatch(/tr=WEB/);
 });
 
 test("includes the journal note in share only when opted in", async ({ page }) => {
@@ -711,7 +711,7 @@ test("includes the journal note in share only when opted in", async ({ page }) =
     });
   });
 
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#include-share-note")).toHaveAttribute("aria-pressed", "false");
   await page.locator("#journal").fill("Christ is the true King in this genealogy.");
   await openMoreMenu(page);
@@ -778,7 +778,7 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
     });
   });
 
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await page.locator("#btn-listen").click();
@@ -787,7 +787,7 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "true");
   const spoken = await page.evaluate(() => window.__spoken.at(-1));
   expect(spoken).toContain("Matthew 1:1-17");
-  expect(spoken).toContain("NIV book 40 chapter 1 verse 1");
+  expect(spoken).toContain("WEB book 40 chapter 1 verse 1");
 
   await page.locator("#btn-listen").click();
   await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
@@ -852,11 +852,11 @@ test("resizes the passage and remembers the choice", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
       "christoday.v1",
-      JSON.stringify({ translation: "NIV", days: {}, passageSize: "lg" }),
+      JSON.stringify({ translation: "WEB", days: {}, passageSize: "lg" }),
     );
   });
 
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("html")).toHaveAttribute("data-passage-size", "lg");
   await expect(page.locator("#btn-type-larger")).toBeDisabled();
   await expect(page.locator("#btn-type-smaller")).toBeEnabled();
@@ -884,24 +884,24 @@ test("searches journal history on device and opens the original note", async ({ 
     localStorage.setItem(
       "christoday.v1",
       JSON.stringify({
-        translation: "NIV",
+        translation: "WEB",
         days: {
           "2026-06-16": {
             journal: "Unique grace in this genealogy",
             completed: false,
-            translation: "NIV",
+            translation: "WEB",
           },
           "2026-06-17": {
             journal: "Servant urgency toward the cross",
             completed: true,
-            translation: "NIV",
+            translation: "WEB",
           },
         },
       }),
     );
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("./?d=2026-06-19&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-19&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Luke 1:1-4");
   await page.locator("#journal-history > summary").click();
   await page.locator("#history-query").fill("grace");
@@ -940,32 +940,37 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#btn-save-reading")).toBeHidden();
   const stored = await page.evaluate(() => localStorage.getItem("christoday.readings.v1"));
   expect(stored).toContain("WEB book 40 chapter 1 verse 1");
-  expect(stored).not.toContain("\"NIV\"");
+  expect(stored).not.toContain("\"ESV\"");
 
-  await page.locator("#translation").selectOption("NIV");
-  await expect(page.locator("#passage-body")).toContainText("NIV book 40 chapter 1 verse 1");
+  await page.locator("#translation").selectOption("ESV");
+  await expect(page.locator("#passage-body")).toContainText("ESV book 40 chapter 1 verse 1");
   await openMoreMenu(page);
   await expect(page.locator("#btn-save-reading")).toBeHidden();
   await expect(page.locator("#btn-remove-reading")).toBeHidden();
   await expect(page.locator("#passage-availability")).toContainText("not stored");
   await expect(page.locator("#passage-availability")).not.toContainText("offline slots");
-  expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("\"NIV\"");
+  expect(await page.evaluate(() => localStorage.getItem("christoday.readings.v1"))).not.toContain("\"ESV\"");
 
   await page.locator("#translation").selectOption("WEB");
   await openMoreMenu(page);
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
   await expect(page.locator("#btn-save-reading")).toBeHidden();
+  let unavailablePayload = [];
   await page.route(/^https:\/\/bolls\.life\//, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ error: "offline" }),
+      body: JSON.stringify(unavailablePayload),
     });
   });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
-  await expect(page.locator("#passage-availability")).toContainText("saved on this device");
-  await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
+  for (const payload of [[], { notice: "unavailable" }, [{ verse: 1, text: "Biblica, Inc. has prohibited me" }]]) {
+    unavailablePayload = payload;
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
+    await expect(page.locator("#passage-body")).not.toContainText("Biblica");
+    await expect(page.locator("#passage-availability")).toContainText("saved on this device");
+    await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
+  }
   await openMoreMenu(page);
   await page.locator("#btn-remove-reading").click();
   await expect(page.locator("#passage-body")).toContainText("reference only");
@@ -975,7 +980,7 @@ test("saves a permitted reading for offline use and refuses the others", async (
 });
 
 test("recovers stale Today labels without moving an edited historical note", async ({ page }) => {
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   const note = "Historical grace stays on this reading.";
   await page.locator("#journal").fill(note);
@@ -995,7 +1000,7 @@ test("recovers stale Today labels without moving an edited historical note", asy
   if (next !== "2026-06-16") expect(saved.days[next]?.completed).not.toBe(true);
 
   const today = singaporeYmd();
-  await page.goto(`./?d=${today}&tr=NIV`, { waitUntil: "domcontentloaded" });
+  await page.goto(`./?d=${today}&tr=WEB`, { waitUntil: "domcontentloaded" });
   await expect(page.locator("#date-pick")).toHaveValue(today);
   await expect(page.locator("#reading-date")).toContainText("Today ·");
   const tomorrow = await page.evaluate((ymd) => ChristoSchedule.addDaysYmd(ymd, 1), today);
@@ -1018,7 +1023,7 @@ test("keeps navigation, completion, and journal available in focus mode", async 
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("./?d=2026-06-16&tr=NIV", { waitUntil: "domcontentloaded" });
+  await page.goto("./?d=2026-06-16&tr=WEB", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#passage-ref")).toHaveText("Matthew 1:1-17");
   await expectPrimaryVisible();
   await expectNoHorizontalOverflow();
@@ -1091,9 +1096,9 @@ test('an older delayed restore cannot overwrite the newest journal', async ({ pa
       return new Promise(resolve => { window.__releaseOldBackup = async () => resolve(await original.call(this)); });
     };
   });
-  await page.goto('./?d=2026-06-16&tr=NIV');
+  await page.goto('./?d=2026-06-16&tr=WEB');
   await expect(page.locator('#passage-ref')).toHaveText('Matthew 1:1-17');
-  const backup = {product:'ChristoDay', schemaVersion:1, state:{translation:'NIV', days:{'2026-06-16':{completed:true,journal:'Old note',translation:'NIV'}}}};
+  const backup = {product:'ChristoDay', schemaVersion:1, state:{translation:'WEB', days:{'2026-06-16':{completed:true,journal:'Old note',translation:'WEB'}}}};
   let dialogs = 0;
   page.on('dialog', dialog => { dialogs++; return dialog.accept(); });
   await page.locator('#backup-file').setInputFiles({name:'slow.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});
@@ -1710,4 +1715,31 @@ test("overflow actions and Tab keep keyboard focus outside hidden content", asyn
   await expect(page.locator("#action-status")).toHaveText("Could not copy passage.");
   await expect(trigger).toBeFocused();
   await expect(page.locator("textarea")).toHaveCount(1);
+});
+
+test("icon buttons retain visible stroked SVGs at desktop width", async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.goto("./?d=2026-06-16");
+  await expect(page.locator("#passage-body")).toContainText("WEB book 40");
+  for (const id of ["btn-prev", "btn-next", "btn-listen", "btn-complete", "btn-more"]) {
+    const svg = page.locator(`#${id} svg`);
+    await expect(svg).toBeVisible();
+    const box = await svg.boundingBox();
+    expect(box.width).toBeGreaterThan(0);
+    expect(box.height).toBeGreaterThan(0);
+    expect(await svg.evaluate((el) => getComputedStyle(el).stroke)).not.toBe("none");
+  }
+});
+
+test("translation notices stay out of Scripture and offer a translation switch", async ({ page }) => {
+  await page.route(/bolls\.life\/get-(?:text|chapter)\/WEB\//, (route) => route.fulfill({
+    contentType: "application/json", body: JSON.stringify([{ verse: 1, text: "Biblica, Inc. has prohibited me from serving this for financial profit" }]),
+  }));
+  await page.goto("./?d=2026-06-16");
+  await expect(page.locator("#passage-status")).toContainText("This translation isn't available right now. Try another translation.");
+  await expect(page.locator("#passage-body")).not.toContainText("Biblica");
+  await page.getByRole("button", { name: "Choose translation" }).click();
+  await expect(page.locator("#translation")).toBeFocused();
+  await page.locator("#translation").selectOption("ESV");
+  await expect(page.locator("#passage-body")).toContainText("ESV book 40");
 });

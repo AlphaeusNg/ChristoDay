@@ -1817,3 +1817,10 @@ Clipboard fallback now removes its temporary textarea in a finally block and res
 Closing a reference popover returns focus from its controls to the original verse marker. Reading another reference inside the popover preserves that original trigger. Dismissal while focus is elsewhere does not steal it, and removed triggers are ignored. Version 2026.10.17.1.
 
 Validation: All eleven Node gates and all 53 Chromium journeys passed. Enlarged-text/phone journeys now verify focus returns after closing the reference popover.
+
+
+## 2026-10-17 — Integrate icon freshness and available translations (PR #13)
+
+Merged current main into the PR and reconciled deployment stamp and local asset URLs at 2026.10.17.2. Worker installation and shell refresh bypass the HTTP cache; inline icons retain explicit size and stroke attributes. WEB is the default, and saved NIV preferences migrate while retaining notes and completion. Provider notices and malformed chapter rows offer a translation switch. Saved WEB readings still open for empty, malformed and provider-notice responses; the PR’s initial bypass of this fallback was removed. Historical progress entries retain their original facts. Deploy instructions now pair version.js with local asset query stamps.
+
+Validation: all eleven Node gates, per-file JavaScript syntax, whitespace checks, and all 55 Chromium journeys passed, including the extended saved-WEB recovery cases and installed-worker offline reload. Direct provider checks confirmed WEB returns integer-numbered verse rows while NIV returns a notice.

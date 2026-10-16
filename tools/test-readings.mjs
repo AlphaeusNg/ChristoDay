@@ -24,9 +24,9 @@ assert.deepEqual(Object.keys(deniedReadings.load().items), [], "denied getter re
 assert.equal(deniedReadings.save(deniedReadings.empty()), false, "denied getter reports failed save");
 
 const readings = loadReadings();
-const secret = "NIV copyrighted sentence that must stay unsaved";
+const secret = "ESV copyrighted sentence that must stay unsaved";
 
-for (const translation of ["NIV", "ESV", "NKJV"]) {
+for (const translation of ["ESV", "NKJV"]) {
   const result = readings.put(readings.empty(), {
     ymd: "2026-06-16",
     translation,
@@ -73,7 +73,7 @@ assert.equal(
   readings.get(loaded, "2026-06-16", "WEB").passage.verses[0].text,
   "The book of the generation"
 );
-assert.equal(readings.get(loaded, "2026-06-16", "NIV"), null);
+assert.equal(readings.get(loaded, "2026-06-16", "ESV"), null);
 const savedHere = readings.availability({ translation: "WEB", saved: true, loaded: "saved" });
 assert.match(savedHere.text, /saved on this device/i);
 assert.doesNotMatch(savedHere.text, /offline slots/);
@@ -86,7 +86,7 @@ const withSlots = readings.availability({
 assert.match(withSlots.text, /saved on this device/i);
 assert.match(withSlots.text, /1 of 30 offline slots used: 2026-06-16/);
 assert.equal(withSlots.text.includes(secret), false);
-for (const translation of ["NIV", "ESV", "NKJV"]) {
+for (const translation of ["ESV", "NKJV"]) {
   const refused = readings.availability({
     translation,
     saved: true,
@@ -141,9 +141,9 @@ assert.equal(afterRemoval.text.includes("2026-06-16"), false);
 
 raw = JSON.stringify({
   items: {
-    "2026-06-16:NIV": {
+    "2026-06-16:ESV": {
       ymd: "2026-06-16",
-      translation: "NIV",
+      translation: "ESV",
       passage: { verses: [{ chapter: 1, verse: 1, text: secret }] },
     },
   },
