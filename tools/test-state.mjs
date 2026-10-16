@@ -24,7 +24,7 @@ assert.equal(stateApi.validYmd("2026-13-01"), false);
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.hydrateState(null))),
   {
-    translation: "NIV",
+    translation: "WEB",
     days: {},
     passageSize: "md",
     lineSpacing: "normal",
@@ -53,7 +53,7 @@ assert.equal(hydrated.days["2026-08-09"].journal, "Saw Christ clearly.");
 assert.equal(hydrated.days["2026-08-09"].completed, true);
 
 const malformed = stateApi.hydrateState({ translation: "INVALID", days: "broken" });
-assert.equal(malformed.translation, "NIV");
+assert.equal(malformed.translation, "WEB");
 assert.equal(malformed.passageSize, "md");
 assert.deepEqual(Object.keys(malformed.days), []);
 
@@ -76,14 +76,14 @@ const created = stateApi.ensureDay(malformed, "2026-08-11");
 assert.deepEqual(JSON.parse(JSON.stringify(created)), {
   completed: false,
   journal: "",
-  translation: "NIV",
+  translation: "WEB",
 });
 
 const corruptStorage = { getItem: () => "{bad-json" };
 assert.deepEqual(
   JSON.parse(JSON.stringify(stateApi.loadState(corruptStorage))),
   {
-    translation: "NIV",
+    translation: "WEB",
     days: {},
     passageSize: "md",
     lineSpacing: "normal",
@@ -150,7 +150,7 @@ const restoredWithFocus = stateApi.parseBackup(JSON.stringify({
     ...backup.state,
     days: {
       ...backup.state.days,
-      "2026-06-20": { completed: false, journal: "Weekend note", translation: "NIV" },
+      "2026-06-20": { completed: false, journal: "Weekend note", translation: "WEB" },
     },
   },
 }));
@@ -229,3 +229,11 @@ assert.deepEqual(JSON.parse(JSON.stringify(stateApi.summarizeBackup({}))), {
 });
 
 console.log("test-state.mjs: hydration, persistence, backup, summary, focus, spacing, and restore-navigation cases ok");
+
+const migrated = stateApi.loadState({ getItem: () => JSON.stringify({ translation: "NIV", days: {
+  "2026-06-16": { translation: "NIV", journal: "Keep this note", completed: true },
+} }) });
+assert.equal(migrated.translation, "WEB");
+assert.equal(migrated.days["2026-06-16"].translation, "WEB");
+assert.equal(migrated.days["2026-06-16"].journal, "Keep this note");
+assert.equal(migrated.days["2026-06-16"].completed, true);

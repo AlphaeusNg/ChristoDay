@@ -16,9 +16,9 @@ function createWorker({
   putFails = false,
 } = {}) {
   const listeners = new Map();
-  const calls = { fetch: [], match: [], open: [], put: [] };
+  const calls = { fetch: [], match: [], open: [], put: [], addAll: [], requestCache: [] };
   const cache = {
-    async addAll() {},
+    async addAll(requests) { calls.addAll.push(...requests); },
     async match(request) {
       calls.match.push(typeof request === "string" ? request : request.url);
       return cachedBody == null ? undefined : new Response(cachedBody);
@@ -40,6 +40,7 @@ function createWorker({
   };
   const context = {
     URL,
+    Request,
     Promise,
     Response,
     self,
@@ -58,6 +59,7 @@ function createWorker({
     },
     async fetch(request) {
       calls.fetch.push(request.url);
+      calls.requestCache.push(request.cache);
       if (networkFails) throw new Error("offline");
       return new Response(networkBody, { status: networkStatus });
     },
@@ -69,7 +71,7 @@ function createWorker({
     const responsePromises = [];
     const lifetimePromises = [];
     listeners.get("fetch")({
-      request: { method: "GET", mode, url },
+      request: mode === "navigate" ? { method: "GET", mode, url } : new Request(url),
       respondWith(promise) {
         responsePromises.push(Promise.resolve(promise));
       },
@@ -80,7 +82,11 @@ function createWorker({
     return { responsePromises, lifetimePromises };
   }
 
-  return { calls, dispatchFetch };
+  return { calls, dispatchFetch, async install() {
+    let pending;
+    listeners.get("install")({ waitUntil(promise) { pending = promise; } });
+    await pending;
+  } };
 }
 
 {
@@ -169,3 +175,20 @@ function createWorker({
 }
 
 console.log("test-service-worker.mjs: navigation, scope, plan freshness, fallback, lifetime, and write-failure cases passed");
+
+{
+  const worker = createWorker();
+  await worker.install();
+  assert(worker.calls.addAll.length > 0);
+  for (const request of worker.calls.addAll) {
+    assert.equal(request.cache, "reload", "precache must bypass stale HTTP assets");
+    assert(request.url.startsWith(scope));
+  }
+}
+for (const path of ["css/style.css", "js/app.js", "manifest.webmanifest"]) {
+  const worker = createWorker({ cachedBody: "stale", networkBody: "fresh" });
+  const event = worker.dispatchFetch(`${scope}${path}?v=2026.10.16.2`);
+  assert.equal(await (await event.responsePromises[0]).text(), "fresh");
+  await Promise.all(event.lifetimePromises);
+  assert.deepEqual(worker.calls.requestCache, ["reload"]);
+}

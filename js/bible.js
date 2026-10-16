@@ -82,7 +82,6 @@
   };
 
   const TRANSLATIONS = {
-    NIV: { code: "NIV", label: "NIV" },
     ESV: { code: "ESV", label: "ESV" },
     NKJV: { code: "NKJV", label: "NKJV" },
     // World English Bible text is public domain and may be kept on device.
@@ -136,25 +135,22 @@
   }
 
   function normalizeChapterData(payload) {
-    const rawVerses = Array.isArray(payload)
-      ? payload
-      : payload && Array.isArray(payload.verses)
-        ? payload.verses
-        : null;
-    if (!rawVerses) throw new Error("Bible API returned invalid chapter data");
-    return rawVerses
-      .filter((verse) => verse && typeof verse === "object")
-      .map((verse) => {
-        const row = { verse: Number(verse.verse), text: verse.text };
-        if (typeof verse.comment === "string" && verse.comment) {
-          row.comment = verse.comment;
-        }
-        return row;
-      })
-      .filter(
-        (verse) =>
-          Number.isInteger(verse.verse) && verse.verse > 0 && typeof verse.text === "string"
-      );
+    if (!Array.isArray(payload) || payload.some((verse) =>
+      !verse || typeof verse !== "object" || !Number.isInteger(verse.verse) ||
+      verse.verse <= 0 || typeof verse.text !== "string"
+    )) {
+      const error = new Error("Bible API returned invalid chapter data");
+      error.code = "TRANSLATION_NOTICE";
+      throw error;
+    }
+    if (payload.some((verse) => /Biblica|prohibited me|financial profit/i.test(verse.text))) {
+      const error = new Error("This translation isn't available right now. Try another translation.");
+      error.code = "TRANSLATION_NOTICE";
+      throw error;
+    }
+    return payload.map(({ verse, text, comment }) => ({
+      verse, text, ...(typeof comment === "string" && comment ? { comment } : {}),
+    }));
   }
 
   function cancellationError() {
@@ -385,7 +381,7 @@
    * @param {{ signal?: AbortSignal }} options
    * @returns {Promise<{ text: string, html: string, translation: string, verses: Array }>}
    */
-  async function fetchPassage(bookKey, ref, translation = "NIV", options = {}) {
+  async function fetchPassage(bookKey, ref, translation = "WEB", options = {}) {
     const signal = options?.signal;
     if (signal?.aborted) throw cancellationError();
     const bookId = BOOK_IDS[bookKey];
@@ -393,7 +389,7 @@
     const ranges = parseRef(ref);
     if (!ranges.length) throw new Error("Could not parse reference: " + ref);
 
-    const tr = TRANSLATIONS[translation] ? translation : "NIV";
+    const tr = TRANSLATIONS[translation] ? translation : "WEB";
     const collected = [];
     for (const range of ranges) {
       const chapterData = await fetchChapter(

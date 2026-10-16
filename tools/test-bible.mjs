@@ -30,22 +30,22 @@ function loadBible(fetchImpl, timers = {}) {
     request = { url, options };
     return { ok: true, json: async () => [{ verse: 1, text: "In the beginning" }] };
   });
-  const chapter = await bible.fetchChapter("NIV", 40, 1);
+  const chapter = await bible.fetchChapter("WEB", 40, 1);
   assert.equal(chapter.length, 1);
-  assert.match(request.url, /\/NIV\/40\/1\/$/);
+  assert.match(request.url, /\/WEB\/40\/1\/$/);
   assert.equal(request.options.mode, "cors");
   assert(request.options.signal instanceof AbortSignal);
 }
 
 {
   const bible = loadBible(async () => ({ ok: false, status: 503 }));
-  await assert.rejects(() => bible.fetchChapter("NIV", 40, 1), /Bible fetch failed \(503\)/);
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), /Bible fetch failed \(503\)/);
 }
 
 {
   const bible = loadBible(async () => ({ ok: true, json: async () => null }));
   await assert.rejects(
-    () => bible.fetchChapter("NIV", 40, 1),
+    () => bible.fetchChapter("WEB", 40, 1),
     /Bible API returned invalid chapter data/
   );
 }
@@ -57,9 +57,7 @@ function loadBible(fetchImpl, timers = {}) {
       verses: [null, { verse: "2", text: "Valid" }, { verse: 0, text: "Invalid" }],
     }),
   }));
-  assert.deepEqual(JSON.parse(JSON.stringify(await bible.fetchChapter("NIV", 40, 1))), [
-    { verse: 2, text: "Valid" },
-  ]);
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), /invalid chapter data/);
 }
 
 {
@@ -80,7 +78,7 @@ function loadBible(fetchImpl, timers = {}) {
       },
     }
   );
-  await assert.rejects(() => bible.fetchChapter("NIV", 40, 1), /Bible fetch timed out/);
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), /Bible fetch timed out/);
   assert(cleared);
 }
 
@@ -94,7 +92,7 @@ function loadBible(fetchImpl, timers = {}) {
     ],
   }));
   const passage = await bible.fetchPassage("matthew", "1:1-2", "UNKNOWN");
-  assert.equal(passage.translation, "NIV");
+  assert.equal(passage.translation, "WEB");
   assert.equal(passage.text, "Before Jesus & disciples");
   assert.match(passage.html, /Jesus &amp; disciples/);
   assert.match(passage.html, /<i>Before<\/i>/);
@@ -183,12 +181,12 @@ function loadBible(fetchImpl, timers = {}) {
     await pending;
     return { ok: true, json: async () => [{ verse: 1, text: "Shared" }] };
   });
-  const first = bible.fetchChapter("NIV", 40, 1);
-  const second = bible.fetchChapter("NIV", 40, 1);
+  const first = bible.fetchChapter("WEB", 40, 1);
+  const second = bible.fetchChapter("WEB", 40, 1);
   assert.equal(fetchCount, 1);
   release();
   assert.deepEqual(await first, await second);
-  await bible.fetchChapter("NIV", 40, 1);
+  await bible.fetchChapter("WEB", 40, 1);
   assert.equal(fetchCount, 1);
 }
 
@@ -199,8 +197,8 @@ function loadBible(fetchImpl, timers = {}) {
     if (fetchCount === 1) throw new Error("temporary failure");
     return { ok: true, json: async () => [] };
   });
-  await assert.rejects(() => bible.fetchChapter("NIV", 40, 1), /temporary failure/);
-  await bible.fetchChapter("NIV", 40, 1);
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), /temporary failure/);
+  await bible.fetchChapter("WEB", 40, 1);
   assert.equal(fetchCount, 2);
 }
 
@@ -211,9 +209,9 @@ function loadBible(fetchImpl, timers = {}) {
     return { ok: true, json: async () => [] };
   });
   for (let chapter = 1; chapter <= bible.MAX_CACHED_CHAPTERS + 1; chapter++) {
-    await bible.fetchChapter("NIV", 40, chapter);
+    await bible.fetchChapter("WEB", 40, chapter);
   }
-  await bible.fetchChapter("NIV", 40, 1);
+  await bible.fetchChapter("WEB", 40, 1);
   assert.equal(fetchCount, bible.MAX_CACHED_CHAPTERS + 2);
 }
 
@@ -232,8 +230,8 @@ function loadBible(fetchImpl, timers = {}) {
   });
   const oldController = new AbortController();
   const newController = new AbortController();
-  const oldConsumer = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, oldController.signal);
-  const newConsumer = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, newController.signal);
+  const oldConsumer = bible.fetchChapter("WEB", 40, 1, bible.FETCH_TIMEOUT_MS, oldController.signal);
+  const newConsumer = bible.fetchChapter("WEB", 40, 1, bible.FETCH_TIMEOUT_MS, newController.signal);
   oldController.abort();
   await assert.rejects(() => oldConsumer, /Bible fetch cancelled/);
   assert.equal(underlyingSignal.aborted, false, "a surviving consumer keeps the shared fetch alive");
@@ -257,11 +255,11 @@ function loadBible(fetchImpl, timers = {}) {
     return { ok: true, json: async () => [{ verse: 1, text: "Retry" }] };
   });
   const controller = new AbortController();
-  const obsolete = bible.fetchChapter("NIV", 40, 1, bible.FETCH_TIMEOUT_MS, controller.signal);
+  const obsolete = bible.fetchChapter("WEB", 40, 1, bible.FETCH_TIMEOUT_MS, controller.signal);
   controller.abort();
   await assert.rejects(() => obsolete, /Bible fetch cancelled/);
   assert.equal(firstSignal.aborted, true, "the last cancellation aborts the underlying fetch");
-  assert.equal((await bible.fetchChapter("NIV", 40, 1))[0].text, "Retry");
+  assert.equal((await bible.fetchChapter("WEB", 40, 1))[0].text, "Retry");
   assert.equal(fetchCount, 2, "a cancelled request is removed immediately and remains retryable");
 }
 
@@ -276,7 +274,7 @@ function loadBible(fetchImpl, timers = {}) {
     });
   });
   const controller = new AbortController();
-  const passage = bible.fetchPassage("matthew", "1:40-2:2", "NIV", {
+  const passage = bible.fetchPassage("matthew", "1:40-2:2", "WEB", {
     signal: controller.signal,
   });
   controller.abort();
@@ -290,7 +288,6 @@ function loadBible(fetchImpl, timers = {}) {
     throw new Error("no network");
   });
   assert.equal(bible.allowsLocalPassageStorage("WEB"), true);
-  assert.equal(bible.allowsLocalPassageStorage("NIV"), false);
   assert.equal(bible.allowsLocalPassageStorage("ESV"), false);
   assert.equal(bible.allowsLocalPassageStorage("NKJV"), false);
   assert.equal(bible.allowsLocalPassageStorage("KJV"), false);
@@ -307,3 +304,12 @@ function loadBible(fetchImpl, timers = {}) {
 }
 
 console.log("test-bible.mjs: network, payload, cache, cancellation, red-letter, local-copy, and passage cases ok");
+
+for (const text of ["Biblica, Inc. has prohibited me", "prohibited me", "financial profit"]) {
+  const bible = loadBible(async () => ({ ok: true, json: async () => [{ verse: 1, text }] }));
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), { code: "TRANSLATION_NOTICE" });
+}
+for (const payload of [[{ verse: "1", text: "Text" }], [{ verse: 1, text: null }], { verses: [] }]) {
+  const bible = loadBible(async () => ({ ok: true, json: async () => payload }));
+  await assert.rejects(() => bible.fetchChapter("WEB", 40, 1), /invalid chapter data/);
+}

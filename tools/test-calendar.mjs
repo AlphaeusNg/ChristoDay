@@ -53,12 +53,12 @@ for (const selected of ["2026-06-01", "2026-06-15", "2026-06-20", "2026-10-14", 
   assert.doesNotMatch(result.text, /VALARM|RRULE|VJOURNAL|COMPLETED:/);
 }
 
-const first = calendar.build(plan, "2026-06-15", "NIV", now);
+const first = calendar.build(plan, "2026-06-15", "WEB", now);
 const repeat = calendar.build(plan, "2026-06-15", "WEB", new Date("2026-10-14T12:00:00Z"));
 assert.deepEqual(events(first.text).map((event) => property(event, "UID")), events(repeat.text).map((event) => property(event, "UID")));
 assert.match(unfold(first.text), /SUMMARY:ChristoDay: Jude 1:1-25/);
 assert.match(unfold(first.text), /SUMMARY:ChristoDay: Jude 1:1-4/);
-assert.match(unfold(calendar.build(plan, "2026-06-15", "invalid", now).text), /tr=NIV/);
+assert.match(unfold(calendar.build(plan, "2026-06-15", "invalid", now).text), /tr=WEB/);
 for (const invalid of ["2026-02-30", "bad", "9999-12-04"]) assert.throws(() => calendar.build(plan, invalid));
 assert.throws(() => calendar.build(null, "2026-06-15"));
 

@@ -36,3 +36,5 @@ export** on a computer.
 Working in this repo? See **[AGENTS.md](AGENTS.md)** for schedule math, tests, and conventions.
 
 MIT © 2026 Alphaeus Ng
+
+Live Scripture defaults to WEB. ESV and NKJV are also available. Saved NIV preferences migrate to WEB because NIV is no longer served by the provider. Unavailable-translation notices are rejected, with a control to choose another translation.

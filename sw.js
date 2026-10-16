@@ -1,5 +1,5 @@
 /* ChristoDay service worker — precache shell + plan for offline weekday use.
-   Bible live text stays network-only. */
+   Shell refreshes bypass HTTP cache; Bible live text stays network-only. */
 importScripts("./js/version.js");
 const CACHE_PREFIX = "christoday-";
 const CACHE = `${CACHE_PREFIX}${self.SITE_VERSION.id}`;
@@ -32,7 +32,11 @@ const PRECACHE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE.map((url) =>
+        new Request(new URL(url, SCOPE_URL), { cache: "reload" })
+      )))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -86,9 +90,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   const cachePromise = caches.open(CACHE);
-  const cachedPromise = cachePromise.then((cache) => cache.match(req));
+  // Versioned HTML URLs also resolve to canonical install-time copies offline.
+  const cachedPromise = cachePromise.then((cache) => cache.match(req, { ignoreSearch: true }));
   const networkPromise = Promise.all([cachePromise, cachedPromise]).then(
-    ([cache, cached]) => fetch(req)
+    ([cache, cached]) => fetch(new Request(req, { cache: "reload" }))
       .then(async (response) => {
         if (response?.ok) {
           try {
@@ -101,6 +106,7 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => cached)
   );
-  event.respondWith(cachedPromise.then((cached) => cached || networkPromise));
+  // Refresh shell assets before using the offline copy, bypassing HTTP cache.
+  event.respondWith(networkPromise);
   event.waitUntil(networkPromise.then(() => undefined));
 });

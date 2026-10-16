@@ -83,7 +83,9 @@ for (const reference of requiredRuntime) {
   assert(precache.includes(reference), `PRECACHE omits runtime file ${reference}`);
 }
 
-const index = readFileSync(join(root, "index.html"), "utf8");
+const rawIndex = readFileSync(join(root, "index.html"), "utf8");
+const versionId = /id: "([^"]+)"/.exec(readFileSync(join(root, "js/version.js"), "utf8"))[1];
+const index = rawIndex.replaceAll(`?v=${versionId}`, "");
 const planPreloadIndex = index.indexOf('rel="preload" href="data/segments.json"');
 const biblePreconnectIndex = index.indexOf('rel="preconnect" href="https://bolls.life"');
 const workerRegistrationIndex = index.indexOf('navigator.serviceWorker.register("./sw.js")');
@@ -297,3 +299,7 @@ assert.match(menuSlice, /Offline reading/, "offline tools are grouped in the men
 assert.match(menuSlice, /Print &amp; calendar/, "print and calendar are grouped in the menu");
 assert.match(css, /\.card-head\s*\{[^}]*flex-wrap:\s*nowrap/, "book badge and reading controls stay on one line");
 assert.match(css, /\.reading-primary\s*\{[^}]*flex-wrap:\s*nowrap/, "primary controls never wrap");
+
+const assetReferences = [...rawIndex.matchAll(/(?:src|href)="((?:js\/[^"?]+\.js|css\/style\.css)\?v=([^"&]+))"/g)];
+assert.equal(assetReferences.length, 16, "every local CSS/JS reference must have a version");
+for (const [, , version] of assetReferences) assert.equal(version, versionId);

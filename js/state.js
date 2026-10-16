@@ -6,13 +6,13 @@
   const BACKUP_PRODUCT = "ChristoDay";
   const BACKUP_SCHEMA_VERSION = 1;
   const MAX_BACKUP_BYTES = 1_000_000;
-  const TRANSLATIONS = new Set(["NIV", "ESV", "NKJV", "WEB"]);
+  const TRANSLATIONS = new Set(["WEB", "ESV", "NKJV"]);
 
   function isRecord(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 
-  function validTranslation(value, fallback = "NIV") {
+  function validTranslation(value, fallback = "WEB") {
     return TRANSLATIONS.has(value) ? value : fallback;
   }
 
@@ -32,7 +32,7 @@
 
   function defaultState() {
     return {
-      translation: "NIV",
+      translation: "WEB",
       days: {},
       passageSize: "md",
       lineSpacing: "normal",
