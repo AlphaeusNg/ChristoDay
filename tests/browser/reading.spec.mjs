@@ -1743,3 +1743,44 @@ test("translation notices stay out of Scripture and offer a translation switch",
   await page.locator("#translation").selectOption("ESV");
   await expect(page.locator("#passage-body")).toContainText("ESV book 40");
 });
+
+
+test("reading shortcuts preserve browser chords, composition, editable and consumed keys", async ({ page }) => {
+  await page.goto("./?date=2026-06-16", { waitUntil: "domcontentloaded" });
+  await page.locator("#date-pick").fill("2026-06-16");
+  await page.locator("#date-pick").dispatchEvent("change");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "false");
+  const initialSize = await page.locator("#passage-body").evaluate(node => getComputedStyle(node).fontSize);
+  const prevented = await page.evaluate(() => {
+    const results = [];
+    const send = (key, options = {}, target = document.body) => {
+      const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...options });
+      target.dispatchEvent(event);
+      results.push(event.defaultPrevented);
+    };
+    for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
+      for (const key of ['c', 't', 'ArrowRight', '-', '+']) send(key, { [modifier]: true });
+    }
+    send('c', { isComposing: true });
+    send('c', { keyCode: 229 });
+    const handled = new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true });
+    handled.preventDefault();
+    document.body.dispatchEvent(handled);
+    const editable = document.createElement('div');
+    editable.contentEditable = 'true';
+    editable.innerHTML = '<span>Private draft</span>';
+    document.body.append(editable);
+    send('c', {}, editable.firstChild);
+    editable.remove();
+    return results;
+  });
+  expect(prevented.every(value => value === false)).toBe(true);
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-16");
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("#passage-body")).toHaveCSS("font-size", initialSize);
+  await page.locator('body').click({ position: { x: 2, y: 2 } });
+  await page.keyboard.press('c');
+  await expect(page.locator("#btn-complete")).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator("#date-pick")).toHaveValue("2026-06-17");
+});

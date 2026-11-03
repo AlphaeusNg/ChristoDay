@@ -380,7 +380,9 @@
     window.addEventListener("hashchange", syncAboutFromHash);
     syncAboutFromHash();
     document.addEventListener("keydown", (e) => {
-      if (e.target.matches("textarea, input, select")) return;
+      if (e.defaultPrevented || e.isComposing || e.keyCode === 229) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target.matches("textarea, input, select") || e.target.isContentEditable) return;
       if (e.key === "ArrowLeft") shiftDay(-1);
       if (e.key === "ArrowRight") shiftDay(1);
       if (e.key === "t" || e.key === "T") renderDay(ChristoSchedule.partsInSingapore().ymd);

@@ -1824,3 +1824,10 @@ Validation: All eleven Node gates and all 53 Chromium journeys passed. Enlarged-
 Merged current main into the PR and reconciled deployment stamp and local asset URLs at 2026.10.17.2. Worker installation and shell refresh bypass the HTTP cache; inline icons retain explicit size and stroke attributes. WEB is the default, and saved NIV preferences migrate while retaining notes and completion. Provider notices and malformed chapter rows offer a translation switch. Saved WEB readings still open for empty, malformed and provider-notice responses; the PR’s initial bypass of this fallback was removed. Historical progress entries retain their original facts. Deploy instructions now pair version.js with local asset query stamps.
 
 Validation: all eleven Node gates, per-file JavaScript syntax, whitespace checks, and all 55 Chromium journeys passed, including the extended saved-WEB recovery cases and installed-worker offline reload. Direct provider checks confirmed WEB returns integer-numbered verse rows while NIV returns a notice.
+
+
+## 2026-11-04 — Preserve browser chords and composition in reading shortcuts
+
+Reading shortcuts leave Ctrl/Cmd/Alt combinations, IME composition, already-handled events and editable content alone. Copying with Ctrl/Cmd+C can no longer mark the reading complete; browser zoom and navigation chords cannot alter passage size or the selected day. Unmodified completion and day-navigation shortcuts stay available. Version 2026.11.04.1; all local asset query stamps move together.
+
+Validation: all eleven Node suites, complete per-file JavaScript syntax checks, whitespace checks and all 56 Chromium journeys passed. The new regression covers each modifier, composition and legacy keyCode 229, consumed events, editable descendants, unchanged completion/date/text size, and ordinary completion/navigation. Plan epoch, Scripture and stored translation rules remain unchanged.
