@@ -1831,3 +1831,17 @@ Validation: all eleven Node gates, per-file JavaScript syntax, whitespace checks
 Reading shortcuts leave Ctrl/Cmd/Alt combinations, IME composition, already-handled events and editable content alone. Copying with Ctrl/Cmd+C can no longer mark the reading complete; browser zoom and navigation chords cannot alter passage size or the selected day. Unmodified completion and day-navigation shortcuts stay available. Version 2026.11.04.1; all local asset query stamps move together.
 
 Validation: all eleven Node suites, complete per-file JavaScript syntax checks, whitespace checks and all 56 Chromium journeys passed. The new regression covers each modifier, composition and legacy keyCode 229, consumed events, editable descendants, unchanged completion/date/text size, and ordinary completion/navigation. Plan epoch, Scripture and stored translation rules remain unchanged.
+
+
+## 2026-11-05 — Preserve browser navigation while More is focused
+
+The reading-tools menu leaves Ctrl/Cmd/Alt chords, IME composition, legacy
+composition keys and already-handled events alone. Those keys previously opened,
+closed or moved focus in More even though reading shortcuts already ignored them.
+Ordinary arrow navigation, Escape and Shift+Tab retain their existing behavior.
+Deployment stamp and every local asset query stamp: 2026.11.05.1.
+
+Validation: all eleven Node suites, per-file JavaScript syntax checks and all
+57 Chromium journeys passed. The new real-menu regression failed before the fix
+and covers both closed and open states, unchanged focus and native event handling.
+Scripture, plan epoch and offline translation rules remain unchanged.

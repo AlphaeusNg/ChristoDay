@@ -1784,3 +1784,35 @@ test("reading shortcuts preserve browser chords, composition, editable and consu
   await page.keyboard.press('ArrowRight');
   await expect(page.locator("#date-pick")).toHaveValue("2026-06-17");
 });
+
+
+test('More preserves browser chords and composition navigation', async ({ page }) => {
+  await page.goto('./?d=2026-06-16&tr=ESV');
+  const trigger = page.locator('#btn-more');
+  const menu = page.locator('#more-menu-list');
+  const variants = [{ ctrlKey: true }, { metaKey: true }, { altKey: true },
+    { isComposing: true }, { keyCode: 229 }, { consumed: true }];
+  for (const open of [false, true]) {
+    await trigger.focus();
+    if (open) await page.keyboard.press('ArrowDown');
+    const focused = await page.evaluate(() => document.activeElement.id);
+    for (const variant of variants) {
+      for (const key of ['ArrowDown', 'ArrowUp', 'Escape', 'Tab']) {
+        const prevented = await page.evaluate(({ variant, key }) => {
+          const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...variant });
+          if (variant.consumed) event.preventDefault();
+          document.activeElement.dispatchEvent(event);
+          return event.defaultPrevented;
+        }, { variant, key });
+        expect(prevented).toBe(Boolean(variant.consumed));
+        expect(await page.evaluate(() => document.activeElement.id)).toBe(focused);
+        await expect(trigger).toHaveAttribute('aria-expanded', String(open));
+      }
+    }
+    if (open) {
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+    }
+  }
+});

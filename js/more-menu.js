@@ -93,6 +93,8 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.isComposing || event.keyCode === 229
+        || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.key === "Escape") {
         if (!isOpen()) return;
         event.preventDefault();
