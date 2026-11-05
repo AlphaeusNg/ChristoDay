@@ -296,6 +296,11 @@
     }
 
     function bind() {
+      window.addEventListener("pagehide", () => {
+        if (!speaking) return;
+        stopListening();
+        announceAction("Stopped reading.");
+      });
       // Touch labels also appear during a long press, without delaying the action.
       document.querySelectorAll(".icon-button").forEach((button) => {
         let timer;

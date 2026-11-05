@@ -846,6 +846,19 @@ test("reads aloud, stops, and resets after completion or speech errors", async (
   await page.evaluate((index) => window.__utterances[index].onend(), replacementIndex);
   await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
   await expect(page.locator("#btn-listen")).toHaveAttribute("aria-pressed", "false");
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
+  const cancelledBeforeDeparture = await page.evaluate(() => window.__cancelled);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
+  expect(await page.evaluate(() => window.__cancelled)).toBeGreaterThan(cancelledBeforeDeparture);
+  await expect(page.locator("#action-status")).toHaveText("Stopped reading.");
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Listen");
+  await page.locator("#btn-listen").click();
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
+  await page.evaluate(() => { window.__utterances.at(-2).onend(); window.__utterances.at(-2).onerror(); });
+  await expect(page.locator("#btn-listen")).toHaveAccessibleName("Stop");
 });
 
 test("resizes the passage and remembers the choice", async ({ page }) => {

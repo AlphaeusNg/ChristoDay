@@ -1900,3 +1900,17 @@ fixes. All eleven Node suites, per-file syntax and whitespace checks and all
 reloads literal entity/angle-bracket text and an image-shaped string through
 three unavailable live responses; text survives, no image node appears and
 no supplied handler runs. Scripture sources and plan data are unchanged.
+
+## 2026-11-06 — Stop speech when leaving the reader
+
+An active reading now stops on page departure, including a page stored in the
+browser back/forward cache. Restoring the page leaves Listen ready for an explicit
+restart. Cancelled utterance callbacks cannot stop a newer reading. Departure
+feedback also clears the stale reading-aloud state. Version and asset stamps:
+2026.11.06.1.
+
+Validation: the pagehide regression failed before the fix. All eleven Node
+suites, recursive JavaScript syntax and whitespace checks, and all 59 Chromium
+journeys passed. The affected speech journey also passed on the final feedback
+change, including departure, restore, restart and obsolete callbacks. Scripture,
+plan epoch and offline translation rules are unchanged.
