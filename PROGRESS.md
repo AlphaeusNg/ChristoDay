@@ -1845,3 +1845,23 @@ Validation: all eleven Node suites, per-file JavaScript syntax checks and all
 57 Chromium journeys passed. The new real-menu regression failed before the fix
 and covers both closed and open states, unchanged focus and native event handling.
 Scripture, plan epoch and offline translation rules remain unchanged.
+
+## 2026-11-05 — Keep reference previews current and strip remote handlers
+
+Opening another verse's cross-reference list cancels any older preview request.
+A late response cannot replace the newly selected references, and closing still
+returns focus to their original marker.
+
+Remote passage line breaks and reference italics/line breaks now retain only
+canonical tags, removing supplied event handlers, styles and other attributes.
+Reference links continue to become escaped buttons only for parsed reference
+paths; invalid destinations remain plain labels. Scripture wording, headings,
+red-letter formatting, plan epoch and offline translation rules are unchanged.
+Deployment stamp and local asset query stamps: 2026.11.05.2.
+
+Validation: all eleven Node suites, per-file JavaScript syntax and whitespace
+checks, and all 58 Chromium journeys passed on the final combined code. New
+unit cases failed with the original unsafe attributes. The browser regression
+proves passage/reference handlers cannot run while italic text, line breaks and
+invalid-link labels render, and a deliberately late preview cannot overwrite a
+newer reference list. The race regression also failed before its fix.

@@ -119,6 +119,8 @@
         }
         const mark = event.target.closest?.(".fn-mark");
         if (mark && root.contains(mark)) {
+          previewController?.abort();
+          previewController = null;
           const [chapter, verse] = String(mark.getAttribute("data-verse-key") || "").split(":");
           const record = verseRecord(chapter, verse);
           show(

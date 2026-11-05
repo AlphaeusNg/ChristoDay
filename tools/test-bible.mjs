@@ -160,6 +160,14 @@ function loadBible(fetchImpl, timers = {}) {
   );
   assert.doesNotMatch(comment, /onclick|alert\(/);
   assert.match(comment, /data-ref="ESV\/43\/3\/16"/);
+  const styledComment = bible.rewriteCommentHtml(
+    '<i onmouseover="alert(1)" style="position:fixed">Italic</i><br onclick="alert(2)"><i/onpointerenter=alert(3)>More</i>'
+  );
+  assert.equal(styledComment, "<i>Italic</i><br><i>More</i>");
+  assert.equal(
+    bible.sanitizeVerseHtml('<i onclick="alert(1)">Italic</i><br onclick="alert(2)"><em style="position:fixed">Emphasis</em>'),
+    "<i>Italic</i><br><i>Emphasis</i>"
+  );
 }
 
 {

@@ -1381,6 +1381,47 @@ test("prints a four-week reference checklist without journal or passage text", a
   }
 });
 
+test("a superseded cross-reference preview cannot replace newly opened references", async ({ page }) => {
+  await page.route(/^https:\/\/bolls\.life\//, route => route.fulfill({
+    json: Array.from({ length: 120 }, (_, index) => ({
+      verse: index + 1,
+      text: `Passage verse ${index + 1}.<br onclick="window.__unsafePassage = true">Remaining text.`,
+      comment: index < 2 ? `<i onmouseover="window.__unsafeComment = true">Reference</i><br onclick="window.__unsafeComment = true"><a href="WEB/43/3/16">Reference for verse ${index + 1}</a><a href="javascript:window.__unsafeComment=true">Plain label</a>` : "",
+    })),
+  }));
+  await page.goto("./?d=2026-06-16&tr=WEB");
+  await expect(page.locator("#passage-body .fn-mark")).toHaveCount(2);
+  await page.locator("#passage-body br").first().dispatchEvent("click");
+  expect(await page.evaluate(() => window.__unsafePassage === true)).toBe(false);
+  await expect(page.locator("#passage-body [onclick]")).toHaveCount(0);
+  await page.evaluate(() => {
+    ChristoBible.fetchVersePreview = (_ref, { signal }) => new Promise(resolve => {
+      window.__previewSignal = signal;
+      window.__finishPreview = () => resolve({ label: "Old preview", translation: "WEB", text: "Stale verse text" });
+    });
+  });
+  const markers = page.locator("#passage-body .fn-mark");
+  await markers.first().click();
+  const italic = page.locator("#ref-popover-body i");
+  await expect(italic).toHaveText("Reference");
+  await italic.dispatchEvent("mouseover");
+  await page.locator("#ref-popover-body br").dispatchEvent("click");
+  expect(await page.evaluate(() => window.__unsafeComment === true)).toBe(false);
+  await expect(page.locator("#ref-popover-body [onmouseover], #ref-popover-body [onclick], #ref-popover-body [href]"))
+    .toHaveCount(0);
+  await expect(page.locator("#ref-popover-body")).toContainText("Plain label");
+  await page.locator("#ref-popover .xref-link").click();
+  await expect(page.locator("#ref-popover-body")).toContainText("Loading");
+  await markers.nth(1).click();
+  await expect(page.locator("#ref-popover-title")).toHaveText("Cross references · 1:2");
+  await page.evaluate(() => window.__finishPreview());
+  await expect(page.locator("#ref-popover-title")).toHaveText("Cross references · 1:2");
+  await expect(page.locator("#ref-popover-body")).toContainText("Reference for verse 2");
+  expect(await page.evaluate(() => window.__previewSignal.aborted)).toBe(true);
+  await page.locator("#ref-popover-close").click();
+  await expect(markers.nth(1)).toBeFocused();
+});
+
 test("reports a calendar download failure without affecting the reading", async ({ page }) => {
   await page.goto("./?d=2026-06-16", { waitUntil: "domcontentloaded" });
   await openMoreMenu(page);

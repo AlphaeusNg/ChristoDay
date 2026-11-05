@@ -300,7 +300,7 @@
   function sanitizeVerseHtml(raw) {
     return String(raw || "")
       .replace(/&nbsp;/gi, " ")
-      .replace(/<br\s*\/?>/gi, "<br>")
+      .replace(/<\/?br\b[^>]*>/gi, "<br>")
       .replace(/<\/?(?:i|em)\b[^>]*>/gi, (tag) => (/^<\//.test(tag) ? "</i>" : "<i>"))
       .replace(/<(?!\/?(?:i|br)\b)[^>]+>/gi, "");
   }
@@ -340,6 +340,7 @@
       }
     );
     html = html.replace(/<(?!\/?(?:i|br)\b)[^>]+>/gi, "");
+    html = html.replace(/<(\/?)(i|br)\b[^>]*>/gi, (_, closing, tag) => `<${closing}${tag.toLowerCase()}>`);
     html = html.replace(/CHRISTOREF(\d+)TOKEN/g, (_, index) => links[Number(index)] || "");
     return html.trim();
   }
