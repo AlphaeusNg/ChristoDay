@@ -448,9 +448,9 @@
       const chapter = Number(verse.chapter);
       const number = Number(verse.verse);
       if (!Number.isInteger(chapter) || chapter < 1 || !Number.isInteger(number) || number < 1) continue;
-      const text = stripHtml(verse.text || "");
+      const text = typeof verse.text === "string" ? verse.text.trim() : "";
       if (!text) continue;
-      const heading = typeof verse.heading === "string" ? stripHtml(verse.heading) : "";
+      const heading = typeof verse.heading === "string" ? verse.heading.trim() : "";
       collected.push({
         chapter,
         verse: number,

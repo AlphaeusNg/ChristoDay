@@ -1884,3 +1884,19 @@ or image elements appear, and confirms no handler executes. A second agent's
 independent Chromium review also covered nested incomplete tags and reference
 button reinsertion; it found zero handlers and retained the legitimate reference
 button. Scripture, plan data and offline translation rules remain unchanged.
+
+
+## 2026-11-05 — Preserve plain text in saved offline readings
+
+Offline verse and heading hydration no longer parses already-plain text as
+HTML. Repeated saves and reloads previously removed literal angle-bracket text
+and decoded entity spellings again. Saved passage rendering now retains that
+text and escapes it at the HTML boundary. WEB remains the only translation
+permitted for offline copies. Version and asset stamps: 2026.11.05.4.
+
+Validation: the new library and stored-render regressions fail before their
+fixes. All eleven Node suites, per-file syntax and whitespace checks and all
+59 Chromium journeys passed on the final code. The extended offline journey
+reloads literal entity/angle-bracket text and an image-shaped string through
+three unavailable live responses; text survives, no image node appears and
+no supplied handler runs. Scripture sources and plan data are unchanged.

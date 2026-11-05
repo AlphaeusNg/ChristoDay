@@ -67,6 +67,21 @@ const storage = {
 
 const saved = readings.put(readings.empty(), webEntry);
 assert.equal(saved.ok, true);
+{
+  const text = 'Literal <words> &lt;label&gt; &amp; value';
+  const heading = 'Heading <label> &amp; text';
+  const entry = { ...webEntry, passage: { verses: [{ chapter: 1, verse: 1, text, heading }] } };
+  const result = readings.put(readings.empty(), entry);
+  assert.equal(result.ok, true);
+  let library = result.library;
+  for (let cycle = 0; cycle < 3; cycle++) {
+    assert.equal(readings.save(library, storage), true);
+    library = readings.load(storage);
+    const verse = readings.get(library, entry.ymd, "WEB").passage.verses[0];
+    assert.equal(verse.text, text, "save/load preserves already-plain verse text");
+    assert.equal(verse.heading, heading, "save/load preserves already-plain headings");
+  }
+}
 assert.equal(readings.save(saved.library, storage), true);
 const loaded = readings.load(storage);
 assert.equal(

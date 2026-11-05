@@ -46,14 +46,16 @@
       if (!isRecord(verse)) return null;
       const chapter = Number(verse.chapter);
       const number = Number(verse.verse);
-      const text = plainText(verse.text);
+      // Passage verses are already plain text. Re-parsing them as HTML changes
+      // literal brackets and entity spellings every time the library is saved.
+      const text = typeof verse.text === "string" ? verse.text.trim() : "";
       if (!Number.isInteger(chapter) || chapter < 1 || !Number.isInteger(number) || number < 1) return null;
       if (!text || text.length > 4000) return null;
       const coordinate = `${chapter}:${number}`;
       if (coordinates.has(coordinate)) return null;
       coordinates.add(coordinate);
       const row = { chapter, verse: number, text };
-      const heading = plainText(verse.heading);
+      const heading = typeof verse.heading === "string" ? verse.heading.trim() : "";
       if (heading) row.heading = heading.slice(0, 80);
       verses.push(row);
       if (verses.length > MAX_VERSES) return null;

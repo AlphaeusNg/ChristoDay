@@ -314,6 +314,15 @@ function loadBible(fetchImpl, timers = {}) {
   assert.match(rendered.html, /class="wj"/);
   assert.doesNotMatch(rendered.html, /<script>/);
   assert.match(rendered.verses[0].text, /Blessed/);
+  assert.equal(rendered.verses[0].text, "Blessed <script>alert(1)</script>", "stored plain text remains literal");
+  assert.match(rendered.html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/, "stored markup-shaped text is escaped");
+  const literal = 'Literal <words> &lt;label&gt; &amp; value';
+  const preserved = bible.renderStoredVerses("philippians", [
+    { chapter: 1, verse: 1, text: literal, heading: literal },
+  ]);
+  assert.equal(preserved.verses[0].text, literal);
+  assert.equal(preserved.verses[0].heading, literal);
+  assert.match(preserved.html, /&lt;words&gt; &amp;lt;label&amp;gt; &amp;amp; value/);
   const letter = bible.renderStoredVerses("philippians", [
     { chapter: 1, verse: 1, text: "Paul" },
   ]);

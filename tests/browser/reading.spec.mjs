@@ -956,6 +956,14 @@ test("saves a permitted reading for offline use and refuses the others", async (
   await expect(page.locator("#btn-remove-reading")).toBeVisible();
   await expect(page.locator("#btn-save-reading")).toBeHidden();
   let unavailablePayload = [];
+  const literalTail = 'Literal <words> &lt;label&gt; &amp; value <img src=x onerror="window.savedTextExecuted=true">';
+  await page.evaluate((literalTail) => {
+    const library = JSON.parse(localStorage.getItem("christoday.readings.v1"));
+    const verse = library.items["2026-06-16:WEB"].passage.verses[0];
+    verse.text += ` ${literalTail}`;
+    verse.heading = literalTail;
+    localStorage.setItem("christoday.readings.v1", JSON.stringify(library));
+  }, literalTail);
   await page.route(/^https:\/\/bolls\.life\//, async (route) => {
     await route.fulfill({
       status: 200,
@@ -968,6 +976,9 @@ test("saves a permitted reading for offline use and refuses the others", async (
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("#passage-body")).toContainText("WEB book 40 chapter 1 verse 1");
     await expect(page.locator("#passage-body")).not.toContainText("Biblica");
+    await expect(page.locator("#passage-body")).toContainText(literalTail);
+    await expect(page.locator("#passage-body img")).toHaveCount(0);
+    expect(await page.evaluate(() => window.savedTextExecuted)).toBeUndefined();
     await expect(page.locator("#passage-availability")).toContainText("saved on this device");
     await expect(page.locator("#passage-availability")).toContainText("1 of 30 offline slots used: 2026-06-16");
   }
