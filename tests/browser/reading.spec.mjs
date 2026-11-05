@@ -1381,6 +1381,36 @@ test("prints a four-week reference checklist without journal or passage text", a
   }
 });
 
+test("incomplete remote tags stay text beside trusted passage and reference markup", async ({ page }) => {
+  const tails = [
+    'Verse text <i onmouseover="window.__unsafeTail = true"',
+    'Verse text <img src=x onerror="window.__unsafeTail = true"',
+  ];
+  await page.route(/^https:\/\/bolls\.life\//, route => route.fulfill({
+    json: Array.from({ length: 120 }, (_, index) => ({
+      verse: index + 1,
+      text: tails[index] || "Ordinary verse text.",
+      comment: index === 0
+        ? '<i onmouseover="window.__unsafeCommentTail = true" <a href="/ESV/43/3/16">John 3:16</a>'
+        : "",
+    })),
+  }));
+  await page.goto("./?d=2026-06-16&tr=WEB");
+  const verses = page.locator("#passage-body .verse");
+  await expect(verses).toHaveCount(17);
+  for (let index = 0; index < tails.length; index++) {
+    await expect(verses.nth(index)).toContainText(tails[index]);
+    await verses.nth(index).dispatchEvent("mouseover");
+  }
+  await expect(page.locator("#passage-body [onmouseover], #passage-body [onerror], #passage-body img")).toHaveCount(0);
+  await page.locator("#passage-body .fn-mark").click();
+  await expect(page.locator("#ref-popover-body .xref-link")).toHaveText("John 3:16");
+  await expect(page.locator("#ref-popover-body")).toContainText('<i onmouseover="window.__unsafeCommentTail = true"');
+  await page.locator("#ref-popover-body .xref-link").dispatchEvent("mouseover");
+  await expect(page.locator("#ref-popover-body [onmouseover], #ref-popover-body i")).toHaveCount(0);
+  expect(await page.evaluate(() => Boolean(window.__unsafeTail || window.__unsafeCommentTail))).toBe(false);
+});
+
 test("a superseded cross-reference preview cannot replace newly opened references", async ({ page }) => {
   await page.route(/^https:\/\/bolls\.life\//, route => route.fulfill({
     json: Array.from({ length: 120 }, (_, index) => ({

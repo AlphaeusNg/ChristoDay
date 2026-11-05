@@ -168,6 +168,15 @@ function loadBible(fetchImpl, timers = {}) {
     bible.sanitizeVerseHtml('<i onclick="alert(1)">Italic</i><br onclick="alert(2)"><em style="position:fixed">Emphasis</em>'),
     "<i>Italic</i><br><i>Emphasis</i>"
   );
+  for (const tag of ["i onmouseover", "img src=x onerror"]) {
+    const tail = `Verse text <${tag}="globalThis.sanitizerBypass = 1"`;
+    assert.equal(bible.sanitizeVerseHtml(tail), tail.replace("<", "&lt;"));
+  }
+  const incompleteComment = bible.rewriteCommentHtml(
+    '<i onmouseover="globalThis.commentBypass = 1" <a href="/ESV/43/3/16">John 3:16</a>'
+  );
+  assert.match(incompleteComment, /^&lt;i onmouseover=/);
+  assert.match(incompleteComment, /<button type="button" class="xref-link"/);
 }
 
 {

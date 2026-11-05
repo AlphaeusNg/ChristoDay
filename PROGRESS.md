@@ -1865,3 +1865,22 @@ unit cases failed with the original unsafe attributes. The browser regression
 proves passage/reference handlers cannot run while italic text, line breaks and
 invalid-link labels render, and a deliberately late preview cannot overwrite a
 newer reference list. The race regression also failed before its fix.
+
+## 2026-11-05 — Escape incomplete remote tags before adding trusted markup
+
+Independent review of the preceding sanitizer fix found that an unfinished
+remote tag could consume the closing passage span or a generated reference
+button. Both sanitizers now escape every remaining `<` except complete canonical
+italic/line-break tags before any trusted markup is appended or reinserted.
+Malformed source tails render as literal text; ordinary encoded entities,
+italics, line breaks, headings and reference buttons retain their behavior.
+Version and all local asset query stamps: 2026.11.05.3.
+
+Validation: all eleven Node suites, per-file JavaScript syntax and whitespace
+checks, and all 59 Chromium journeys passed on the final code. New browser
+coverage renders incomplete italic/image tails through the real passage and
+reference paths, checks that supplied text survives, verifies no event attributes
+or image elements appear, and confirms no handler executes. A second agent's
+independent Chromium review also covered nested incomplete tags and reference
+button reinsertion; it found zero handlers and retained the legitimate reference
+button. Scripture, plan data and offline translation rules remain unchanged.
